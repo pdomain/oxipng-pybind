@@ -1,4 +1,4 @@
-# se-pyoxipng Docs
+# oxipng-pybind Docs
 
 - [File optimization usage](usage/file-optimization.md)
 - [Upstream bump process](process/upstream-bumps.md)

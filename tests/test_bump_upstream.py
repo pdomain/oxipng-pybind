@@ -52,7 +52,7 @@ def test_update_pyproject_toml(tmp_path: Path) -> None:
     path.write_text(
         """
 [project]
-name = "se-pyoxipng"
+name = "oxipng-pybind"
 version = "10.1.0"
 """.lstrip(),
         encoding="utf-8",
@@ -69,7 +69,7 @@ def test_update_cargo_toml(tmp_path: Path) -> None:
     path.write_text(
         """
 [package]
-name = "se-pyoxipng"
+name = "oxipng-pybind"
 version = "10.1.0"
 
 [dependencies]

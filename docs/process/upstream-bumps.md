@@ -1,6 +1,6 @@
 # Upstream Bumps
 
-`se-pyoxipng` tracks upstream `oxipng` releases.
+`oxipng-pybind` tracks upstream `oxipng` releases.
 
 The scheduled `upstream-bump.yml` workflow:
 

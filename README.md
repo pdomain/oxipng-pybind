@@ -1,6 +1,6 @@
-# se-pyoxipng
+# oxipng-pybind
 
-`se-pyoxipng` is a focused Python wrapper around the Rust
+`oxipng-pybind` is a focused Python wrapper around the Rust
 [`oxipng`](https://github.com/oxipng/oxipng) library.
 
 It supports file-based PNG optimization while tracking current upstream
@@ -9,12 +9,12 @@ It supports file-based PNG optimization while tracking current upstream
 ## Install
 
 ```bash
-pip install se-pyoxipng
+pip install oxipng-pybind
 ```
 
 ## Supported API
 
-The distribution is named `se-pyoxipng`, but the import module is `oxipng`.
+The distribution is named `oxipng-pybind`, but the import module is `oxipng`.
 
 ```python
 from oxipng import optimize

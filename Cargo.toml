@@ -1,10 +1,10 @@
 [package]
-name = "se-pyoxipng"
+name = "oxipng-pybind"
 version = "10.1.1"
 edition = "2021"
 license = "MIT"
 description = "Focused Python wrapper for oxipng"
-repository = "https://github.com/ConcaveTrillion/se-pyoxipng"
+repository = "https://github.com/ConcaveTrillion/oxipng-pybind"
 rust-version = "1.85.1"
 
 [lib]

@@ -3,7 +3,7 @@ requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "se-pyoxipng"
+name = "oxipng-pybind"
 version = "10.1.1"
 description = "Focused Python wrapper for oxipng."
 readme = "README.md"
@@ -30,8 +30,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/ConcaveTrillion/se-pyoxipng"
-Issues = "https://github.com/ConcaveTrillion/se-pyoxipng/issues"
+Repository = "https://github.com/ConcaveTrillion/oxipng-pybind"
+Issues = "https://github.com/ConcaveTrillion/oxipng-pybind/issues"
 Upstream = "https://github.com/oxipng/oxipng"
 
 [dependency-groups]

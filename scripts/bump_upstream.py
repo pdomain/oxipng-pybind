@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bump se-pyoxipng to the latest upstream oxipng release."""
+"""Bump oxipng-pybind to the latest upstream oxipng release."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def main() -> int:
     update_cargo_toml(ROOT / "Cargo.toml", version)
     update_cargo_lock(version)
     update_uv_lock()
-    print(f"updated se-pyoxipng to oxipng {version}")
+    print(f"updated oxipng-pybind to oxipng {version}")
     return 0
 
 

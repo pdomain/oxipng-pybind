@@ -1,4 +1,4 @@
-"""Typing stub for the supported se-pyoxipng API."""
+"""Typing stub for the supported oxipng-pybind API."""
 
 from os import PathLike
 

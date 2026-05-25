@@ -11,5 +11,5 @@ path = Path("cover.png")
 optimize(path, level=6)
 ```
 
-The distribution is named `se-pyoxipng`, but the import module remains
+The distribution is named `oxipng-pybind`, but the import module remains
 `oxipng`.

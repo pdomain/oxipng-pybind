@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-`se-pyoxipng` wraps upstream `oxipng`.
+`oxipng-pybind` wraps upstream `oxipng`.
 
 ## oxipng
 

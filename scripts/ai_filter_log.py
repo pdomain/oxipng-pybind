@@ -12,7 +12,7 @@ EXPECTED_ARG_COUNT = 2
 def main() -> int:
     """Print the final log lines for quick agent feedback."""
     if len(sys.argv) != EXPECTED_ARG_COUNT:
-        print("usage: ai-filter-log.py LOG", file=sys.stderr)
+        print("usage: ai_filter_log.py LOG", file=sys.stderr)
         return 2
 
     path = Path(sys.argv[1])

@@ -10,7 +10,7 @@ $(_goals):
 	@rm -f $(LOG)
 	@$(MAKE) --no-print-directory AI= $@ > $(LOG) 2>&1 \
 		&& echo "$@ passed (log: $(LOG))" \
-		|| (echo "$@ failed:"; uv run scripts/ai-filter-log.py $(LOG); echo "(full log: $(LOG))"; exit 1)
+		|| (echo "$@ failed:"; uv run scripts/ai_filter_log.py $(LOG); echo "(full log: $(LOG))"; exit 1)
 
 else
 

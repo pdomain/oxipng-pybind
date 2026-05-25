@@ -61,8 +61,9 @@ dev = [
 ]
 
 [tool.maturin]
-module-name = "oxipng"
+module-name = "_oxipng"
 features = ["pyo3/extension-module"]
+python-packages = ["oxipng"]
 include = [
     { path = "oxipng.pyi", format = ["sdist", "wheel"] },
 ]

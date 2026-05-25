@@ -8,7 +8,7 @@ repository = "https://github.com/ConcaveTrillion/se-pyoxipng"
 rust-version = "1.85.1"
 
 [lib]
-name = "oxipng"
+name = "_oxipng"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]

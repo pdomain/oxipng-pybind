@@ -1,0 +1,141 @@
+[build-system]
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "se-pyoxipng"
+version = "10.1.1"
+description = "Standard Ebooks focused Python wrapper for oxipng."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "ConcaveTrillion", email = "ConcaveTrillion@gmail.com" },
+]
+keywords = ["png", "optimizer", "oxipng", "standard-ebooks"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/ConcaveTrillion/se-pyoxipng"
+Issues = "https://github.com/ConcaveTrillion/se-pyoxipng/issues"
+Upstream = "https://github.com/oxipng/oxipng"
+
+[dependency-groups]
+test = [
+    "pillow>=10.0",
+    "pytest>=8.4",
+    "pytest-cov>=6.2.1",
+    "pytest-xdist>=3.6",
+]
+lint = [
+    "basedpyright>=1.39.4",
+    "gitlint>=0.19.1",
+    "pre-commit>=4.3",
+    "ruff>=0.13",
+]
+build = [
+    "maturin>=1.8,<2.0",
+]
+automation = [
+    "tomlkit>=0.13",
+]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+    { include-group = "build" },
+    { include-group = "automation" },
+]
+
+[tool.maturin]
+module-name = "oxipng"
+features = ["pyo3/extension-module"]
+include = [
+    { path = "oxipng.pyi", format = ["sdist", "wheel"] },
+]
+strip = true
+
+[tool.pytest.ini_options]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
+testpaths = ["tests"]
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "ANN",
+    "B",
+    "BLE",
+    "C4",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "G",
+    "I",
+    "LOG",
+    "N",
+    "PERF",
+    "PL",
+    "PT",
+    "RET",
+    "RUF",
+    "S",
+    "SIM",
+    "T20",
+    "TC",
+    "TID",
+    "TRY",
+    "UP",
+    "W",
+]
+ignore = [
+    "COM812",
+    "D100",
+    "D104",
+    "D107",
+    "D203",
+    "D212",
+    "E501",
+    "TRY003",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN", "D", "PLR2004", "S101", "S108"]
+"scripts/*.py" = ["D", "S310", "S603", "T201"]
+
+[tool.basedpyright]
+include = ["oxipng.pyi", "tests", "scripts"]
+exclude = ["**/__pycache__", "**/.venv", "target"]
+typeCheckingMode = "recommended"
+failOnWarnings = true
+pythonVersion = "3.10"
+venvPath = "."
+venv = ".venv"
+reportAny = "none"
+reportExplicitAny = "none"
+reportMissingTypeStubs = "none"
+reportUnusedCallResult = "none"

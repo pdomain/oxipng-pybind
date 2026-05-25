@@ -1,0 +1,14 @@
+.cache/
+.coverage
+.ci-ai.log
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+build/
+dist/
+htmlcov/
+target/
+*.egg-info/
+*.pyc

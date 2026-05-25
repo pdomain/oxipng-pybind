@@ -65,7 +65,7 @@ module-name = "_oxipng"
 features = ["pyo3/extension-module"]
 python-packages = ["oxipng"]
 include = [
-    { path = "oxipng.pyi", format = ["sdist", "wheel"] },
+    { path = "oxipng/__init__.pyi", format = ["sdist", "wheel"] },
 ]
 strip = true
 
@@ -129,7 +129,7 @@ convention = "google"
 "scripts/*.py" = ["D", "S310", "S603", "T201"]
 
 [tool.basedpyright]
-include = ["oxipng.pyi", "tests", "scripts"]
+include = ["oxipng", "tests", "scripts"]
 exclude = ["**/__pycache__", "**/.venv", "target"]
 typeCheckingMode = "recommended"
 failOnWarnings = true

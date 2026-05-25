@@ -1,36 +1,25 @@
 """Python facade for the native oxipng extension."""
 
-import inspect
-from os import PathLike
+from typing import TYPE_CHECKING
 
-from _oxipng import PngError, optimize as _optimize
+if TYPE_CHECKING:
+    from os import PathLike
 
-StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
+    StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
 
+    class PngError(Exception):
+        """Raised when oxipng cannot optimize the input PNG."""
 
-def optimize(
-    input: StrOrBytesPath,
-    output: StrOrBytesPath | None = None,
-    **kwargs: object,
-) -> None:
-    """Optimize a PNG file on disk."""
-    _optimize(input, output, **kwargs)
+    def optimize(
+        input: StrOrBytesPath,
+        output: StrOrBytesPath | None = None,
+        *,
+        level: int = 2,
+    ) -> None:
+        """Optimize a PNG file on disk."""
+        _ = (input, output, level)
 
-
-optimize.__signature__ = inspect.Signature(
-    parameters=[
-        inspect.Parameter("input", inspect.Parameter.POSITIONAL_OR_KEYWORD),
-        inspect.Parameter(
-            "output",
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            default=None,
-        ),
-        inspect.Parameter(
-            "level",
-            inspect.Parameter.KEYWORD_ONLY,
-            default=2,
-        ),
-    ],
-)
+else:
+    from _oxipng import PngError, optimize
 
 __all__ = ["PngError", "optimize"]

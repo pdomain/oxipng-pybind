@@ -16,6 +16,9 @@ The workflow does not push directly to `main`.
 
 Enable these GitHub settings for CI-gated auto-merge:
 
+- Add an `UPSTREAM_BUMP_TOKEN` repository secret. The token must be able to
+  create pull requests and enable auto-merge so bump PRs trigger normal PR CI
+  checks and can merge through protected-branch requirements.
 - Allow GitHub Actions to create and approve pull requests.
 - Enable auto-merge for the repository.
 - Protect `main`.

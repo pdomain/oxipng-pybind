@@ -15,14 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       UV_PYTHON: "3.13"
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
         with:
-          version: latest
+          version: 0.11.12
+      - uses: dtolnay/rust-toolchain@1.85.1
       - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+        run: cargo install cargo-deny --version 0.19.7 --locked
       - name: Sync dependencies
         run: uv sync --group dev
       - name: Bump upstream
@@ -38,11 +38,21 @@ jobs:
       - name: Run CI before opening PR
         if: steps.changes.outputs.changed == 'true'
         run: make ci
+      - name: Check upstream bump token
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          UPSTREAM_BUMP_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
+        run: |
+          if [ -z "$UPSTREAM_BUMP_TOKEN" ]; then
+            echo "UPSTREAM_BUMP_TOKEN is required to create bump PRs with normal PR CI checks and auto-merge."
+            exit 1
+          fi
       - name: Create pull request
         if: steps.changes.outputs.changed == 'true'
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
           commit-message: "chore: bump upstream oxipng"
           title: "chore: bump upstream oxipng"
           body: |
@@ -53,5 +63,9 @@ jobs:
           delete-branch: true
           labels: dependencies, automated
       - name: Enable auto-merge
-        if: steps.cpr.outputs.pull-request-number != ''
+        if: >-
+          steps.cpr.outputs.pull-request-number != '' &&
+          contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
         run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch

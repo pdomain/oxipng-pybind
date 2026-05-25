@@ -26,7 +26,7 @@ help: ## Show this help message
 setup: ## Sync deps, build editable extension, and install pre-commit hooks
 	uv sync --group dev
 	uv run maturin develop
-	-uv run pre-commit install
+	uv run pre-commit install
 
 develop: ## Build and install the editable extension
 	uv run maturin develop
@@ -61,7 +61,7 @@ md-lint: ## Run markdownlint via pre-commit
 	-uv run pre-commit run markdownlint-cli2 --all-files
 
 md-lint-fix: ## Run markdownlint auto-fix via pre-commit
-	-uv run pre-commit run --hook-stage manual markdownlint-cli2-fix --all-files
+	@echo "No markdownlint auto-fix hook is configured."
 
 format: ## Format Rust and Python, then run lint
 	cargo fmt --all

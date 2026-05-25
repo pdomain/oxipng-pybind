@@ -24,7 +24,9 @@ jobs:
         with:
           components: clippy
       - name: Install cargo-deny
-        run: cargo install cargo-deny --version 0.18.3 --locked
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.19.7
       - name: Sync dependencies
         run: uv sync --group dev
       - name: Bump upstream

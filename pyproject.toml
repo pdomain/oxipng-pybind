@@ -66,6 +66,7 @@ features = ["pyo3/extension-module"]
 python-packages = ["oxipng"]
 include = [
     { path = "oxipng/__init__.pyi", format = ["sdist", "wheel"] },
+    { path = "oxipng/py.typed", format = ["sdist", "wheel"] },
 ]
 strip = true
 

@@ -3,8 +3,8 @@
 `se-pyoxipng` is a focused Python wrapper around the Rust
 [`oxipng`](https://github.com/oxipng/oxipng) library.
 
-It exists to support the PNG optimization API currently used by Standard
-Ebooks tooling while tracking current upstream `oxipng` releases.
+It supports file-based PNG optimization while tracking current upstream
+`oxipng` releases.
 
 ## Install
 

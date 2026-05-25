@@ -15,6 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
 
 
+def resolve_executable(name: str) -> str:
+    """Resolve an executable path for subprocess calls."""
+    executable = shutil.which(name)
+    if executable is None:
+        raise RuntimeError(f"{name} executable not found on PATH")
+    return executable
+
+
 def normalize_version(version: str) -> str:
     """Normalize GitHub tag names to packaging versions."""
     return version.removeprefix("v")
@@ -44,12 +52,17 @@ def update_cargo_toml(path: Path, version: str) -> None:
 
 def update_cargo_lock(version: str) -> None:
     """Refresh Cargo.lock for the requested upstream oxipng version."""
-    cargo = shutil.which("cargo")
-    if cargo is None:
-        raise RuntimeError("cargo executable not found on PATH")
-
     subprocess.run(
-        [cargo, "update", "-p", "oxipng", "--precise", version],
+        [resolve_executable("cargo"), "update", "-p", "oxipng", "--precise", version],
+        cwd=ROOT,
+        check=True,
+    )
+
+
+def update_uv_lock() -> None:
+    """Refresh uv.lock for the updated Python package metadata."""
+    subprocess.run(
+        [resolve_executable("uv"), "lock"],
         cwd=ROOT,
         check=True,
     )
@@ -61,6 +74,7 @@ def main() -> int:
     update_pyproject_toml(ROOT / "pyproject.toml", version)
     update_cargo_toml(ROOT / "Cargo.toml", version)
     update_cargo_lock(version)
+    update_uv_lock()
     print(f"updated se-pyoxipng to oxipng {version}")
     return 0
 

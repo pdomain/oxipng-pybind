@@ -5,14 +5,14 @@ build-backend = "maturin"
 [project]
 name = "se-pyoxipng"
 version = "10.1.1"
-description = "Standard Ebooks focused Python wrapper for oxipng."
+description = "Focused Python wrapper for oxipng."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
     { name = "ConcaveTrillion", email = "ConcaveTrillion@gmail.com" },
 ]
-keywords = ["png", "optimizer", "oxipng", "standard-ebooks"]
+keywords = ["png", "optimizer", "oxipng"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

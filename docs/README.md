@@ -1,4 +1,4 @@
 # se-pyoxipng Docs
 
-- [Standard Ebooks usage](usage/standard-ebooks.md)
+- [File optimization usage](usage/file-optimization.md)
 - [Upstream bump process](process/upstream-bumps.md)

@@ -25,7 +25,7 @@ def test_optimize_signature_matches_supported_api() -> None:
     assert str(inspect.signature(optimize)) == "(input, output=None, *, level=2)"
 
 
-def test_optimize_in_place_with_standard_ebooks_level(png_path: Path) -> None:
+def test_optimize_in_place_with_high_compression_level(png_path: Path) -> None:
     optimize(png_path, level=6)
 
     assert_readable_png(png_path)

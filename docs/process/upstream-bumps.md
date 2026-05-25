@@ -5,7 +5,7 @@
 The scheduled `upstream-bump.yml` workflow:
 
 1. Reads the latest release from `oxipng/oxipng`.
-2. Updates `Cargo.toml`, `Cargo.lock`, and `pyproject.toml`.
+2. Updates `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, and `uv.lock`.
 3. Runs the full repository CI.
 4. Opens a pull request when files changed.
 5. Enables auto-merge for that pull request.

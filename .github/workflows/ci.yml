@@ -21,6 +21,8 @@ jobs:
         with:
           version: 0.11.12
       - uses: dtolnay/rust-toolchain@1.85.1
+        with:
+          components: clippy
       - name: Install cargo-deny
         run: cargo install cargo-deny --version 0.18.3 --locked
       - run: make ci

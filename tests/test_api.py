@@ -1,5 +1,6 @@
 """Supported public API tests."""
 
+import inspect
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,12 @@ def test_import_supported_api() -> None:
 
     assert callable(optimize)
     assert issubclass(PngError, Exception)
+
+
+def test_optimize_signature_matches_supported_api() -> None:
+    from oxipng import optimize
+
+    assert str(inspect.signature(optimize)) == "(input, output=None, *, level=2)"
 
 
 def test_optimize_in_place_with_standard_ebooks_level(png_path: Path) -> None:

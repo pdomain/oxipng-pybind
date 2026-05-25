@@ -43,6 +43,7 @@ fn map_png_error(error: oxi::PngError) -> PyErr {
 
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
+#[pyo3(text_signature = "(input, output=None, *, level=2)")]
 fn optimize(
     input: PathBuf,
     output: Option<PathBuf>,

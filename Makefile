@@ -58,7 +58,7 @@ py-lint-fix: ## Run ruff format and ruff check --fix
 	uv run ruff check --fix .
 
 md-lint: ## Run markdownlint via pre-commit
-	-uv run pre-commit run markdownlint-cli2 --all-files
+	uv run pre-commit run markdownlint-cli2 --all-files
 
 md-lint-fix: ## Run markdownlint auto-fix via pre-commit
 	@echo "No markdownlint auto-fix hook is configured."

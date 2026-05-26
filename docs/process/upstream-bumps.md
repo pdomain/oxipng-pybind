@@ -6,9 +6,15 @@ The scheduled `upstream-bump.yml` workflow:
 
 1. Reads the latest release from `oxipng/oxipng`.
 2. Updates `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, and `uv.lock`.
-3. Runs the full repository CI.
-4. Opens a pull request when files changed.
-5. Enables auto-merge for that pull request.
+3. Fetches the matching upstream tag into `.cache/upstream/oxipng`.
+4. Copies the prior API surface manifest to the target version when needed.
+5. Runs `scripts/scan_upstream_surface.py --update-docs`.
+6. Runs the full repository CI.
+7. Opens a pull request when files changed, including the scan summary.
+8. Opens or updates one `upstream-surface` triage issue per upstream version
+   when the scan detects new unexposed surface.
+9. Enables auto-merge only when CI passes and the scan reports no broken
+   exposed mappings.
 
 The workflow does not push directly to `main`.
 

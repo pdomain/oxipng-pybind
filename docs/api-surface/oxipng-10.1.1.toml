@@ -1,0 +1,70 @@
+upstream_version = "10.1.1"
+
+[functions]
+exposed = ["optimize", "optimize_from_memory"]
+
+[options.exposed]
+level = "Options::from_preset"
+interlace = "Options.interlace"
+strip = "Options.strip"
+deflate = "Options.deflater"
+filter = "Options.filters"
+fix_errors = "Options.fix_errors"
+force = "Options.force"
+
+[options.unexposed]
+optimize_alpha = "lossy transparent-pixel optimization deferred"
+bit_depth_reduction = "kept at preset value"
+color_type_reduction = "kept at preset value"
+palette_reduction = "kept at preset value"
+grayscale_reduction = "kept at preset value"
+idat_recoding = "kept at preset value"
+scale_16 = "kept at preset value"
+fast_evaluation = "kept at preset value"
+timeout = "timeout policy deferred"
+max_decompressed_size = "resource-limit policy deferred"
+
+[enums.Interlacing.exposed]
+keep = "Options.interlace = None"
+off = "Options.interlace = Some(false)"
+on = "Options.interlace = Some(true)"
+
+[enums.StripChunks.exposed]
+none = "StripChunks::None"
+safe = "StripChunks::Safe"
+all = "StripChunks::All"
+
+[enums.StripChunks.unexposed]
+Strip = "requires chunk-name parsing policy"
+Keep = "requires chunk-name parsing policy"
+
+[enums.Deflater.exposed]
+libdeflater = "Deflater::Libdeflater"
+zopfli = "Deflater::Zopfli(Default::default())"
+
+[enums.FilterStrategy.exposed]
+none = "FilterStrategy::Basic(RowFilter::None)"
+sub = "FilterStrategy::Basic(RowFilter::Sub)"
+up = "FilterStrategy::Basic(RowFilter::Up)"
+average = "FilterStrategy::Basic(RowFilter::Average)"
+paeth = "FilterStrategy::Basic(RowFilter::Paeth)"
+minsum = "FilterStrategy::MinSum"
+entropy = "FilterStrategy::Entropy"
+bigrams = "FilterStrategy::Bigrams"
+bigent = "FilterStrategy::BigEnt"
+brute = "FilterStrategy::Brute { num_lines: 3, level: 1 }"
+
+[enums.FilterStrategy.unexposed]
+Predefined = "requires per-row filter input API"
+
+[enums.RowFilter.exposed]
+None = "RowFilter::None"
+Sub = "RowFilter::Sub"
+Up = "RowFilter::Up"
+Average = "RowFilter::Average"
+Paeth = "RowFilter::Paeth"
+
+[notes]
+interlacing = "Python Interlacing.keep maps to leaving Options.interlace unchanged as None."
+libdeflater = "Python Deflater.libdeflater preserves the preset compression level."
+brute = "Python FilterStrategy.brute collapses to Brute { num_lines: 3, level: 1 }."

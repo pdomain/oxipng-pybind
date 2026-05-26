@@ -1,5 +1,7 @@
 """Tests for upstream bump helpers."""
+# pyright: reportUnannotatedClassAttribute=false, reportUnknownArgumentType=false, reportUnknownLambdaType=false, reportUnusedParameter=false
 
+import json
 import shutil
 import subprocess
 import urllib.request
@@ -127,3 +129,120 @@ def test_update_uv_lock_runs_uv_lock(monkeypatch: pytest.MonkeyPatch) -> None:
     bump_upstream.update_uv_lock()
 
     assert calls == [(["/usr/bin/uv", "lock"], bump_upstream.ROOT, True)]
+
+
+def test_write_target_version(tmp_path: Path) -> None:
+    path = tmp_path / "out" / "version.txt"
+
+    bump_upstream.write_target_version("10.2.0", path)
+
+    assert path.read_text(encoding="utf-8") == "10.2.0\n"
+
+
+def test_find_surface_issue_returns_matching_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_which(executable: str) -> str | None:
+        assert executable == "gh"
+        return "/usr/bin/gh"
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        check: bool,
+        capture_output: bool,
+        text: bool,
+    ) -> object:
+        assert command[:3] == ["/usr/bin/gh", "issue", "list"]
+        assert cwd == bump_upstream.ROOT
+        assert check is True
+        assert capture_output is True
+        assert text is True
+
+        class Result:
+            stdout = json.dumps(
+                [
+                    {
+                        "number": 12,
+                        "title": "Evaluate upstream oxipng 10.2.0 surface changes",
+                    }
+                ]
+            )
+
+        return Result()
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert bump_upstream.find_surface_issue("10.2.0") == 12
+
+
+def test_find_surface_issue_ignores_different_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_which(executable: str) -> str | None:
+        return f"/usr/bin/{executable}"
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        check: bool,
+        capture_output: bool,
+        text: bool,
+    ) -> object:
+        class Result:
+            stdout = json.dumps(
+                [
+                    {
+                        "number": 12,
+                        "title": "Evaluate upstream oxipng 10.3.0 surface changes",
+                    }
+                ]
+            )
+
+        return Result()
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert bump_upstream.find_surface_issue("10.2.0") is None
+
+
+def test_upsert_surface_issue_creates_when_missing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    report = tmp_path / "pr-body-section.md"
+    report.write_text("report", encoding="utf-8")
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: None)
+    monkeypatch.setattr(shutil, "which", lambda executable: f"/usr/bin/{executable}")
+
+    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
+        calls.append(command)
+        return object()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    bump_upstream.upsert_surface_issue("10.2.0", report)
+
+    assert calls[0][:3] == ["/usr/bin/gh", "issue", "create"]
+
+
+def test_upsert_surface_issue_updates_existing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    report = tmp_path / "pr-body-section.md"
+    report.write_text("report", encoding="utf-8")
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: 12)
+    monkeypatch.setattr(shutil, "which", lambda executable: f"/usr/bin/{executable}")
+
+    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
+        calls.append(command)
+        return object()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    bump_upstream.upsert_surface_issue("10.2.0", report)
+
+    assert calls[0][:4] == ["/usr/bin/gh", "issue", "edit", "12"]

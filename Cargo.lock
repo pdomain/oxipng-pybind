@@ -203,6 +203,7 @@ dependencies = [
 name = "oxipng-pybind"
 version = "10.1.1"
 dependencies = [
+ "indexmap",
  "oxipng",
  "pyo3",
 ]

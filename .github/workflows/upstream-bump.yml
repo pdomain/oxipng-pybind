@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 jobs:
@@ -30,7 +31,23 @@ jobs:
       - name: Sync dependencies
         run: uv sync --group dev
       - name: Bump upstream
+        id: bump
         run: uv run python scripts/bump_upstream.py
+      - name: Fetch upstream source
+        run: |
+          version="${{ steps.bump.outputs.target-version }}"
+          git clone --depth 1 --branch "v$version" https://github.com/oxipng/oxipng .cache/upstream/oxipng
+      - name: Prepare API surface manifest
+        run: |
+          version="${{ steps.bump.outputs.target-version }}"
+          mkdir -p docs/api-surface
+          if [ ! -f "docs/api-surface/oxipng-$version.toml" ]; then
+            previous="$(ls docs/api-surface/oxipng-*.toml | sort -V | tail -n 1)"
+            cp "$previous" "docs/api-surface/oxipng-$version.toml"
+            sed -i "s/^upstream_version = .*/upstream_version = \"$version\"/" "docs/api-surface/oxipng-$version.toml"
+          fi
+      - name: Scan upstream surface
+        run: uv run --group dev python scripts/scan_upstream_surface.py --update-docs
       - name: Check for changes
         id: changes
         run: |
@@ -51,6 +68,17 @@ jobs:
             echo "UPSTREAM_BUMP_TOKEN is required to create bump PRs with normal PR CI checks and auto-merge."
             exit 1
           fi
+      - name: Write pull request body
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          mkdir -p .cache/upstream-bump
+          {
+            echo "Automated upstream oxipng bump."
+            echo
+            cat .cache/upstream-surface/pr-body-section.md
+            echo
+            echo "Auto-merge is enabled only after required checks pass."
+          } > .cache/upstream-bump/pr-body.md
       - name: Create pull request
         if: steps.changes.outputs.changed == 'true'
         id: cpr
@@ -59,13 +87,22 @@ jobs:
           token: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
           commit-message: "chore: bump upstream oxipng"
           title: "chore: bump upstream oxipng"
-          body: |
-            Automated upstream oxipng bump.
-
-            Auto-merge is enabled only after required checks pass.
+          body-path: .cache/upstream-bump/pr-body.md
           branch: automation/bump-oxipng
           delete-branch: true
           labels: dependencies, automated
+      - name: Create or update upstream surface issue
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
+        run: |
+          uv run python - <<'PY'
+          from pathlib import Path
+          from scripts.bump_upstream import upsert_surface_issue
+
+          version = Path(".cache/upstream-bump/target-version.txt").read_text(encoding="utf-8").strip()
+          upsert_surface_issue(version, Path(".cache/upstream-surface/pr-body-section.md"))
+          PY
       - name: Enable auto-merge
         if: >-
           steps.cpr.outputs.pull-request-number != '' &&

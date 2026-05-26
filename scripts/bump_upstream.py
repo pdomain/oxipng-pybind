@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import urllib.request
@@ -68,6 +69,88 @@ def update_uv_lock() -> None:
     )
 
 
+def write_target_version(version: str, path: Path) -> None:
+    """Write the target upstream version for workflow steps."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(version + "\n", encoding="utf-8")
+
+
+def emit_github_output(name: str, value: str) -> None:
+    """Write a GitHub Actions output when running in Actions."""
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        with Path(output).open("a", encoding="utf-8") as handle:
+            handle.write(f"{name}={value}\n")
+
+
+def issue_body(version: str, report: str) -> str:
+    """Build the upstream-surface triage issue body."""
+    return f"""Upstream version: {version}
+
+Detected surface report:
+
+{report}
+
+Triage checklist:
+
+- [ ] expose now
+- [ ] defer and document
+- [ ] reject as intentionally unsupported
+"""
+
+
+def find_surface_issue(version: str) -> int | None:
+    """Find an open upstream-surface issue for a specific version."""
+    command = [
+        resolve_executable("gh"),
+        "issue",
+        "list",
+        "--label",
+        "upstream-surface",
+        "--state",
+        "open",
+        "--json",
+        "number,title",
+    ]
+    result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
+    title = f"Evaluate upstream oxipng {version} surface changes"
+    for issue in json.loads(result.stdout):
+        if issue.get("title") == title:
+            return int(issue["number"])
+    return None
+
+
+def upsert_surface_issue(version: str, report_path: Path) -> None:
+    """Create or update the upstream-surface triage issue for a version."""
+    report = report_path.read_text(encoding="utf-8")
+    title = f"Evaluate upstream oxipng {version} surface changes"
+    body = issue_body(version, report)
+    existing = find_surface_issue(version)
+    gh = resolve_executable("gh")
+    if existing is None:
+        subprocess.run(
+            [
+                gh,
+                "issue",
+                "create",
+                "--title",
+                title,
+                "--label",
+                "upstream-surface",
+                "--body",
+                body,
+            ],
+            cwd=ROOT,
+            check=True,
+        )
+    else:
+        subprocess.run(
+            [gh, "issue", "edit", str(existing), "--body", body],
+            cwd=ROOT,
+            check=True,
+        )
+
+
 def main() -> int:
     """Bump all tracked version files to the latest upstream release."""
     version = latest_upstream_version()
@@ -75,6 +158,8 @@ def main() -> int:
     update_cargo_toml(ROOT / "Cargo.toml", version)
     update_cargo_lock(version)
     update_uv_lock()
+    write_target_version(version, ROOT / ".cache/upstream-bump/target-version.txt")
+    emit_github_output("target-version", version)
     print(f"updated oxipng-pybind to oxipng {version}")
     return 0
 

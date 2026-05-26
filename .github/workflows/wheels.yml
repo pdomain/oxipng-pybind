@@ -1,0 +1,107 @@
+name: wheels
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - ".github/workflows/wheels.yml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "pyproject.toml"
+      - "oxipng/**"
+      - "scripts/check_wheel_tags.py"
+      - "scripts/smoke_wheel.py"
+      - "src/**"
+      - "tests/**"
+      - "docs/process/release-artifacts.md"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.artifact }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - artifact: wheels-linux-x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            expected-platform: manylinux_2_28_x86_64
+            smoke: true
+          - artifact: wheels-linux-aarch64
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            expected-platform: manylinux_2_28_aarch64
+            smoke: false
+          - artifact: wheels-macos-x86_64
+            runner: macos-13
+            target: x86_64-apple-darwin
+            expected-platform: macosx_*_x86_64
+            smoke: true
+          - artifact: wheels-macos-aarch64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            expected-platform: macosx_*_arm64
+            smoke: true
+          - artifact: wheels-windows-x86_64
+            runner: windows-latest
+            target: x64
+            expected-platform: win_amd64
+            smoke: true
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - uses: dtolnay/rust-toolchain@1.85.1
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist --interpreter python3.10
+          manylinux: "2_28"
+          target: ${{ matrix.target }}
+      - name: Check wheel tags
+        shell: bash
+        run: python scripts/check_wheel_tags.py --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
+      - name: Smoke wheel
+        if: matrix.smoke
+        shell: bash
+        run: |
+          python -m venv .wheel-smoke
+          if [ -x .wheel-smoke/Scripts/python.exe ]; then
+            smoke_python=.wheel-smoke/Scripts/python.exe
+          else
+            smoke_python=.wheel-smoke/bin/python
+          fi
+          "$smoke_python" -m pip install dist/*.whl pillow
+          "$smoke_python" scripts/smoke_wheel.py
+      - name: Write Linux aarch64 smoke exception
+        if: matrix.artifact == 'wheels-linux-aarch64'
+        shell: bash
+        run: |
+          wheel="$(basename dist/*.whl)"
+          {
+            echo "wheel filename: $wheel"
+            echo "runner image: ${{ matrix.runner }}"
+            echo "failing smoke command: python scripts/smoke_wheel.py under QEMU"
+            echo "reason: Linux aarch64 wheel is cross-built and runtime smoke requires native ARM coverage."
+            echo "tracking issue: TODO create native ARM smoke coverage issue"
+          } > linux-aarch64-smoke-exception.txt
+      - name: Upload Linux aarch64 smoke exception
+        if: matrix.artifact == 'wheels-linux-aarch64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-aarch64-smoke-exception.txt
+          path: linux-aarch64-smoke-exception.txt
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*.whl

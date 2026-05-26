@@ -3,8 +3,8 @@
 `oxipng-pybind` is a focused Python wrapper around the Rust
 [`oxipng`](https://github.com/oxipng/oxipng) library.
 
-It supports file-based PNG optimization while tracking current upstream
-`oxipng` releases.
+It supports file-based and in-memory PNG optimization while tracking current
+upstream `oxipng` releases.
 
 ## Install
 
@@ -17,20 +17,31 @@ pip install oxipng-pybind
 The distribution is named `oxipng-pybind`, but the import module is `oxipng`.
 
 ```python
-from oxipng import optimize
+from oxipng import Deflater, FilterStrategy, Interlacing, StripChunks
+from oxipng import optimize, optimize_from_memory
 
 optimize(path, level=6)
+data = optimize_from_memory(png_bytes, strip=StripChunks.safe)
 ```
 
 Supported objects:
 
-- `oxipng.optimize(input, output=None, *, level=2)`
+- `oxipng.optimize(input, output=None, *, level=2, interlace=None, strip=None,
+  deflate=None, filter=None, fix_errors=False, force=False, backup=False,
+  preserve_attrs=False)`
+- `oxipng.optimize_from_memory(data, *, level=2, interlace=None, strip=None,
+  deflate=None, filter=None, fix_errors=False, force=False)`
 - `oxipng.PngError`
+- `oxipng.Interlacing`
+- `oxipng.StripChunks`
+- `oxipng.Deflater`
+- `oxipng.FilterStrategy`
 
 `input` and `output` may be strings, bytes paths, or `os.PathLike` values.
 When `output` is omitted, the input file is optimized in place.
 
-`level` must be an integer from `0` through `6`.
+`level` must be an integer from `0` through `6`. Enum-like options accept the
+documented enum members or their string aliases.
 
 ## Unsupported pyoxipng APIs
 
@@ -41,11 +52,11 @@ not provided:
 - `RawImage`
 - `ColorType`
 - `RowFilter`
-- `Interlacing`
-- `StripChunks`
-- `Deflater`
+- arbitrary chunk keep/strip lists
+- stdin/stdout optimization
+- lossy transparent-pixel optimization knobs
 
-Unsupported keyword arguments to `optimize()` raise `TypeError`.
+Unsupported keyword arguments raise `TypeError`.
 
 ## Development
 

@@ -703,11 +703,11 @@ In `src/lib.rs`, replace the current `#[new]` function signature with a tuple/kw
     #[new]
     #[pyo3(signature = (*args, **kwargs))]
     fn new(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        if args.len() == 5 {
-            return Self::new_stable(args, kwargs);
-        }
-        if args.len() == 3 {
+        if args.len() == 3 && Self::has_raw_image_kwarg(kwargs, "color_type")? {
             return Self::new_pyoxipng_compat(args, kwargs);
+        }
+        if args.len() <= 5 {
+            return Self::new_stable(args, kwargs);
         }
         Err(PyTypeError::new_err(
             "RawImage expects either (width, height, color_type, bit_depth, data) or (data, width, height, color_type=...)",
@@ -715,19 +715,30 @@ In `src/lib.rs`, replace the current `#[new]` function signature with a tuple/kw
     }
 ```
 
-Add `new_stable` and `new_pyoxipng_compat` as private methods in the same `impl PyRawImage` block:
+Add `new_stable`, `new_pyoxipng_compat`, and argument helpers as private methods
+in the inherent `impl PyRawImage` block outside `#[pymethods]`:
 
 ```rust
     fn new_stable(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let width: u32 = args.get_item(0)?.extract()?;
-        let height: u32 = args.get_item(1)?.extract()?;
-        let color_type = args.get_item(2)?;
-        let bit_depth = args.get_item(3)?;
-        let data = args.get_item(4)?;
-        let palette = kwargs.and_then(|dict| dict.get_item("palette").transpose()).transpose()?;
-        let transparent = kwargs
-            .and_then(|dict| dict.get_item("transparent").transpose())
-            .transpose()?;
+        Self::reject_extra_kwargs(
+            kwargs,
+            &[
+                "width",
+                "height",
+                "color_type",
+                "bit_depth",
+                "data",
+                "palette",
+                "transparent",
+            ],
+        )?;
+        let width: u32 = Self::raw_image_required_arg(args, kwargs, 0, "width")?.extract()?;
+        let height: u32 = Self::raw_image_required_arg(args, kwargs, 1, "height")?.extract()?;
+        let color_type = Self::raw_image_required_arg(args, kwargs, 2, "color_type")?;
+        let bit_depth = Self::raw_image_required_arg(args, kwargs, 3, "bit_depth")?;
+        let data = Self::raw_image_required_arg(args, kwargs, 4, "data")?;
+        let palette = Self::raw_image_kwarg(kwargs, "palette")?;
+        let transparent = Self::raw_image_kwarg(kwargs, "transparent")?;
         Self::from_parts(width, height, &color_type, &bit_depth, &data, palette.as_ref(), transparent.as_ref())
     }
 
@@ -740,7 +751,8 @@ Add `new_stable` and `new_pyoxipng_compat` as private methods in the same `impl 
         let color_type = kwargs
             .get_item("color_type")?
             .ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
-        if !object_type_name(&color_type)?.ends_with("_CompatColorType") {
+        Self::reject_extra_kwargs(Some(kwargs), &["color_type"])?;
+        if !is_oxipng_compat_type(&color_type, "_CompatColorType")? {
             return Err(PyTypeError::new_err("color_type must be created by ColorType compatibility factories"));
         }
         let kind = py_string_attr(&color_type, "kind")?
@@ -758,6 +770,56 @@ Add `new_stable` and `new_pyoxipng_compat` as private methods in the same `impl 
             palette.as_ref().filter(|value| !value.is_none()),
             transparent.as_ref().filter(|value| !value.is_none()),
         )
+    }
+
+    fn raw_image_kwarg<'py>(
+        kwargs: Option<&Bound<'py, PyDict>>,
+        name: &str,
+    ) -> PyResult<Option<Bound<'py, PyAny>>> {
+        kwargs
+            .map(|dict| dict.get_item(name))
+            .transpose()
+            .map(Option::flatten)
+    }
+
+    fn raw_image_required_arg<'py>(
+        args: &Bound<'py, PyTuple>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+        index: usize,
+        name: &str,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let keyword_value = Self::raw_image_kwarg(kwargs, name)?;
+        if index < args.len() {
+            if keyword_value.is_some() {
+                return Err(PyTypeError::new_err(format!(
+                    "RawImage got multiple values for argument '{name}'"
+                )));
+            }
+            return args.get_item(index);
+        }
+        keyword_value.ok_or_else(|| {
+            PyTypeError::new_err(format!(
+                "RawImage missing required argument '{name}' for stable constructor"
+            ))
+        })
+    }
+
+    fn has_raw_image_kwarg(kwargs: Option<&Bound<'_, PyDict>>, name: &str) -> PyResult<bool> {
+        Ok(Self::raw_image_kwarg(kwargs, name)?.is_some())
+    }
+
+    fn reject_extra_kwargs(kwargs: Option<&Bound<'_, PyDict>>, allowed: &[&str]) -> PyResult<()> {
+        if let Some(dict) = kwargs {
+            for key in dict.keys().iter() {
+                let key: String = key.extract()?;
+                if !allowed.contains(&key.as_str()) {
+                    return Err(PyTypeError::new_err(format!(
+                        "unsupported RawImage option: {key}"
+                    )));
+                }
+            }
+        }
+        Ok(())
     }
 
     fn from_parts(

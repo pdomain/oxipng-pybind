@@ -108,3 +108,32 @@ def test_raw_image_rgba_preserves_pixels() -> None:
         (2, 2),
         raw_pixels,
     )
+
+
+def test_raw_image_grayscale_transparency_preserves_pixels() -> None:
+    raw = RawImage(2, 1, ColorType.grayscale, BitDepth.eight, bytes([0, 255]), transparent=0)
+
+    optimized = raw.create_optimized_png(level=3)
+
+    assert decoded_rgba(optimized) == (
+        (2, 1),
+        bytes([0, 0, 0, 0, 255, 255, 255, 255]),
+    )
+
+
+def test_raw_image_rgb_transparency_preserves_pixels() -> None:
+    raw = RawImage(
+        2,
+        1,
+        ColorType.rgb,
+        BitDepth.eight,
+        bytes([255, 0, 0, 0, 0, 255]),
+        transparent=(255, 0, 0),
+    )
+
+    optimized = raw.create_optimized_png(level=3)
+
+    assert decoded_rgba(optimized) == (
+        (2, 1),
+        bytes([255, 0, 0, 0, 0, 0, 255, 255]),
+    )

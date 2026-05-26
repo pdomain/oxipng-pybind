@@ -314,7 +314,32 @@ fn extract_u8(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u8> {
         .map_err(|_| PyValueError::new_err(format!("{context} values must fit in u8")))
 }
 
-fn parse_rgb16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<oxi::RGB16> {
+fn bit_depth_value(bit_depth: oxi::BitDepth) -> u8 {
+    bit_depth as u8
+}
+
+fn max_sample_value(bit_depth: oxi::BitDepth) -> u16 {
+    match bit_depth_value(bit_depth) {
+        16 => u16::MAX,
+        value => (1_u16 << value) - 1,
+    }
+}
+
+fn validate_transparent_value(value: u16, bit_depth: oxi::BitDepth) -> PyResult<()> {
+    let max = max_sample_value(bit_depth);
+    if value > max {
+        return Err(PyValueError::new_err(format!(
+            "transparent values must be between 0 and {max} for this bit depth"
+        )));
+    }
+    Ok(())
+}
+
+fn parse_rgb16_with_depth(
+    value: &Bound<'_, PyAny>,
+    context: &str,
+    bit_depth: oxi::BitDepth,
+) -> PyResult<oxi::RGB16> {
     let tuple = value
         .downcast::<PyTuple>()
         .map_err(|_| PyValueError::new_err(format!("{context} must be a 3-tuple")))?;
@@ -323,11 +348,99 @@ fn parse_rgb16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<oxi::RGB16> 
             "{context} must be a 3-tuple"
         )));
     }
-    Ok(oxi::RGB16::new(
-        extract_u16(&tuple.get_item(0)?, context)?,
-        extract_u16(&tuple.get_item(1)?, context)?,
-        extract_u16(&tuple.get_item(2)?, context)?,
-    ))
+    let r = extract_u16(&tuple.get_item(0)?, context)?;
+    let g = extract_u16(&tuple.get_item(1)?, context)?;
+    let b = extract_u16(&tuple.get_item(2)?, context)?;
+    validate_transparent_value(r, bit_depth)?;
+    validate_transparent_value(g, bit_depth)?;
+    validate_transparent_value(b, bit_depth)?;
+    Ok(oxi::RGB16::new(r, g, b))
+}
+
+fn validate_png_chunk_name(name: [u8; 4]) -> PyResult<[u8; 4]> {
+    if !name.iter().all(u8::is_ascii_alphabetic) {
+        return Err(PyValueError::new_err(
+            "chunk name must contain exactly 4 ASCII letters",
+        ));
+    }
+    if !name[0].is_ascii_lowercase() {
+        return Err(PyValueError::new_err(
+            "chunk name must be an ancillary PNG chunk",
+        ));
+    }
+    if !name[1].is_ascii_uppercase() {
+        return Err(PyValueError::new_err(
+            "chunk name must be a public PNG chunk",
+        ));
+    }
+    if !name[2].is_ascii_uppercase() {
+        return Err(PyValueError::new_err(
+            "chunk name must use a valid reserved bit",
+        ));
+    }
+    if matches!(
+        &name,
+        b"IHDR" | b"PLTE" | b"IDAT" | b"IEND" | b"tRNS" | b"iCCP"
+    ) {
+        return Err(PyValueError::new_err(
+            "chunk name is reserved for structured RawImage data",
+        ));
+    }
+    Ok(name)
+}
+
+fn validate_indexed_pixels(
+    data: &[u8],
+    palette_len: usize,
+    bit_depth: oxi::BitDepth,
+) -> PyResult<()> {
+    let max_palette_len = 1_usize << bit_depth_value(bit_depth);
+    if palette_len > max_palette_len {
+        return Err(PyValueError::new_err(format!(
+            "palette length must be at most {max_palette_len} for this bit depth"
+        )));
+    }
+
+    match bit_depth_value(bit_depth) {
+        8 => {
+            if data.iter().any(|index| usize::from(*index) >= palette_len) {
+                return Err(PyValueError::new_err(
+                    "pixel index must be less than palette length",
+                ));
+            }
+        }
+        4 => {
+            for byte in data {
+                for index in [byte >> 4, byte & 0x0f] {
+                    if usize::from(index) >= palette_len {
+                        return Err(PyValueError::new_err(
+                            "pixel index must be less than palette length",
+                        ));
+                    }
+                }
+            }
+        }
+        2 => {
+            for byte in data {
+                for shift in [6, 4, 2, 0] {
+                    if usize::from((byte >> shift) & 0x03) >= palette_len {
+                        return Err(PyValueError::new_err(
+                            "pixel index must be less than palette length",
+                        ));
+                    }
+                }
+            }
+        }
+        1 => {
+            if palette_len < 2 && data.iter().any(|byte| *byte != 0) {
+                return Err(PyValueError::new_err(
+                    "pixel index must be less than palette length",
+                ));
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn parse_palette_color(value: &Bound<'_, PyAny>) -> PyResult<oxi::RGBA8> {
@@ -371,6 +484,7 @@ fn parse_palette(value: Option<&Bound<'_, PyAny>>) -> PyResult<Vec<oxi::RGBA8>> 
 
 fn parse_color_type(
     color_type: &Bound<'_, PyAny>,
+    bit_depth: oxi::BitDepth,
     palette: Option<&Bound<'_, PyAny>>,
     transparent: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<oxi::ColorType> {
@@ -379,11 +493,14 @@ fn parse_color_type(
             let transparent_shade = transparent
                 .map(|value| extract_u16(value, "transparent"))
                 .transpose()?;
+            if let Some(value) = transparent_shade {
+                validate_transparent_value(value, bit_depth)?;
+            }
             Ok(oxi::ColorType::Grayscale { transparent_shade })
         }
         "rgb" => {
             let transparent_color = transparent
-                .map(|value| parse_rgb16(value, "transparent"))
+                .map(|value| parse_rgb16_with_depth(value, "transparent", bit_depth))
                 .transpose()?;
             Ok(oxi::ColorType::RGB { transparent_color })
         }
@@ -437,9 +554,12 @@ impl PyRawImage {
         palette: Option<&Bound<'_, PyAny>>,
         transparent: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Self> {
-        let color_type = parse_color_type(color_type, palette, transparent)?;
         let bit_depth = parse_bit_depth(bit_depth)?;
+        let color_type = parse_color_type(color_type, bit_depth, palette, transparent)?;
         let data = bytes_like_to_vec(data)?;
+        if let oxi::ColorType::Indexed { palette } = &color_type {
+            validate_indexed_pixels(&data, palette.len(), bit_depth)?;
+        }
         let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
             .map_err(map_png_error)?;
         Ok(Self { inner })
@@ -451,6 +571,7 @@ impl PyRawImage {
         let name: [u8; 4] = name
             .try_into()
             .map_err(|_| PyValueError::new_err("chunk name must be exactly 4 bytes"))?;
+        let name = validate_png_chunk_name(name)?;
         self.inner.add_png_chunk(name, data);
         Ok(())
     }

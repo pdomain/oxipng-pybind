@@ -317,6 +317,75 @@ def test_raw_image_add_png_chunk_preserves_allowed_chunk() -> None:
         assert cast("Any", image).text["Comment"] == "hello"
 
 
+@pytest.mark.parametrize("name", [b"IHDR", b"IDAT", b"IEND", b"PLTE", b"tRNS", b"iCCP"])
+def test_raw_image_rejects_structural_or_dedicated_chunks(name: bytes) -> None:
+    raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+
+    with pytest.raises(ValueError, match="chunk name"):
+        raw.add_png_chunk(name, b"payload")
+
+
+@pytest.mark.parametrize("name", [b"abc", b"abcde", b"ab1d", b"ab_d", b"ab\x00d", b"abCd"])
+def test_raw_image_rejects_invalid_chunk_names(name: bytes) -> None:
+    raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+
+    with pytest.raises(ValueError, match="chunk name"):
+        raw.add_png_chunk(name, b"payload")
+
+
+def test_raw_image_rejects_too_many_palette_entries_for_bit_depth() -> None:
+    palette = [(index, index, index) for index in range(5)]
+
+    with pytest.raises(ValueError, match="palette length"):
+        RawImage(1, 1, ColorType.indexed, BitDepth.two, bytes([0]), palette=palette)
+
+
+def test_raw_image_rejects_indexed_pixels_outside_palette() -> None:
+    with pytest.raises(ValueError, match="pixel index"):
+        RawImage(
+            2,
+            1,
+            ColorType.indexed,
+            BitDepth.eight,
+            bytes([0, 2]),
+            palette=[(255, 0, 0), (0, 0, 255)],
+        )
+
+
+def test_raw_image_rejects_grayscale_transparency_above_bit_depth_range() -> None:
+    with pytest.raises(ValueError, match="transparent"):
+        RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]), transparent=256)
+
+
+def test_raw_image_rejects_rgb_transparency_above_bit_depth_range() -> None:
+    with pytest.raises(ValueError, match="transparent"):
+        RawImage(
+            1,
+            1,
+            ColorType.rgb,
+            BitDepth.eight,
+            bytes([255, 0, 0]),
+            transparent=(256, 0, 0),
+        )
+
+
+@pytest.mark.parametrize(
+    "color_type", [ColorType.indexed, ColorType.grayscale_alpha, ColorType.rgba]
+)
+def test_raw_image_rejects_transparency_for_unsupported_color_types(color_type: ColorType) -> None:
+    kwargs: dict[str, object] = {}
+    data = bytes([0])
+    if color_type is ColorType.indexed:
+        kwargs["palette"] = [(0, 0, 0)]
+    elif color_type is ColorType.grayscale_alpha:
+        data = bytes([0, 255])
+    else:
+        data = bytes([0, 0, 0, 255])
+
+    with pytest.raises(ValueError, match="transparent is not supported"):
+        RawImage(1, 1, color_type, BitDepth.eight, data, transparent=0, **kwargs)
+
+
 def test_raw_image_invalid_data_length_raises_png_error() -> None:
     with pytest.raises(PngError, match="Data length"):
         RawImage(2, 2, ColorType.rgba, BitDepth.eight, b"too short")

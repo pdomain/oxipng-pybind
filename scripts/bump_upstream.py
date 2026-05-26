@@ -5,13 +5,20 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import urllib.request
+from argparse import ArgumentParser
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
+WRAPPER_VERSION_PATTERN = re.compile(r"^(?P<base>\d+\.\d+\.\d+)(?:\.post(?P<post>\d+))?$")
 
 
 def resolve_executable(name: str) -> str:
@@ -27,11 +34,31 @@ def normalize_version(version: str) -> str:
     return version.removeprefix("v")
 
 
+def next_post_release(version: str) -> str:
+    """Return the next PEP 440 post release for a wrapper version."""
+    match = WRAPPER_VERSION_PATTERN.fullmatch(version)
+    if match is None:
+        raise ValueError(f"unsupported wrapper version: {version}")
+    base = match.group("base")
+    post = match.group("post")
+    if post is None:
+        return f"{base}.post1"
+    return f"{base}.post{int(post) + 1}"
+
+
 def latest_upstream_version() -> str:
     """Fetch the latest upstream oxipng release version."""
     with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:
         payload = json.loads(response.read().decode("utf-8"))
     return normalize_version(str(payload["tag_name"]))
+
+
+def read_pyproject_version(path: Path) -> str:
+    """Read the Python package version."""
+    import tomlkit  # noqa: PLC0415  # optional automation dependency is loaded only here
+
+    document = tomlkit.parse(path.read_text(encoding="utf-8"))
+    return str(document["project"]["version"])
 
 
 def update_pyproject_toml(path: Path, version: str) -> None:
@@ -41,6 +68,14 @@ def update_pyproject_toml(path: Path, version: str) -> None:
     document = tomlkit.parse(path.read_text(encoding="utf-8"))
     document["project"]["version"] = version
     path.write_text(tomlkit.dumps(document), encoding="utf-8")
+
+
+def read_pinned_upstream_version(path: Path) -> str:
+    """Read the pinned upstream oxipng dependency version."""
+    import tomlkit  # noqa: PLC0415  # optional automation dependency is loaded only here
+
+    document = tomlkit.parse(path.read_text(encoding="utf-8"))
+    return str(document["dependencies"]["oxi"]["version"]).lstrip("=")
 
 
 def update_cargo_toml(path: Path, version: str) -> None:
@@ -83,6 +118,33 @@ def emit_github_output(name: str, value: str) -> None:
     if output:
         with Path(output).open("a", encoding="utf-8") as handle:
             handle.write(f"{name}={value}\n")
+
+
+def bump_upstream_files(
+    version: str,
+    *,
+    pyproject_path: Path = ROOT / "pyproject.toml",
+    cargo_path: Path = ROOT / "Cargo.toml",
+    target_version_path: Path = ROOT / ".cache/upstream-bump/target-version.txt",
+) -> bool:
+    """Update tracked files for a new upstream release."""
+    current_upstream = read_pinned_upstream_version(cargo_path)
+    write_target_version(version, target_version_path)
+    if current_upstream == version:
+        return False
+    update_pyproject_toml(pyproject_path, version)
+    update_cargo_toml(cargo_path, version)
+    update_cargo_lock(version)
+    update_uv_lock()
+    return True
+
+
+def bump_wrapper_post_release(pyproject_path: Path = ROOT / "pyproject.toml") -> str:
+    """Bump the Python package to the next wrapper-only post release."""
+    version = next_post_release(read_pyproject_version(pyproject_path))
+    update_pyproject_toml(pyproject_path, version)
+    update_uv_lock()
+    return version
 
 
 def issue_body(version: str, report: str) -> str:
@@ -153,16 +215,29 @@ def upsert_surface_issue(version: str, report_path: Path) -> None:
         )
 
 
-def main() -> int:
-    """Bump all tracked version files to the latest upstream release."""
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run upstream or wrapper-only version bumps."""
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--wrapper-post",
+        action="store_true",
+        help="bump only the Python package to the next .postN release",
+    )
+    args = parser.parse_args(argv)
+
+    if args.wrapper_post:
+        version = bump_wrapper_post_release()
+        emit_github_output("wrapper-version", version)
+        print(f"updated oxipng-pybind wrapper version to {version}")
+        return 0
+
     version = latest_upstream_version()
-    update_pyproject_toml(ROOT / "pyproject.toml", version)
-    update_cargo_toml(ROOT / "Cargo.toml", version)
-    update_cargo_lock(version)
-    update_uv_lock()
-    write_target_version(version, ROOT / ".cache/upstream-bump/target-version.txt")
+    changed = bump_upstream_files(version)
     emit_github_output("target-version", version)
-    print(f"updated oxipng-pybind to oxipng {version}")
+    if changed:
+        print(f"updated oxipng-pybind to oxipng {version}")
+    else:
+        print(f"oxipng-pybind already pins oxipng {version}")
     return 0
 
 

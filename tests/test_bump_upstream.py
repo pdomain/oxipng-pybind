@@ -19,6 +19,17 @@ def test_normalize_version_strips_v_prefix() -> None:
     assert bump_upstream.normalize_version("10.1.1") == "10.1.1"
 
 
+def test_next_post_release_adds_or_increments_post_segment() -> None:
+    assert bump_upstream.next_post_release("10.1.1") == "10.1.1.post1"
+    assert bump_upstream.next_post_release("10.1.1.post1") == "10.1.1.post2"
+
+
+@pytest.mark.parametrize("version", ["v10.1.1", "10.1", "10.1.1.dev1"])
+def test_next_post_release_rejects_unsupported_versions(version: str) -> None:
+    with pytest.raises(ValueError, match="unsupported wrapper version"):
+        bump_upstream.next_post_release(version)
+
+
 def test_latest_upstream_version_reads_github_release_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -66,6 +77,20 @@ version = "10.1.0"
     assert data["project"]["version"] == "10.1.1"
 
 
+def test_read_pyproject_version(tmp_path: Path) -> None:
+    path = tmp_path / "pyproject.toml"
+    path.write_text(
+        """
+[project]
+name = "oxipng-pybind"
+version = "10.1.1.post1"
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    assert bump_upstream.read_pyproject_version(path) == "10.1.1.post1"
+
+
 def test_update_cargo_toml(tmp_path: Path) -> None:
     path = tmp_path / "Cargo.toml"
     path.write_text(
@@ -85,6 +110,171 @@ oxi = { package = "oxipng", version = "=10.1.0", default-features = false, featu
     data = tomlkit.parse(path.read_text(encoding="utf-8"))
     assert data["package"]["version"] == "10.1.1"
     assert data["dependencies"]["oxi"]["version"] == "=10.1.1"
+
+
+def test_read_pinned_upstream_version(tmp_path: Path) -> None:
+    path = tmp_path / "Cargo.toml"
+    path.write_text(
+        """
+[package]
+name = "oxipng-pybind"
+version = "10.1.1"
+
+[dependencies]
+oxi = { package = "oxipng", version = "=10.1.1" }
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    assert bump_upstream.read_pinned_upstream_version(path) == "10.1.1"
+
+
+def test_bump_upstream_leaves_post_release_when_upstream_is_current(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    cargo = tmp_path / "Cargo.toml"
+    target = tmp_path / "target-version.txt"
+    pyproject.write_text(
+        """
+[project]
+name = "oxipng-pybind"
+version = "10.1.1.post1"
+""".lstrip(),
+        encoding="utf-8",
+    )
+    cargo.write_text(
+        """
+[package]
+name = "oxipng-pybind"
+version = "10.1.1"
+
+[dependencies]
+oxi = { package = "oxipng", version = "=10.1.1" }
+""".lstrip(),
+        encoding="utf-8",
+    )
+    cargo_lock_calls: list[str] = []
+    uv_lock_calls: list[None] = []
+
+    monkeypatch.setattr(bump_upstream, "update_cargo_lock", cargo_lock_calls.append)
+    monkeypatch.setattr(bump_upstream, "update_uv_lock", lambda: uv_lock_calls.append(None))
+
+    changed = bump_upstream.bump_upstream_files(
+        "10.1.1",
+        pyproject_path=pyproject,
+        cargo_path=cargo,
+        target_version_path=target,
+    )
+
+    assert changed is False
+    assert bump_upstream.read_pyproject_version(pyproject) == "10.1.1.post1"
+    assert bump_upstream.read_pinned_upstream_version(cargo) == "10.1.1"
+    assert target.read_text(encoding="utf-8") == "10.1.1\n"
+    assert cargo_lock_calls == []
+    assert uv_lock_calls == []
+
+
+def test_bump_upstream_resets_wrapper_version_for_new_upstream(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    cargo = tmp_path / "Cargo.toml"
+    target = tmp_path / "target-version.txt"
+    pyproject.write_text(
+        """
+[project]
+name = "oxipng-pybind"
+version = "10.1.1.post2"
+""".lstrip(),
+        encoding="utf-8",
+    )
+    cargo.write_text(
+        """
+[package]
+name = "oxipng-pybind"
+version = "10.1.1"
+
+[dependencies]
+oxi = { package = "oxipng", version = "=10.1.1" }
+""".lstrip(),
+        encoding="utf-8",
+    )
+    cargo_lock_calls: list[str] = []
+    uv_lock_calls: list[None] = []
+
+    monkeypatch.setattr(bump_upstream, "update_cargo_lock", cargo_lock_calls.append)
+    monkeypatch.setattr(bump_upstream, "update_uv_lock", lambda: uv_lock_calls.append(None))
+
+    changed = bump_upstream.bump_upstream_files(
+        "10.2.0",
+        pyproject_path=pyproject,
+        cargo_path=cargo,
+        target_version_path=target,
+    )
+
+    assert changed is True
+    assert bump_upstream.read_pyproject_version(pyproject) == "10.2.0"
+    assert bump_upstream.read_pinned_upstream_version(cargo) == "10.2.0"
+    assert target.read_text(encoding="utf-8") == "10.2.0\n"
+    assert cargo_lock_calls == ["10.2.0"]
+    assert uv_lock_calls == [None]
+
+
+def test_bump_wrapper_post_release_updates_only_pyproject(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[project]
+name = "oxipng-pybind"
+version = "10.1.1.post1"
+""".lstrip(),
+        encoding="utf-8",
+    )
+    uv_lock_calls: list[None] = []
+
+    monkeypatch.setattr(bump_upstream, "update_uv_lock", lambda: uv_lock_calls.append(None))
+
+    version = bump_upstream.bump_wrapper_post_release(pyproject)
+
+    assert version == "10.1.1.post2"
+    assert bump_upstream.read_pyproject_version(pyproject) == "10.1.1.post2"
+    assert uv_lock_calls == [None]
+
+
+def test_main_wrapper_post_mode_updates_wrapper_version(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    outputs: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(bump_upstream, "bump_wrapper_post_release", lambda: "10.1.1.post1")
+    monkeypatch.setattr(
+        bump_upstream, "emit_github_output", lambda name, value: outputs.append((name, value))
+    )
+
+    assert bump_upstream.main(["--wrapper-post"]) == 0
+
+    assert outputs == [("wrapper-version", "10.1.1.post1")]
+    assert capsys.readouterr().out == "updated oxipng-pybind wrapper version to 10.1.1.post1\n"
+
+
+def test_main_upstream_mode_reports_current_pin(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    outputs: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(bump_upstream, "latest_upstream_version", lambda: "10.1.1")
+    monkeypatch.setattr(bump_upstream, "bump_upstream_files", lambda version: False)
+    monkeypatch.setattr(
+        bump_upstream, "emit_github_output", lambda name, value: outputs.append((name, value))
+    )
+
+    assert bump_upstream.main([]) == 0
+
+    assert outputs == [("target-version", "10.1.1")]
+    assert capsys.readouterr().out == "oxipng-pybind already pins oxipng 10.1.1\n"
 
 
 def test_update_cargo_lock_runs_precise_cargo_update(monkeypatch: pytest.MonkeyPatch) -> None:

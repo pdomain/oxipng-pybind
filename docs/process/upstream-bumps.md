@@ -24,6 +24,37 @@ The upstream bump workflow keeps dependency updates, source scans, and CI in a
 read-only job. Only the PR and issue publication job receives write
 permissions.
 
+## Version Policy
+
+The Python package version is the public wrapper release version.
+
+The Cargo package version stays SemVer-compatible. It does not need to match a
+Python `.postN` release.
+
+The `Cargo.toml` `oxi` dependency pin records the upstream `oxipng` version.
+
+The API surface manifest records the same upstream version as the `oxi` pin.
+
+For wrapper-only fixes, run:
+
+```bash
+uv run --group dev python scripts/bump_upstream.py --wrapper-post
+```
+
+This changes `pyproject.toml` from `10.1.1` to `10.1.1.post1`, or from
+`10.1.1.post1` to `10.1.1.post2`. It also refreshes `uv.lock`.
+
+For upstream releases, run the default bump path:
+
+```bash
+uv run --group dev python scripts/bump_upstream.py
+```
+
+If the pinned upstream version is already current, the script leaves existing
+wrapper post releases unchanged. If upstream moved from `10.1.1` to `10.2.0`,
+the script resets the Python package version to `10.2.0`, updates the Cargo
+package version to `10.2.0`, and pins `oxi` to `=10.2.0`.
+
 Mutable action tags should be replaced with full commit SHAs during
 release-hardening maintenance. Review the resolved SHAs before merge.
 

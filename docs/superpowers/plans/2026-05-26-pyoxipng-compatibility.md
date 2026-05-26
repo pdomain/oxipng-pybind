@@ -635,7 +635,7 @@ Expected: commit succeeds.
 - Modify: `src/lib.rs`
 - Modify: `oxipng/__init__.pyi`
 
-- [ ] **Step 1: Write failing tests for pyoxipng-style RawImage construction**
+- [x] **Step 1: Write failing tests for pyoxipng-style RawImage construction**
 
 Add these tests near the existing raw image tests:
 
@@ -684,7 +684,7 @@ def test_stable_raw_image_constructor_does_not_warn() -> None:
     assert_readable_png_bytes(raw.create_optimized_png())
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -695,7 +695,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_raw_image_con
 
 Expected: compatibility constructor tests fail because the native `RawImage` constructor does not accept `(data, width, height, color_type=...)`.
 
-- [ ] **Step 3: Change the PyO3 constructor to accept both call shapes**
+- [x] **Step 3: Change the PyO3 constructor to accept both call shapes**
 
 In `src/lib.rs`, replace the current `#[new]` function signature with a tuple/kwargs parser:
 
@@ -783,7 +783,7 @@ Add `new_stable` and `new_pyoxipng_compat` as private methods in the same `impl 
 
 Remove the old constructor body after `from_parts` is in place.
 
-- [ ] **Step 4: Update RawImage stubs with overloads**
+- [x] **Step 4: Update RawImage stubs with overloads**
 
 In `oxipng/__init__.pyi`, replace the single `RawImage.__init__` signature with:
 
@@ -814,7 +814,7 @@ In `oxipng/__init__.pyi`, replace the single `RawImage.__init__` signature with:
         """Create a pyoxipng-compatible raw image; emits DeprecationWarning."""
 ```
 
-- [ ] **Step 5: Run raw image compatibility tests**
+- [x] **Step 5: Run raw image compatibility tests**
 
 Run:
 
@@ -825,7 +825,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_raw_image_con
 
 Expected: selected tests pass.
 
-- [ ] **Step 6: Run full API tests**
+- [x] **Step 6: Run full API tests**
 
 Run:
 
@@ -835,7 +835,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -v -ra
 
 Expected: all `tests/test_api.py` tests pass.
 
-- [ ] **Step 7: Run Rust and Python checks**
+- [x] **Step 7: Run Rust and Python checks**
 
 Run:
 
@@ -848,7 +848,7 @@ uv run --group dev basedpyright
 
 Expected: all commands pass.
 
-- [ ] **Step 8: Commit RawImage compatibility**
+- [x] **Step 8: Commit RawImage compatibility**
 
 Run:
 

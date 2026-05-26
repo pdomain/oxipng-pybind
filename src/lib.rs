@@ -1,7 +1,11 @@
 use indexmap::IndexSet;
 use pyo3::buffer::PyBuffer;
 use pyo3::create_exception;
-use pyo3::exceptions::{PyException, PyFileExistsError, PyOSError, PyTypeError, PyValueError};
+use pyo3::exceptions::{
+    PyAttributeError, PyDeprecationWarning, PyException, PyFileExistsError, PyOSError, PyTypeError,
+    PyValueError,
+};
+use pyo3::ffi::c_str;
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyByteArray, PyBytes, PyDict, PyList, PySet, PyString, PyTuple};
 use std::fs::{self, OpenOptions};
@@ -46,21 +50,37 @@ fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
     value.extract()
 }
 
-fn object_type_name(value: &Bound<'_, PyAny>) -> PyResult<String> {
-    value.get_type().qualname().map(|name| name.to_string())
+fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
+    PyErr::warn(
+        py,
+        &py.get_type::<PyDeprecationWarning>(),
+        c_str!(
+            "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
+        ),
+        2,
+    )
+}
+
+fn is_oxipng_compat_type(value: &Bound<'_, PyAny>, qualname: &str) -> PyResult<bool> {
+    let value_type = value.get_type();
+    let module = value_type.module()?.to_str()?.to_owned();
+    let actual_qualname = value_type.qualname()?.to_str()?.to_owned();
+    Ok(module == "oxipng" && actual_qualname == qualname)
 }
 
 fn py_string_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<String>> {
     match value.getattr(name) {
         Ok(attr) => Ok(Some(attr.extract()?)),
-        Err(_) => Ok(None),
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
 fn py_int_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<i64>> {
     match value.getattr(name) {
         Ok(attr) => Ok(Some(attr.extract()?)),
-        Err(_) => Ok(None),
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
@@ -103,7 +123,7 @@ fn parse_chunk_name_text(name: &str) -> PyResult<[u8; 4]> {
 }
 
 fn parse_strip(value: &Bound<'_, PyAny>) -> PyResult<oxi::StripChunks> {
-    if object_type_name(value)?.ends_with("_CompatStripChunks") {
+    if is_oxipng_compat_type(value, "_CompatStripChunks")? {
         let mode = py_string_attr(value, "mode")?
             .ok_or_else(|| PyValueError::new_err("strip compatibility object missing mode"))?;
         let names = value
@@ -140,7 +160,7 @@ fn parse_deflater(
     value: &Bound<'_, PyAny>,
     preset_deflater: oxi::Deflater,
 ) -> PyResult<oxi::Deflater> {
-    if object_type_name(value)?.ends_with("_CompatDeflater") {
+    if is_oxipng_compat_type(value, "_CompatDeflater")? {
         let kind = py_string_attr(value, "kind")?
             .ok_or_else(|| PyValueError::new_err("deflate compatibility object missing kind"))?;
         let raw_value = py_int_attr(value, "value")?
@@ -664,11 +684,96 @@ struct PyRawImage {
     inner: oxi::RawImage,
 }
 
-#[pymethods]
 impl PyRawImage {
-    #[new]
-    #[pyo3(signature = (width, height, color_type, bit_depth, data, *, palette=None, transparent=None))]
-    fn new(
+    fn new_stable(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let width: u32 = args.get_item(0)?.extract()?;
+        let height: u32 = args.get_item(1)?.extract()?;
+        let color_type = args.get_item(2)?;
+        let bit_depth = args.get_item(3)?;
+        let data = args.get_item(4)?;
+        let palette = Self::raw_image_kwarg(kwargs, "palette")?;
+        let transparent = Self::raw_image_kwarg(kwargs, "transparent")?;
+        Self::reject_extra_kwargs(kwargs, &["palette", "transparent"])?;
+        Self::from_parts(
+            width,
+            height,
+            &color_type,
+            &bit_depth,
+            &data,
+            palette.as_ref(),
+            transparent.as_ref(),
+        )
+    }
+
+    fn new_pyoxipng_compat(
+        args: &Bound<'_, PyTuple>,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        warn_pyoxipng_compat(args.py())?;
+
+        let data = args.get_item(0)?;
+        let width: u32 = args.get_item(1)?.extract()?;
+        let height: u32 = args.get_item(2)?.extract()?;
+        let kwargs = kwargs.ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
+        let color_type = kwargs
+            .get_item("color_type")?
+            .ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
+        Self::reject_extra_kwargs(Some(kwargs), &["color_type"])?;
+
+        if !is_oxipng_compat_type(&color_type, "_CompatColorType")? {
+            return Err(PyTypeError::new_err(
+                "color_type must be created by ColorType compatibility factories",
+            ));
+        }
+
+        let kind = py_string_attr(&color_type, "kind")?
+            .ok_or_else(|| PyValueError::new_err("color_type compatibility object missing kind"))?;
+        let raw_bit_depth = py_int_attr(&color_type, "bit_depth")?.ok_or_else(|| {
+            PyValueError::new_err("color_type compatibility object missing bit_depth")
+        })?;
+        let bit_depth = u8::try_from(raw_bit_depth)
+            .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
+        let palette = color_type.getattr("palette")?;
+        let transparent = color_type.getattr("transparent")?;
+        let kind = PyString::new(args.py(), &kind);
+        let bit_depth = bit_depth.into_pyobject(args.py())?;
+
+        Self::from_parts(
+            width,
+            height,
+            kind.as_any(),
+            bit_depth.as_any(),
+            &data,
+            (!palette.is_none()).then_some(palette.as_any()),
+            (!transparent.is_none()).then_some(transparent.as_any()),
+        )
+    }
+
+    fn raw_image_kwarg<'py>(
+        kwargs: Option<&Bound<'py, PyDict>>,
+        name: &str,
+    ) -> PyResult<Option<Bound<'py, PyAny>>> {
+        kwargs
+            .map(|dict| dict.get_item(name))
+            .transpose()
+            .map(Option::flatten)
+    }
+
+    fn reject_extra_kwargs(kwargs: Option<&Bound<'_, PyDict>>, allowed: &[&str]) -> PyResult<()> {
+        if let Some(dict) = kwargs {
+            for key in dict.keys().iter() {
+                let key: String = key.extract()?;
+                if !allowed.contains(&key.as_str()) {
+                    return Err(PyTypeError::new_err(format!(
+                        "unsupported RawImage option: {key}"
+                    )));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn from_parts(
         width: u32,
         height: u32,
         color_type: &Bound<'_, PyAny>,
@@ -686,6 +791,24 @@ impl PyRawImage {
         let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
             .map_err(map_png_error)?;
         Ok(Self { inner })
+    }
+}
+
+#[pymethods]
+impl PyRawImage {
+    #[new]
+    #[pyo3(signature = (*args, **kwargs))]
+    fn new(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        if args.len() == 5 {
+            return Self::new_stable(args, kwargs);
+        }
+        if args.len() == 3 {
+            return Self::new_pyoxipng_compat(args, kwargs);
+        }
+
+        Err(PyTypeError::new_err(
+            "RawImage expects either (width, height, color_type, bit_depth, data) or (data, width, height, color_type=...)",
+        ))
     }
 
     /// Add an auxiliary PNG chunk.

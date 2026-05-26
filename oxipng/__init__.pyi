@@ -2,6 +2,7 @@
 
 from enum import Enum
 from os import PathLike
+from typing import overload
 
 StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
 BytesLike = bytes | bytearray | memoryview
@@ -108,6 +109,7 @@ class PngError(Exception):
     """Raised when oxipng cannot optimize the input PNG."""
 
 class RawImage:
+    @overload
     def __init__(
         self,
         width: int,
@@ -118,9 +120,16 @@ class RawImage:
         *,
         palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None,
         transparent: int | tuple[int, int, int] | None = None,
-    ) -> None:
-        """Create a raw image from packed pixel data."""
-
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        data: BytesLike,
+        width: int,
+        height: int,
+        *,
+        color_type: _CompatColorType,
+    ) -> None: ...
     def add_png_chunk(self, name: BytesLike, data: BytesLike) -> None:
         """Add an auxiliary PNG chunk."""
 

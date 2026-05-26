@@ -1,6 +1,7 @@
 """Supported public API tests."""
 
 import inspect
+import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any, TypeAlias, cast
@@ -423,6 +424,52 @@ def test_optimize_from_memory_memoryview_returns_readable_bytes(png_bytes: bytes
 def test_corrupt_memory_input_raises_png_error() -> None:
     with pytest.raises(PngError):
         optimize_from_memory(b"not a png")
+
+
+def test_pyoxipng_raw_image_constructor_accepts_rgb_descriptor() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.rgb(None)
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(bytes([255, 0, 0]), 1, 1, color_type=color_type)
+
+    output = raw.create_optimized_png()
+
+    assert_readable_png_bytes(output)
+
+
+def test_pyoxipng_raw_image_constructor_accepts_rgba_descriptor() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.rgba()
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(bytes([255, 0, 0, 255]), 1, 1, color_type=color_type)
+
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
+def test_pyoxipng_raw_image_constructor_accepts_indexed_descriptor() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.indexed([(255, 0, 0)])
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(bytes([0]), 1, 1, color_type=color_type)
+
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
+def test_pyoxipng_raw_image_constructor_requires_compat_color_type() -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(TypeError, match="color_type"),
+    ):
+        cast("Any", RawImage)(bytes([255, 0, 0]), 1, 1, color_type="rgb")
+
+
+def test_stable_raw_image_constructor_does_not_warn() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(raw.create_optimized_png())
 
 
 def test_raw_image_rgba_create_optimized_png_returns_readable_bytes() -> None:

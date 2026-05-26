@@ -28,7 +28,8 @@ from oxipng import (
 
 Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
 PYOXIPNG_WARNING = (
-    "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
+    "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; "
+    "this compatibility path will be removed in a future release."
 )
 
 
@@ -110,10 +111,6 @@ def test_public_callables_expose_runtime_docstrings() -> None:
 
 
 def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
-    assert RowFilter.none.value == "none"
-    assert RowFilter.brute.value == "brute"
-    assert Interlacing.Off.value == "off"
-    assert Interlacing.Adam7.value == "on"
     assert callable(Deflaters.libdeflater)
     assert callable(Deflaters.zopfli)
     assert callable(StripChunks.strip)
@@ -127,6 +124,37 @@ def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
         "Create a libdeflater option with an explicit compression level."
     )
     assert Deflaters.zopfli.__doc__ == "Create a zopfli option with an explicit iteration count."
+
+
+def test_deprecated_enum_aliases_warn_on_access() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        off = Interlacing.Off
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        adam7 = Interlacing.Adam7
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        none = RowFilter.none
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        brute = RowFilter.brute
+
+    assert off.value == "off"
+    assert adam7.value == "on"
+    assert none.value == "none"
+    assert brute.value == "brute"
+
+
+def test_stable_enum_members_do_not_warn_on_access() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        interlace = Interlacing.off
+        filter_strategy = FilterStrategy.none
+        color_type = ColorType.rgba
+        bit_depth = BitDepth.eight
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert interlace.value == "off"
+    assert filter_strategy.value == "none"
+    assert color_type.value == "rgba"
+    assert bit_depth.value == 8
 
 
 def test_pyoxipng_color_factories_warn_and_stable_factories_do_not_warn() -> None:
@@ -158,6 +186,37 @@ def test_pyoxipng_color_factories_warn_and_stable_factories_do_not_warn() -> Non
     assert keep.mode == "keep"
     assert libdeflater.kind == "libdeflater"
     assert zopfli.kind == "zopfli"
+
+
+def test_pyoxipng_predefined_filter_rejects_non_string_entries() -> None:
+    with pytest.raises(TypeError, match="row filter names"):
+        FilterStrategy.predefined([object()])
+
+
+def test_pyoxipng_indexed_color_requires_palette() -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(ValueError, match="requires a palette"),
+    ):
+        ColorType.indexed(None)
+
+
+@pytest.mark.parametrize("color_type", [ColorType.rgba, ColorType.grayscale_alpha])
+def test_pyoxipng_alpha_color_rejects_transparent(color_type: ColorType) -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(ValueError, match="does not accept transparent"),
+    ):
+        color_type(0)
+
+
+@pytest.mark.parametrize("color_type", [ColorType.rgb, ColorType.grayscale])
+def test_pyoxipng_non_indexed_color_rejects_palette(color_type: ColorType) -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(TypeError, match="does not accept palette"),
+    ):
+        color_type([(255, 0, 0)])
 
 
 def test_optimize_in_place_with_high_compression_level(png_path: Path) -> None:
@@ -313,14 +372,18 @@ def test_filter_sequence_is_accepted(png_bytes: bytes) -> None:
 def test_predefined_filter_factory_uses_basic_filters_without_warning() -> None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        predefined = FilterStrategy.predefined([RowFilter.none, "sub", FilterStrategy.up])
+        with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+            row_filter = RowFilter.none
+        predefined = FilterStrategy.predefined([row_filter, "sub", FilterStrategy.up])
 
     assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert predefined.filters == ("none", "sub", "up")
 
 
 def test_predefined_filter_optimizes_memory(png_bytes: bytes) -> None:
-    predefined = FilterStrategy.predefined(["none", RowFilter.sub, FilterStrategy.up])
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        row_filter = RowFilter.sub
+    predefined = FilterStrategy.predefined(["none", row_filter, FilterStrategy.up])
 
     output = optimize_from_memory(png_bytes, filter=predefined)
 
@@ -339,7 +402,12 @@ def test_predefined_filter_rejects_non_basic_filters(value: object) -> None:
 
 
 def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
-    output = optimize_from_memory(png_bytes, filter={RowFilter.none, RowFilter.sub})
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        none = RowFilter.none
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        sub = RowFilter.sub
+
+    output = optimize_from_memory(png_bytes, filter={none, sub})
 
     assert_readable_png_bytes(output)
 

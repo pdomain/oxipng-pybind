@@ -32,11 +32,18 @@ now stable API in `oxipng-pybind`.
 Compatibility paths emit `DeprecationWarning`. They are unsupported migration
 paths. A migration path is a short-term bridge for old callers, not a stable API.
 
-Remaining compatibility paths are:
+Warning-emitting compatibility paths are:
 
 - `ColorType` descriptor calls;
 - `RawImage(data, width, height, color_type=...)`;
-- pyoxipng naming aliases such as `Interlacing.Off` and `Interlacing.Adam7`.
+- pyoxipng enum aliases such as `Interlacing.Off`, `Interlacing.Adam7`, and
+  `RowFilter`.
+
+Every compatibility warning states that the path will be removed in a future
+release.
+
+Stable enum members such as `Interlacing.off`, `FilterStrategy.none`,
+`ColorType.rgba`, and `BitDepth.eight` do not warn.
 
 ## Unsupported Paths
 

@@ -109,3 +109,28 @@ try:
 except PngError:
     print("not valid raw image data")
 ```
+
+## pyoxipng Migration
+
+The old pyoxipng constructor order still works as a migration path:
+
+```python
+from oxipng import ColorType, RawImage
+
+raw = RawImage(data, width, height, color_type=ColorType.rgba())
+```
+
+This path emits `DeprecationWarning`. The warning says it will be removed in a
+future release.
+
+Move the color details into stable `RawImage` arguments:
+
+```python
+from oxipng import BitDepth, ColorType, RawImage
+
+raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
+```
+
+Do not mix the two shapes. For example, `RawImage(data, width, height,
+color_type=ColorType.rgba)` is rejected because pyoxipng order requires a
+`ColorType.rgba()` descriptor.

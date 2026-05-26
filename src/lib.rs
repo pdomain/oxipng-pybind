@@ -113,7 +113,7 @@ fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
         py,
         &py.get_type::<PyDeprecationWarning>(),
         c_str!(
-            "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
+            "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; this compatibility path will be removed in a future release."
         ),
         2,
     )
@@ -123,7 +123,9 @@ fn is_oxipng_compat_type(value: &Bound<'_, PyAny>, qualname: &str) -> PyResult<b
     let value_type = value.get_type();
     let module = value_type.module()?.to_str()?.to_owned();
     let actual_qualname = value_type.qualname()?.to_str()?.to_owned();
-    Ok(module == "oxipng" && actual_qualname == qualname)
+    let helper_qualname = qualname.trim_start_matches('_');
+    Ok((module == "oxipng" && actual_qualname == qualname)
+        || (module == "oxipng._pyoxipng_compat" && actual_qualname == helper_qualname))
 }
 
 fn py_string_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<String>> {

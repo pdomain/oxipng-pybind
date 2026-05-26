@@ -1,21 +1,15 @@
 """Python facade for the native oxipng extension."""
 
-from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
-from warnings import warn
 
-PYOXIPNG_COMPAT_WARNING = (
-    "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
-)
+from . import _pyoxipng_compat as _compat
 
 
-def _warn_pyoxipng_compat() -> None:
-    warn(PYOXIPNG_COMPAT_WARNING, DeprecationWarning, stacklevel=3)
-
-
-class Interlacing(Enum):
+class Interlacing(Enum, metaclass=_compat.PyoxipngCompatEnumMeta):
     """PNG interlacing behavior."""
+
+    __pyoxipng_deprecated_names__ = frozenset({"Off", "Adam7"})
 
     keep = "keep"
     off = "off"
@@ -32,14 +26,14 @@ class StripChunks(Enum):
     all = "all"
 
     @staticmethod
-    def strip(names: list[str] | tuple[str, ...] | set[str]) -> "_CompatStripChunks":
+    def strip(names: list[str] | tuple[str, ...] | set[str]) -> _compat.CompatStripChunks:
         """Create a strip-chunk option for explicit PNG chunk names."""
-        return _CompatStripChunks("strip", tuple(names))
+        return _compat.CompatStripChunks("strip", tuple(names))
 
     @staticmethod
-    def keep(names: list[str] | tuple[str, ...] | set[str]) -> "_CompatStripChunks":
+    def keep(names: list[str] | tuple[str, ...] | set[str]) -> _compat.CompatStripChunks:
         """Create a keep-chunk option for explicit PNG chunk names."""
-        return _CompatStripChunks("keep", tuple(names))
+        return _compat.CompatStripChunks("keep", tuple(names))
 
 
 class Deflater(Enum):
@@ -53,14 +47,14 @@ class Deflaters:
     """DEFLATE option factories."""
 
     @staticmethod
-    def libdeflater(compression: int = 11) -> "_CompatDeflater":
+    def libdeflater(compression: int = 11) -> _compat.CompatDeflater:
         """Create a libdeflater option with an explicit compression level."""
-        return _CompatDeflater("libdeflater", compression)
+        return _compat.CompatDeflater("libdeflater", compression)
 
     @staticmethod
-    def zopfli(iterations: int = 15) -> "_CompatDeflater":
+    def zopfli(iterations: int = 15) -> _compat.CompatDeflater:
         """Create a zopfli option with an explicit iteration count."""
-        return _CompatDeflater("zopfli", iterations)
+        return _compat.CompatDeflater("zopfli", iterations)
 
 
 class FilterStrategy(Enum):
@@ -78,16 +72,31 @@ class FilterStrategy(Enum):
     brute = "brute"
 
     @staticmethod
-    def predefined(filters: list[object] | tuple[object, ...]) -> "_PredefinedFilters":
+    def predefined(filters: list[object] | tuple[object, ...]) -> _compat.PredefinedFilters:
         """Create a predefined row-filter sequence."""
         if not filters:
             raise ValueError("predefined filter must not be empty")
-        parsed = tuple(_basic_row_filter_value(filter_value) for filter_value in filters)
-        return _PredefinedFilters(parsed)
+        parsed = tuple(_compat.basic_row_filter_value(filter_value) for filter_value in filters)
+        return _compat.PredefinedFilters(parsed)
 
 
-class RowFilter(Enum):
+class RowFilter(Enum, metaclass=_compat.PyoxipngCompatEnumMeta):
     """PNG row filter names."""
+
+    __pyoxipng_deprecated_names__ = frozenset(
+        {
+            "none",
+            "sub",
+            "up",
+            "average",
+            "paeth",
+            "minsum",
+            "entropy",
+            "bigrams",
+            "bigent",
+            "brute",
+        }
+    )
 
     none = "none"
     sub = "sub"
@@ -99,40 +108,6 @@ class RowFilter(Enum):
     bigrams = "bigrams"
     bigent = "bigent"
     brute = "brute"
-
-
-@dataclass(frozen=True)
-class _CompatColorType:
-    kind: str
-    bit_depth: int
-    palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None
-    transparent: int | tuple[int, int, int] | None = None
-
-
-@dataclass(frozen=True)
-class _CompatStripChunks:
-    mode: str
-    names: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class _CompatDeflater:
-    kind: str
-    value: int
-
-
-@dataclass(frozen=True)
-class _PredefinedFilters:
-    filters: tuple[str, ...]
-
-
-def _basic_row_filter_value(value: object) -> str:
-    raw_value = getattr(value, "value", value)
-    if not isinstance(raw_value, str):
-        raise TypeError("predefined filter entries must be row filter names")
-    if raw_value not in {"none", "sub", "up", "average", "paeth"}:
-        raise ValueError("predefined filter entries must be one of: none, sub, up, average, paeth")
-    return raw_value
 
 
 class BitDepth(Enum):
@@ -162,21 +137,21 @@ class ColorType(Enum):
         | None = None,
         *,
         bit_depth: int | BitDepth = BitDepth.eight,
-    ) -> _CompatColorType:
+    ) -> _compat.CompatColorType:
         """Create a pyoxipng-compatible color descriptor; emits DeprecationWarning."""
-        _warn_pyoxipng_compat()
+        _compat.warn_pyoxipng_compat()
         raw_bit_depth = bit_depth.value if isinstance(bit_depth, BitDepth) else bit_depth
         if self is ColorType.indexed:
             if not isinstance(transparent, list):
                 raise ValueError("indexed color_type requires a palette")
-            return _CompatColorType("indexed", raw_bit_depth, palette=list(transparent))
+            return _compat.CompatColorType("indexed", raw_bit_depth, palette=list(transparent))
         if self in {ColorType.rgba, ColorType.grayscale_alpha}:
             if transparent is not None:
                 raise ValueError(f"{self.value} does not accept transparent")
-            return _CompatColorType(self.value, raw_bit_depth)
+            return _compat.CompatColorType(self.value, raw_bit_depth)
         if isinstance(transparent, list):
             raise TypeError(f"{self.value} does not accept palette")
-        return _CompatColorType(self.value, raw_bit_depth, transparent=transparent)
+        return _compat.CompatColorType(self.value, raw_bit_depth, transparent=transparent)
 
 
 ColorType.__call__.__doc__ = (

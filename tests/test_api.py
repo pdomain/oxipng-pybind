@@ -327,6 +327,13 @@ def test_pyoxipng_timeout_warns_and_optimizes_memory(png_bytes: bytes) -> None:
     assert_readable_png_bytes(output)
 
 
+def test_pyoxipng_timeout_none_warns_and_optimizes_memory(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        output = optimize_from_memory(png_bytes, timeout=None)
+
+    assert_readable_png_bytes(output)
+
+
 def test_pyoxipng_advanced_bool_none_warns_and_optimizes_memory(png_bytes: bytes) -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         output = optimize_from_memory(png_bytes, optimize_alpha=None)

@@ -68,14 +68,19 @@ def test_import_supported_api() -> None:
 def test_optimize_signature_matches_supported_api() -> None:
     assert str(inspect.signature(optimize)) == (
         "(input, output=None, *, level=2, interlace=None, strip=None, deflate=None, "
-        "filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False)"
+        "filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False, "
+        "optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, "
+        "palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, "
+        "fast_evaluation=None, timeout=None)"
     )
 
 
 def test_optimize_from_memory_signature_matches_supported_api() -> None:
     assert str(inspect.signature(optimize_from_memory)) == (
         "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, "
-        "fix_errors=False, force=False)"
+        "fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, "
+        "color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, "
+        "idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
     )
 
 
@@ -100,24 +105,15 @@ def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
     assert ColorType.rgb.__call__.__doc__ == (
         "Create a pyoxipng-compatible color descriptor; emits DeprecationWarning."
     )
-    assert (
-        StripChunks.strip.__doc__
-        == "Create a pyoxipng-compatible strip-chunk option; emits DeprecationWarning."
-    )
-    assert (
-        StripChunks.keep.__doc__
-        == "Create a pyoxipng-compatible keep-chunk option; emits DeprecationWarning."
-    )
+    assert StripChunks.strip.__doc__ == "Create a strip-chunk option for explicit PNG chunk names."
+    assert StripChunks.keep.__doc__ == "Create a keep-chunk option for explicit PNG chunk names."
     assert Deflaters.libdeflater.__doc__ == (
-        "Create a pyoxipng-compatible libdeflater option; emits DeprecationWarning."
+        "Create a libdeflater option with an explicit compression level."
     )
-    assert (
-        Deflaters.zopfli.__doc__
-        == "Create a pyoxipng-compatible zopfli option; emits DeprecationWarning."
-    )
+    assert Deflaters.zopfli.__doc__ == "Create a zopfli option with an explicit iteration count."
 
 
-def test_pyoxipng_compatibility_factories_warn() -> None:
+def test_pyoxipng_color_factories_warn_and_stable_factories_do_not_warn() -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.rgb(None)
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
@@ -128,15 +124,15 @@ def test_pyoxipng_compatibility_factories_warn() -> None:
         grayscale = ColorType.grayscale(None)
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale_alpha = ColorType.grayscale_alpha()
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         strip = StripChunks.strip(["tEXt"])
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         keep = StripChunks.keep({"iCCP"})
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         libdeflater = Deflaters.libdeflater(12)
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         zopfli = Deflaters.zopfli(15)
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert color_type.kind == "rgb"
     assert rgba.kind == "rgba"
     assert indexed.kind == "indexed"
@@ -270,29 +266,34 @@ def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
 
 
 def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         strip = StripChunks.strip(["tEXt"])
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     optimize(png_path, strip=strip)
 
     assert_readable_png_path(png_path)
 
 
 def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         keep = StripChunks.keep({"iCCP"})
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     optimize(png_path, strip=keep)
 
     assert_readable_png_path(png_path)
 
 
 def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         libdeflater = Deflaters.libdeflater(12)
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         zopfli = Deflaters.zopfli(1)
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=libdeflater))
     assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=zopfli))
 
@@ -310,52 +311,54 @@ def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
         "fast_evaluation",
     ],
 )
-def test_pyoxipng_advanced_bool_options_warn_and_optimize_memory(
+def test_advanced_bool_options_optimize_memory_without_warning(
     png_bytes: bytes,
     option: str,
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         output = cast("Any", optimize_from_memory)(png_bytes, **{option: False})
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(output)
 
 
-def test_pyoxipng_timeout_warns_and_optimizes_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+def test_timeout_optimizes_memory_without_warning(png_bytes: bytes) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         output = optimize_from_memory(png_bytes, timeout=1.0)
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(output)
 
 
-def test_pyoxipng_timeout_none_warns_and_optimizes_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+def test_timeout_none_optimizes_memory_without_warning(png_bytes: bytes) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         output = optimize_from_memory(png_bytes, timeout=None)
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(output)
 
 
-def test_pyoxipng_advanced_bool_none_warns_and_optimizes_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+def test_advanced_bool_none_optimizes_memory_without_warning(png_bytes: bytes) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         output = optimize_from_memory(png_bytes, optimize_alpha=None)
 
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(output)
 
 
 @pytest.mark.parametrize("value", [float("inf"), 1e300])
 def test_pyoxipng_timeout_rejects_out_of_range_values(png_bytes: bytes, value: float) -> None:
-    with (
-        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
-        pytest.raises(ValueError, match="timeout"),
-    ):
+    with pytest.raises(ValueError, match="timeout"):
         optimize_from_memory(png_bytes, timeout=value)
 
 
 @pytest.mark.parametrize("value", [True, False])
 def test_pyoxipng_timeout_rejects_bool(png_bytes: bytes, value: bool) -> None:
-    with (
-        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
-        pytest.raises(TypeError, match="timeout"),
-    ):
+    with pytest.raises(TypeError, match="timeout"):
         cast("Any", optimize_from_memory)(png_bytes, timeout=value)
 
 
@@ -363,10 +366,7 @@ def test_pyoxipng_timeout_rejects_bool(png_bytes: bytes, value: bool) -> None:
 def test_pyoxipng_advanced_options_reject_invalid_values(option: str, png_bytes: bytes) -> None:
     value: object = "bad"
 
-    with (
-        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
-        pytest.raises((TypeError, ValueError), match=option),
-    ):
+    with pytest.raises((TypeError, ValueError), match=option):
         cast("Any", optimize_from_memory)(png_bytes, **{option: value})
 
 
@@ -393,8 +393,7 @@ def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
     png_bytes: bytes,
     names: list[str],
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        strip = StripChunks.strip(names)
+    strip = StripChunks.strip(names)
 
     with pytest.raises(ValueError, match="chunk name"):
         optimize_from_memory(png_bytes, strip=strip)
@@ -406,8 +405,7 @@ def test_pyoxipng_deflaters_reject_invalid_values(
     factory: Any,
     value: int,
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        deflater = factory(value)
+    deflater = factory(value)
 
     with pytest.raises(ValueError, match="deflate"):
         optimize_from_memory(png_bytes, deflate=deflater)

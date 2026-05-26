@@ -357,39 +357,30 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
                     preserve_attrs = parse_bool(&value, "preserve_attrs")?;
                 }
                 "optimize_alpha" => {
-                    warn_pyoxipng_compat(value.py())?;
                     optimize_alpha = parse_advanced_bool(&value, "optimize_alpha")?;
                 }
                 "bit_depth_reduction" => {
-                    warn_pyoxipng_compat(value.py())?;
                     bit_depth_reduction = parse_advanced_bool(&value, "bit_depth_reduction")?;
                 }
                 "color_type_reduction" => {
-                    warn_pyoxipng_compat(value.py())?;
                     color_type_reduction = parse_advanced_bool(&value, "color_type_reduction")?;
                 }
                 "palette_reduction" => {
-                    warn_pyoxipng_compat(value.py())?;
                     palette_reduction = parse_advanced_bool(&value, "palette_reduction")?;
                 }
                 "grayscale_reduction" => {
-                    warn_pyoxipng_compat(value.py())?;
                     grayscale_reduction = parse_advanced_bool(&value, "grayscale_reduction")?;
                 }
                 "idat_recoding" => {
-                    warn_pyoxipng_compat(value.py())?;
                     idat_recoding = parse_advanced_bool(&value, "idat_recoding")?;
                 }
                 "scale_16" => {
-                    warn_pyoxipng_compat(value.py())?;
                     scale_16 = parse_advanced_bool(&value, "scale_16")?;
                 }
                 "fast_evaluation" => {
-                    warn_pyoxipng_compat(value.py())?;
                     fast_evaluation = parse_advanced_bool(&value, "fast_evaluation")?;
                 }
                 "timeout" => {
-                    warn_pyoxipng_compat(value.py())?;
                     timeout = parse_timeout(&value)?;
                 }
                 "backup" | "preserve_attrs" => {
@@ -478,7 +469,7 @@ fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
 #[pyo3(
-    text_signature = "(input, output=None, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False)"
+    text_signature = "(input, output=None, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
 )]
 fn optimize(
     py: Python<'_>,
@@ -973,7 +964,7 @@ impl PyRawImage {
     /// Return optimized PNG bytes.
     #[pyo3(signature = (**kwargs))]
     #[pyo3(
-        text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False)"
+        text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
     )]
     fn create_optimized_png(
         &self,
@@ -990,7 +981,7 @@ impl PyRawImage {
 #[pyfunction]
 #[pyo3(signature = (data, **kwargs))]
 #[pyo3(
-    text_signature = "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False)"
+    text_signature = "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
 )]
 fn optimize_from_memory(
     py: Python<'_>,

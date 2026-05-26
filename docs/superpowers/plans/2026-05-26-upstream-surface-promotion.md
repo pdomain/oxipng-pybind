@@ -41,7 +41,7 @@ Do not edit:
 - Modify: `tests/test_api.py`
 - Modify: `docs/superpowers/plans/2026-05-26-upstream-surface-promotion.md`
 
-- [ ] **Step 1: Add failing tests for warning-free stable factories and advanced options**
+- [x] **Step 1: Add failing tests for warning-free stable factories and advanced options**
 
 Update `tests/test_api.py`:
 
@@ -59,7 +59,7 @@ Expected new docstrings:
 "Create a zopfli option with an explicit iteration count."
 ```
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run:
 
@@ -69,7 +69,7 @@ uv run --group dev pytest tests/test_api.py::test_pyoxipng_compatibility_exports
 
 Expected: tests fail because runtime code still warns and docstrings still mention compatibility.
 
-- [ ] **Step 3: Promote Python factories**
+- [x] **Step 3: Promote Python factories**
 
 In `oxipng/__init__.py`:
 
@@ -80,7 +80,7 @@ In `oxipng/__init__.py`:
 - Update factory docstrings to the four stable strings from Step 1.
 - Keep `_CompatStripChunks` and `_CompatDeflater` internal object names to avoid Rust parser churn.
 
-- [ ] **Step 4: Update stubs for stable factories and advanced options**
+- [x] **Step 4: Update stubs for stable factories and advanced options**
 
 In `oxipng/__init__.pyi`:
 
@@ -88,7 +88,7 @@ In `oxipng/__init__.pyi`:
 - Add `max_decompressed_size: int | None = None` to `RawImage.create_optimized_png`, `optimize`, and `optimize_from_memory`.
 - Leave advanced option keywords in place.
 
-- [ ] **Step 5: Remove Rust deprecation warnings from stable option keywords**
+- [x] **Step 5: Remove Rust deprecation warnings from stable option keywords**
 
 In `src/lib.rs`:
 
@@ -105,7 +105,7 @@ In `src/lib.rs`:
 - Keep `warn_pyoxipng_compat` for remaining compatibility paths.
 - Update `text_signature` strings for `optimize`, `optimize_from_memory`, and `RawImage.create_optimized_png` to include advanced options if tests require signature accuracy.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run:
 
@@ -116,7 +116,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -q
 
 Expected: tests pass after test names and assertions are updated for stable paths.
 
-- [ ] **Step 7: Commit Task 1**
+- [x] **Step 7: Commit Task 1**
 
 Run:
 

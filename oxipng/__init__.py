@@ -33,14 +33,12 @@ class StripChunks(Enum):
 
     @staticmethod
     def strip(names: list[str] | tuple[str, ...] | set[str]) -> "_CompatStripChunks":
-        """Create a pyoxipng-compatible strip-chunk option; emits DeprecationWarning."""
-        _warn_pyoxipng_compat()
+        """Create a strip-chunk option for explicit PNG chunk names."""
         return _CompatStripChunks("strip", tuple(names))
 
     @staticmethod
     def keep(names: list[str] | tuple[str, ...] | set[str]) -> "_CompatStripChunks":
-        """Create a pyoxipng-compatible keep-chunk option; emits DeprecationWarning."""
-        _warn_pyoxipng_compat()
+        """Create a keep-chunk option for explicit PNG chunk names."""
         return _CompatStripChunks("keep", tuple(names))
 
 
@@ -52,18 +50,16 @@ class Deflater(Enum):
 
 
 class Deflaters:
-    """pyoxipng-compatible DEFLATE option factories."""
+    """DEFLATE option factories."""
 
     @staticmethod
     def libdeflater(compression: int = 11) -> "_CompatDeflater":
-        """Create a pyoxipng-compatible libdeflater option; emits DeprecationWarning."""
-        _warn_pyoxipng_compat()
+        """Create a libdeflater option with an explicit compression level."""
         return _CompatDeflater("libdeflater", compression)
 
     @staticmethod
     def zopfli(iterations: int = 15) -> "_CompatDeflater":
-        """Create a pyoxipng-compatible zopfli option; emits DeprecationWarning."""
-        _warn_pyoxipng_compat()
+        """Create a zopfli option with an explicit iteration count."""
         return _CompatDeflater("zopfli", iterations)
 
 
@@ -83,7 +79,7 @@ class FilterStrategy(Enum):
 
 
 class RowFilter(Enum):
-    """pyoxipng-compatible row filter names."""
+    """PNG row filter names."""
 
     none = "none"
     sub = "sub"

@@ -21,11 +21,11 @@ class StripChunks(Enum):
 
     @staticmethod
     def strip(names: list[str] | tuple[str, ...] | set[str]) -> _CompatStripChunks:
-        """Create a pyoxipng-compatible strip-chunk option; emits DeprecationWarning."""
+        """Create a strip-chunk option for explicit PNG chunk names."""
 
     @staticmethod
     def keep(names: list[str] | tuple[str, ...] | set[str]) -> _CompatStripChunks:
-        """Create a pyoxipng-compatible keep-chunk option; emits DeprecationWarning."""
+        """Create a keep-chunk option for explicit PNG chunk names."""
 
 class Deflater(Enum):
     libdeflater = "libdeflater"
@@ -34,11 +34,11 @@ class Deflater(Enum):
 class Deflaters:
     @staticmethod
     def libdeflater(compression: int = 11) -> _CompatDeflater:
-        """Create a pyoxipng-compatible libdeflater option; emits DeprecationWarning."""
+        """Create a libdeflater option with an explicit compression level."""
 
     @staticmethod
     def zopfli(iterations: int = 15) -> _CompatDeflater:
-        """Create a pyoxipng-compatible zopfli option; emits DeprecationWarning."""
+        """Create a zopfli option with an explicit iteration count."""
 
 class FilterStrategy(Enum):
     none = "none"
@@ -159,6 +159,7 @@ class RawImage:
         scale_16: bool | None = None,
         fast_evaluation: bool | None = None,
         timeout: float | None = None,
+        max_decompressed_size: int | None = None,
     ) -> bytes:
         """Return optimized PNG bytes."""
 
@@ -188,6 +189,7 @@ def optimize(
     scale_16: bool | None = None,
     fast_evaluation: bool | None = None,
     timeout: float | None = None,
+    max_decompressed_size: int | None = None,
 ) -> None:
     """Optimize a PNG file on disk."""
 
@@ -214,5 +216,6 @@ def optimize_from_memory(
     scale_16: bool | None = None,
     fast_evaluation: bool | None = None,
     timeout: float | None = None,
+    max_decompressed_size: int | None = None,
 ) -> bytes:
     """Optimize PNG bytes in memory."""

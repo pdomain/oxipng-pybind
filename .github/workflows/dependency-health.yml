@@ -1,0 +1,90 @@
+name: dependency-health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "31 10 * * 2"
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: refresh and verify dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    env:
+      UV_PYTHON: "3.13"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.11.12
+      - uses: dtolnay/rust-toolchain@1.85.1
+        with:
+          components: clippy
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.19.7
+      - name: Refresh lockfiles
+        run: |
+          uv lock --upgrade
+          cargo update
+      - name: Sync refreshed dependencies
+        run: uv sync --group dev
+      - name: Build editable extension
+        run: uv run --group dev maturin develop
+      - name: Run dependency audits
+        run: make dependency-audit
+      - name: Run CI
+        run: make ci
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload refreshed lockfiles
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-refresh
+          path: |
+            Cargo.lock
+            uv.lock
+
+  publish:
+    name: open dependency refresh PR
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: dependency-refresh
+          path: .
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: refresh dependency lockfiles"
+          title: "chore: refresh dependency lockfiles"
+          body: |
+            Automated dependency refresh.
+
+            Verification run in the prepare job:
+
+            - `make dependency-audit`
+            - `make ci`
+
+            Review the lockfile diff for security-relevant updates before merge.
+          branch: automation/dependency-refresh
+          delete-branch: true
+          labels: dependencies, automated

@@ -501,8 +501,9 @@ git push origin main
 
 - Create: `.github/workflows/dependency-health.yml`
 - Modify: `docs/process/dependency-health.md`
+- Modify: `docs/superpowers/plans/2026-05-26-strict-ci-dependency-health.md`
 
-- [ ] **Step 1: Create read-only prepare job**
+- [x] **Step 1: Create read-only prepare job**
 
 Create `.github/workflows/dependency-health.yml`:
 
@@ -567,7 +568,7 @@ jobs:
             uv.lock
 ```
 
-- [ ] **Step 2: Add write-scoped publish job**
+- [x] **Step 2: Add write-scoped publish job**
 
 Append this job to `.github/workflows/dependency-health.yml`:
 
@@ -605,7 +606,7 @@ Append this job to `.github/workflows/dependency-health.yml`:
           labels: dependencies, automated
 ```
 
-- [ ] **Step 3: Document the scheduled workflow**
+- [x] **Step 3: Document the scheduled workflow**
 
 Append this section to `docs/process/dependency-health.md`:
 
@@ -622,7 +623,7 @@ diffs before merge, especially when CVE remediation pulls major transitive
 updates.
 ```
 
-- [ ] **Step 4: Validate workflow syntax**
+- [x] **Step 4: Validate workflow syntax**
 
 Run:
 
@@ -633,12 +634,12 @@ make md-lint
 
 Expected: both commands pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
 ```bash
-git add .github/workflows/dependency-health.yml docs/process/dependency-health.md
+git add .github/workflows/dependency-health.yml docs/process/dependency-health.md docs/superpowers/plans/2026-05-26-strict-ci-dependency-health.md
 git commit -m "ci: schedule dependency health refresh"
 git push origin main
 ```

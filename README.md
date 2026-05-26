@@ -84,5 +84,5 @@ required checks pass.
 
 ## License
 
-This wrapper is MIT licensed. Upstream `oxipng` is MIT licensed. See
-`THIRD_PARTY_NOTICES.md`.
+This wrapper is MIT licensed. See `LICENSE`. Upstream `oxipng` is MIT
+licensed; see `THIRD_PARTY_NOTICES.md`.

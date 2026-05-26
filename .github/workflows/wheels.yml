@@ -69,7 +69,7 @@ jobs:
           target: ${{ matrix.target }}
       - name: Check wheel tags
         shell: bash
-        run: python scripts/check_wheel_tags.py --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
+        run: python scripts/check_wheel_tags.py --expected-python cp310 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
       - name: Smoke wheel
         if: matrix.smoke
         shell: bash

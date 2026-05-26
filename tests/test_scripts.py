@@ -46,6 +46,22 @@ def test_check_wheel_tags_main_reports_errors(
     assert "no wheel paths provided" in capsys.readouterr().out
 
 
+def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+    wheel.write_text("", encoding="utf-8")
+
+    errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310")
+
+    assert errors == [f"{wheel.name} uses Python tag cp311, expected cp310"]
+
+
+def test_check_wheel_tags_accepts_cp310_abi3(tmp_path: Path) -> None:
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
+    wheel.write_text("", encoding="utf-8")
+
+    assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310") == []
+
+
 def test_ai_filter_log_prints_tail(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:

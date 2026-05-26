@@ -20,7 +20,9 @@ def parse_wheel_tags(path: Path) -> tuple[str, str, str]:
     return parts[1], parts[2], parts[3]
 
 
-def check_wheels(wheels: list[Path], expected_platform: str) -> list[str]:
+def check_wheels(
+    wheels: list[Path], expected_platform: str, expected_python: str = "cp310"
+) -> list[str]:
     """Return validation errors for wheel tags."""
     if not wheels:
         return ["no wheel paths provided"]
@@ -33,6 +35,8 @@ def check_wheels(wheels: list[Path], expected_platform: str) -> list[str]:
             errors.append(str(exc))
             continue
 
+        if python_tag != expected_python:
+            errors.append(f"{wheel.name} uses Python tag {python_tag}, expected {expected_python}")
         if abi_tag != "abi3":
             errors.append(f"{wheel.name} uses non-ABI3 tag {python_tag}-{abi_tag}")
         if not fnmatch.fnmatchcase(platform_tag, expected_platform):
@@ -46,11 +50,16 @@ def check_wheels(wheels: list[Path], expected_platform: str) -> list[str]:
 def main() -> int:
     """Run the wheel tag checker."""
     parser = argparse.ArgumentParser()
+    parser.add_argument("--expected-python", default="cp310")
     parser.add_argument("--expected-platform", required=True)
     parser.add_argument("wheels", nargs="*")
     args = parser.parse_args()
 
-    errors = check_wheels([Path(wheel) for wheel in args.wheels], args.expected_platform)
+    errors = check_wheels(
+        [Path(wheel) for wheel in args.wheels],
+        args.expected_platform,
+        args.expected_python,
+    )
     if errors:
         for error in errors:
             print(error)

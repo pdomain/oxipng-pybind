@@ -9,8 +9,9 @@ The workflow is artifact-only in this phase:
 - it does not publish to PyPI or TestPyPI;
 - it does not build or upload an sdist.
 
-Expected wheel ABI tags use `cp310-abi3` for Python 3.10 and newer. Expected
-platform tags are:
+Expected wheel Python and ABI tags use `cp310-abi3` for Python 3.10 and newer.
+The wheel tag check validates the Python tag, ABI tag, and platform tag before
+artifacts are uploaded. Expected platform tags are:
 
 - `manylinux_2_28_x86_64`
 - `manylinux_2_28_aarch64`

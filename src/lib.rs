@@ -12,6 +12,7 @@ use std::fs::{self, OpenOptions};
 use std::io;
 use std::num::NonZeroU64;
 use std::path::PathBuf;
+use std::time::Duration;
 
 create_exception!(oxipng, PngError, PyException);
 
@@ -48,6 +49,23 @@ fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
         return Err(PyTypeError::new_err(format!("{option} must be a bool")));
     }
     value.extract()
+}
+
+fn parse_timeout(value: &Bound<'_, PyAny>) -> PyResult<Option<Duration>> {
+    if value.is_none() {
+        return Ok(None);
+    }
+
+    let seconds: f64 = value.extract().map_err(|_| {
+        PyTypeError::new_err("timeout must be a non-negative number of seconds or None")
+    })?;
+    if !seconds.is_finite() || seconds < 0.0 {
+        return Err(PyValueError::new_err(
+            "timeout must be a non-negative number of seconds or None",
+        ));
+    }
+
+    Ok(Some(Duration::from_secs_f64(seconds)))
 }
 
 fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
@@ -279,6 +297,15 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
     let mut force = false;
     let mut backup = false;
     let mut preserve_attrs = false;
+    let mut optimize_alpha = None;
+    let mut bit_depth_reduction = None;
+    let mut color_type_reduction = None;
+    let mut palette_reduction = None;
+    let mut grayscale_reduction = None;
+    let mut idat_recoding = None;
+    let mut scale_16 = None;
+    let mut fast_evaluation = None;
+    let mut timeout = None;
 
     if let Some(dict) = kwargs {
         for (key, value) in dict.iter() {
@@ -314,6 +341,42 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
                 "preserve_attrs" if matches!(mode, ParseMode::File) => {
                     preserve_attrs = parse_bool(&value, "preserve_attrs")?;
                 }
+                "optimize_alpha" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    optimize_alpha = Some(parse_bool(&value, "optimize_alpha")?);
+                }
+                "bit_depth_reduction" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    bit_depth_reduction = Some(parse_bool(&value, "bit_depth_reduction")?);
+                }
+                "color_type_reduction" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    color_type_reduction = Some(parse_bool(&value, "color_type_reduction")?);
+                }
+                "palette_reduction" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    palette_reduction = Some(parse_bool(&value, "palette_reduction")?);
+                }
+                "grayscale_reduction" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    grayscale_reduction = Some(parse_bool(&value, "grayscale_reduction")?);
+                }
+                "idat_recoding" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    idat_recoding = Some(parse_bool(&value, "idat_recoding")?);
+                }
+                "scale_16" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    scale_16 = Some(parse_bool(&value, "scale_16")?);
+                }
+                "fast_evaluation" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    fast_evaluation = Some(parse_bool(&value, "fast_evaluation")?);
+                }
+                "timeout" => {
+                    warn_pyoxipng_compat(value.py())?;
+                    timeout = parse_timeout(&value)?;
+                }
                 "backup" | "preserve_attrs" => {
                     return Err(PyTypeError::new_err(format!("unsupported option: {key}")));
                 }
@@ -325,6 +388,31 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
     }
 
     let mut options = oxi::Options::from_preset(level);
+    if let Some(value) = optimize_alpha {
+        options.optimize_alpha = value;
+    }
+    if let Some(value) = bit_depth_reduction {
+        options.bit_depth_reduction = value;
+    }
+    if let Some(value) = color_type_reduction {
+        options.color_type_reduction = value;
+    }
+    if let Some(value) = palette_reduction {
+        options.palette_reduction = value;
+    }
+    if let Some(value) = grayscale_reduction {
+        options.grayscale_reduction = value;
+    }
+    if let Some(value) = idat_recoding {
+        options.idat_recoding = value;
+    }
+    if let Some(value) = scale_16 {
+        options.scale_16 = value;
+    }
+    if let Some(value) = fast_evaluation {
+        options.fast_evaluation = value;
+    }
+    options.timeout = timeout;
     if let Some(value) = interlace {
         options.interlace = value;
     }

@@ -935,7 +935,7 @@ emitting `DeprecationWarning`.
 - Modify: `src/lib.rs`
 - Modify: `oxipng/__init__.pyi`
 
-- [ ] **Step 1: Write failing tests for advanced options and warnings**
+- [x] **Step 1: Write failing tests for advanced options and warnings**
 
 Add these tests near the option parsing tests:
 
@@ -978,7 +978,7 @@ def test_pyoxipng_advanced_options_reject_invalid_values(option: str, png_bytes:
         optimize_from_memory(png_bytes, **{option: value})
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -989,7 +989,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_advanced or p
 
 Expected: fail because advanced keywords are currently unsupported.
 
-- [ ] **Step 3: Add advanced fields to `parse_options`**
+- [x] **Step 3: Add advanced fields to `parse_options`**
 
 In `src/lib.rs`, add:
 
@@ -1101,7 +1101,7 @@ After `let mut options = oxi::Options::from_preset(level);`, apply parsed fields
     options.timeout = timeout;
 ```
 
-- [ ] **Step 4: Update stubs for advanced keyword parameters**
+- [x] **Step 4: Update stubs for advanced keyword parameters**
 
 In `oxipng/__init__.pyi`, add these keyword parameters to `optimize`, `optimize_from_memory`, and `RawImage.create_optimized_png` signatures:
 
@@ -1119,7 +1119,7 @@ In `oxipng/__init__.pyi`, add these keyword parameters to `optimize`, `optimize_
 
 Keep existing stable keyword order before these compatibility-only parameters.
 
-- [ ] **Step 5: Run advanced option tests**
+- [x] **Step 5: Run advanced option tests**
 
 Run:
 
@@ -1130,7 +1130,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_advanced or p
 
 Expected: selected tests pass.
 
-- [ ] **Step 6: Verify stable API still does not warn**
+- [x] **Step 6: Verify stable API still does not warn**
 
 Add this standard-library import at the top of `tests/test_api.py`:
 
@@ -1168,7 +1168,7 @@ uv run --no-sync --group dev pytest tests/test_api.py::test_stable_option_paths_
 
 Expected: test passes.
 
-- [ ] **Step 7: Run full API tests and checks**
+- [x] **Step 7: Run full API tests and checks**
 
 Run:
 
@@ -1182,7 +1182,7 @@ uv run --group dev basedpyright
 
 Expected: all commands pass.
 
-- [ ] **Step 8: Commit advanced compatibility options**
+- [x] **Step 8: Commit advanced compatibility options**
 
 Run:
 

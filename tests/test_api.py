@@ -297,6 +297,65 @@ def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
     assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=zopfli))
 
 
+@pytest.mark.parametrize(
+    "option",
+    [
+        "optimize_alpha",
+        "bit_depth_reduction",
+        "color_type_reduction",
+        "palette_reduction",
+        "grayscale_reduction",
+        "idat_recoding",
+        "scale_16",
+        "fast_evaluation",
+    ],
+)
+def test_pyoxipng_advanced_bool_options_warn_and_optimize_memory(
+    png_bytes: bytes,
+    option: str,
+) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        output = cast("Any", optimize_from_memory)(png_bytes, **{option: False})
+
+    assert_readable_png_bytes(output)
+
+
+def test_pyoxipng_timeout_warns_and_optimizes_memory(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        output = optimize_from_memory(png_bytes, timeout=1.0)
+
+    assert_readable_png_bytes(output)
+
+
+@pytest.mark.parametrize("option", ["optimize_alpha", "bit_depth_reduction", "timeout"])
+def test_pyoxipng_advanced_options_reject_invalid_values(option: str, png_bytes: bytes) -> None:
+    value: object = "bad"
+
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises((TypeError, ValueError), match=option),
+    ):
+        cast("Any", optimize_from_memory)(png_bytes, **{option: value})
+
+
+def test_stable_option_paths_do_not_emit_deprecation_warnings(png_bytes: bytes) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output = optimize_from_memory(
+            png_bytes,
+            level=2,
+            interlace=Interlacing.keep,
+            strip=StripChunks.none,
+            deflate=Deflater.libdeflater,
+            filter=FilterStrategy.none,
+            fix_errors=False,
+            force=False,
+        )
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output)
+
+
 @pytest.mark.parametrize("names", [["abc"], ["abcde"], ["ab1d"]])
 def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
     png_bytes: bytes,

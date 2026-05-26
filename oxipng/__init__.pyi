@@ -150,6 +150,15 @@ class RawImage:
         | None = None,
         fix_errors: bool = False,
         force: bool = False,
+        optimize_alpha: bool | None = None,
+        bit_depth_reduction: bool | None = None,
+        color_type_reduction: bool | None = None,
+        palette_reduction: bool | None = None,
+        grayscale_reduction: bool | None = None,
+        idat_recoding: bool | None = None,
+        scale_16: bool | None = None,
+        fast_evaluation: bool | None = None,
+        timeout: float | None = None,
     ) -> bytes:
         """Return optimized PNG bytes."""
 
@@ -170,6 +179,15 @@ def optimize(
     force: bool = False,
     backup: bool = False,
     preserve_attrs: bool = False,
+    optimize_alpha: bool | None = None,
+    bit_depth_reduction: bool | None = None,
+    color_type_reduction: bool | None = None,
+    palette_reduction: bool | None = None,
+    grayscale_reduction: bool | None = None,
+    idat_recoding: bool | None = None,
+    scale_16: bool | None = None,
+    fast_evaluation: bool | None = None,
+    timeout: float | None = None,
 ) -> None:
     """Optimize a PNG file on disk."""
 
@@ -187,5 +205,14 @@ def optimize_from_memory(
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
+    optimize_alpha: bool | None = None,
+    bit_depth_reduction: bool | None = None,
+    color_type_reduction: bool | None = None,
+    palette_reduction: bool | None = None,
+    grayscale_reduction: bool | None = None,
+    idat_recoding: bool | None = None,
+    scale_16: bool | None = None,
+    fast_evaluation: bool | None = None,
+    timeout: float | None = None,
 ) -> bytes:
     """Optimize PNG bytes in memory."""

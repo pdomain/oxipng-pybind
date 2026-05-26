@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from scripts import ai_filter_log, check_wheel_tags, scan_upstream_surface, smoke_wheel
+from scripts import (
+    ai_filter_log,
+    bump_upstream,
+    check_wheel_tags,
+    scan_upstream_surface,
+    smoke_wheel,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -86,6 +92,19 @@ def test_ai_filter_log_reports_missing_file(
     assert "log file not found" in capsys.readouterr().err
 
 
+def test_normalize_version_removes_leading_v() -> None:
+    assert bump_upstream.normalize_version("v10.1.2") == "10.1.2"
+
+
+def test_issue_body_mentions_manual_surface_triage() -> None:
+    body = bump_upstream.issue_body("10.1.2", "## report")
+
+    assert "Upstream version: 10.1.2" in body
+    assert "- [ ] expose now" in body
+    assert "- [ ] defer and document" in body
+    assert "- [ ] reject as intentionally unsupported" in body
+
+
 def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -> None:
     upstream = tmp_path / "upstream"
     src = upstream / "src"
@@ -102,8 +121,10 @@ def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -
         encoding="utf-8",
     )
     (src / "colors.rs").write_text(
-        "pub enum ColorType { Grayscale, RGB, NewColor }\n"
-        "pub enum BitDepth { One = 1, Eight = 8, ThirtyTwo = 32 }\n",
+        (
+            "pub enum ColorType { Grayscale, RGB, NewColor }\n"
+            "pub enum BitDepth { One = 1, Eight = 8, ThirtyTwo = 32 }\n"
+        ),
         encoding="utf-8",
     )
     manifest = {

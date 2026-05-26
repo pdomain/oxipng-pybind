@@ -10,8 +10,6 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-import tomlkit
-
 ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
 
@@ -38,6 +36,8 @@ def latest_upstream_version() -> str:
 
 def update_pyproject_toml(path: Path, version: str) -> None:
     """Update the Python package version."""
+    import tomlkit  # noqa: PLC0415
+
     document = tomlkit.parse(path.read_text(encoding="utf-8"))
     document["project"]["version"] = version
     path.write_text(tomlkit.dumps(document), encoding="utf-8")
@@ -45,6 +45,8 @@ def update_pyproject_toml(path: Path, version: str) -> None:
 
 def update_cargo_toml(path: Path, version: str) -> None:
     """Update the Rust package and upstream dependency versions."""
+    import tomlkit  # noqa: PLC0415
+
     document = tomlkit.parse(path.read_text(encoding="utf-8"))
     document["package"]["version"] = version
     document["dependencies"]["oxi"]["version"] = f"={version}"

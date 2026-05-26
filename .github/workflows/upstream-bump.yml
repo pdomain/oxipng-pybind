@@ -6,14 +6,15 @@ on:
     - cron: "17 9 * * 1"
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  bump:
-    name: bump oxipng
+  prepare:
+    name: prepare oxipng bump
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+      target-version: ${{ steps.bump.outputs.target-version }}
     env:
       UV_PYTHON: "3.13"
     steps:
@@ -59,8 +60,40 @@ jobs:
       - name: Run CI before opening PR
         if: steps.changes.outputs.changed == 'true'
         run: make ci
-      - name: Check upstream bump token
+      - name: Upload bump workspace
         if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-bump-workspace
+          include-hidden-files: true
+          path: |
+            Cargo.toml
+            Cargo.lock
+            pyproject.toml
+            uv.lock
+            CHANGELOG.md
+            docs/api-surface/*.toml
+            docs/architecture/api-compatibility.md
+            docs/architecture/options-surface.md
+            .cache/upstream-bump/target-version.txt
+            .cache/upstream-surface/pr-body-section.md
+
+  publish:
+    name: publish oxipng bump PR
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: upstream-bump-workspace
+          path: .
+      - name: Check upstream bump token
         env:
           UPSTREAM_BUMP_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
         run: |
@@ -69,7 +102,6 @@ jobs:
             exit 1
           fi
       - name: Write pull request body
-        if: steps.changes.outputs.changed == 'true'
         run: |
           mkdir -p .cache/upstream-bump
           {
@@ -80,7 +112,6 @@ jobs:
             echo "Auto-merge is enabled only after required checks pass."
           } > .cache/upstream-bump/pr-body.md
       - name: Create pull request
-        if: steps.changes.outputs.changed == 'true'
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
@@ -92,17 +123,35 @@ jobs:
           delete-branch: true
           labels: dependencies, automated
       - name: Create or update upstream surface issue
-        if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
         run: |
-          uv run python - <<'PY'
+          python - <<'PY'
           from pathlib import Path
           from scripts.bump_upstream import upsert_surface_issue
 
           version = Path(".cache/upstream-bump/target-version.txt").read_text(encoding="utf-8").strip()
           upsert_surface_issue(version, Path(".cache/upstream-surface/pr-body-section.md"))
           PY
+      - name: Wait for wheel workflow
+        if: >-
+          steps.cpr.outputs.pull-request-number != '' &&
+          contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
+        run: |
+          pr="${{ steps.cpr.outputs.pull-request-number }}"
+          sha="$(gh pr view "$pr" --json headRefOid --jq .headRefOid)"
+          for attempt in $(seq 1 60); do
+            conclusion="$(gh run list --workflow wheels.yml --commit "$sha" --json status,conclusion --jq '.[0] | "\(.status) \(.conclusion)"')"
+            case "$conclusion" in
+              "completed success") exit 0 ;;
+              "completed failure"|"completed cancelled"|"completed timed_out") echo "wheels workflow failed: $conclusion"; exit 1 ;;
+            esac
+            sleep 30
+          done
+          echo "timed out waiting for wheels workflow"
+          exit 1
       - name: Enable auto-merge
         if: >-
           steps.cpr.outputs.pull-request-number != '' &&

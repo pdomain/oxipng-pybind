@@ -18,6 +18,12 @@ The scheduled `upstream-bump.yml` workflow:
 
 The workflow does not push directly to `main`.
 
+The upstream bump workflow keeps dependency update, source scan, and CI execution
+in a read-only job. Only the PR/issue publication job receives write
+permissions. Mutable action tags should be replaced with full commit SHAs during
+release-hardening maintenance, and the resolved SHAs should be reviewed before
+merge.
+
 ## Required Repository Settings
 
 Enable these GitHub settings for CI-gated auto-merge:

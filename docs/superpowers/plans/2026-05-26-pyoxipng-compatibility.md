@@ -60,12 +60,6 @@ PYOXIPNG_WARNING = (
 )
 ```
 
-Add this standard-library import at the top of `tests/test_api.py`:
-
-```python
-import warnings
-```
-
 Add these tests after `test_public_callables_expose_runtime_docstrings`:
 
 ```python
@@ -1069,6 +1063,12 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_advanced or p
 Expected: selected tests pass.
 
 - [ ] **Step 6: Verify stable API still does not warn**
+
+Add this standard-library import at the top of `tests/test_api.py`:
+
+```python
+import warnings
+```
 
 Add this test near the advanced option tests:
 

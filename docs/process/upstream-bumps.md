@@ -13,16 +13,21 @@ The scheduled `.github/workflows/upstream-bump.yml` workflow:
 5. Runs `scripts/scan_upstream_surface.py --update-docs`.
 6. Runs the full repository CI.
 7. Opens a pull request when files changed, including the scan summary.
-8. Opens or updates one `upstream-surface` triage issue per upstream version
-   when the scan detects new unexposed surface.
-9. Enables auto-merge only when CI passes and the scan reports no broken
-   exposed mappings.
+8. Opens or updates one `upstream-surface` triage issue per upstream version.
+9. Waits for `.github/workflows/wheels.yml` on the pull request commit.
+10. Enables auto-merge after the prepare CI and wheel workflow pass. Branch
+    protection still controls the required pull request checks. The scan must
+    also report no broken exposed mappings.
 
 The workflow does not push directly to `main`.
 
 The upstream bump workflow keeps dependency updates, source scans, and CI in a
 read-only job. Only the PR and issue publication job receives write
 permissions.
+
+The prepare job uploads only the bump workspace that the publish job needs:
+`Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `uv.lock`, `CHANGELOG.md`, API
+surface docs, the target-version file, and the generated PR body section.
 
 ## Version Policy
 

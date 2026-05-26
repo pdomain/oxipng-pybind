@@ -52,6 +52,14 @@ when they clarify shared behavior.
 | `reportExplicitAny` | `pyproject.toml` | Public tests intentionally use `Any` to prove runtime validation rejects or accepts dynamic Python values. |
 | `reportUnusedCallResult` | `pyproject.toml` | Tests often call constructors only to assert validation errors, and CLI scripts call parser/writer helpers for side effects. Assigning every result to `_` adds noise. |
 
+## Basedpyright File Suppressions
+
+| Rule | Location | Justification |
+| --- | --- | --- |
+| `reportImplicitOverride` | `oxipng/_pyoxipng_compat.py` | The enum metaclass overrides `EnumType.__getattribute__` so deprecated pyoxipng names can warn on access. |
+| `reportUnknownArgumentType`, `reportUnknownVariableType` | `scripts/scan_upstream_surface.py` | `tomlkit` returns dynamic TOML objects. The scanner narrows only at the comparison boundary. |
+| `reportUnannotatedClassAttribute`, `reportUnknownArgumentType`, `reportUnknownLambdaType`, `reportUnusedParameter` | `tests/test_bump_upstream.py` | The tests use small fake response objects and monkeypatched callables to assert subprocess and network behavior. Full fake types would hide the behavior under test. |
+
 ## Security Advisory Ignores
 
 No RustSec advisories are ignored. `deny.toml` keeps `[advisories].ignore` empty.

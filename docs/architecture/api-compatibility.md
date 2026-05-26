@@ -7,7 +7,7 @@ Stable API calls must remain warning-free.
 
 ## Stable API
 
-The supported Python surface is:
+The stable no-warning Python surface is:
 
 - `optimize`
 - `optimize_from_memory`
@@ -17,6 +17,7 @@ The supported Python surface is:
 - `Interlacing`
 - `StripChunks`
 - `Deflater`
+- `Deflaters`
 - `FilterStrategy`
 - `ColorType`
 - `BitDepth`
@@ -30,7 +31,8 @@ These names are the public contract for normal use.
 now stable API in `oxipng-pybind`.
 
 Compatibility paths emit `DeprecationWarning`. They are unsupported migration
-paths. A migration path is a short-term bridge for old callers, not a stable API.
+paths. A migration path is a short-term bridge for old callers, not a stable
+API.
 
 Warning-emitting compatibility paths are:
 
@@ -43,20 +45,25 @@ Every compatibility warning states that the path will be removed in a future
 release.
 
 Stable enum members such as `Interlacing.off`, `FilterStrategy.none`,
-`ColorType.rgba`, and `BitDepth.eight` do not warn.
+`ColorType.rgba`, and `BitDepth.eight` do not warn. `StripChunks.strip`,
+`StripChunks.keep`, `Deflaters.libdeflater`, and `Deflaters.zopfli` also do not
+warn.
+
+`RowFilter` is exported only for old pyoxipng-style code. Do not use it in new
+code. Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
 
 ## Unsupported Paths
 
 These paths are not supported:
 
 - pyoxipng-specific raw buffer helpers beyond `RawImage`
-- stdin/stdout behavior
+- stdin and stdout stream handling
 
 Unsupported paths may fail, warn, or stay absent.
 
 ## Source Of Truth
 
-The machine-readable compatibility source of truth for upstream `oxipng`
+The machine-readable upstream-surface source of truth for upstream `oxipng`
 10.1.1 is [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
 
 ## Unexposed Upstream Surface

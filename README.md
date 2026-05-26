@@ -35,9 +35,13 @@ standard Python exceptions such as `TypeError` or `ValueError`.
 
 Most practical upstream options are stable API. Remaining `pyoxipng`
 compatibility paths emit `DeprecationWarning`. New code should use the stable
-`oxipng-pybind` API.
+`oxipng-pybind` API. See [Move from pyoxipng](docs/usage/pyoxipng-migration.md).
 
-stdin/stdout optimization is still unsupported.
+The API maps supported Rust options to Python types. It does not expose Rust
+stdin or stdout stream arguments.
+
+stdin and stdout optimization are not part of this API. Callers own reading
+from stdin and writing to stdout.
 
 ## Development
 

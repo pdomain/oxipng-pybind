@@ -104,8 +104,8 @@ Required facts:
 - Python 3.11 or newer is required for release artifacts.
 - PyPI publishing is not yet enabled.
 - `optimize`, `optimize_from_memory`, and `RawImage` are the main entry points.
-- pyoxipng compatibility paths emit `DeprecationWarning`.
-- stdin/stdout optimization is still unsupported.
+- remaining pyoxipng compatibility-only paths emit `DeprecationWarning`.
+- stdin and stdout stream handling is caller-owned.
 
 - [x] **Step 3: Rewrite `docs/README.md`**
 
@@ -197,7 +197,7 @@ Use these purposes:
 Required facts:
 
 - Stable API calls must remain warning-free.
-- pyoxipng compatibility paths emit `DeprecationWarning`.
+- remaining pyoxipng compatibility-only paths emit `DeprecationWarning`.
 - Compatibility paths are unsupported migration paths.
 - The Rust extension owns validation for native options.
 - Python wrappers own ergonomic names and path handling.
@@ -289,7 +289,7 @@ For the active docs clarity spec, preserve:
 
 For the pyoxipng compatibility spec, preserve:
 
-- warning-emitting unsupported compatibility path;
+- warning-emitting unsupported compatibility-only paths;
 - no stable API behavior changes;
 - concise docstring policy;
 - remaining migration expectations.

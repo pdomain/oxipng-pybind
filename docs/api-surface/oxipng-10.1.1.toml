@@ -8,7 +8,11 @@ exposed = ["optimize", "optimize_from_memory"]
 analyze = "wraps optimize with OutFile::None"
 
 [classes]
-exposed = ["OptimizationResult", "RawImage"]
+exposed = ["Deflaters", "OptimizationResult", "RawImage"]
+
+[classes.Deflaters.methods]
+libdeflater = "Deflaters.libdeflater(compression) maps to Deflater::Libdeflater { compression }"
+zopfli = "Deflaters.zopfli(iterations) maps to Deflater::Zopfli with iteration_count"
 
 [classes.OptimizationResult.properties]
 original_size = "original input size in bytes"
@@ -19,6 +23,9 @@ constructor = "RawImage(width, height, color_type, bit_depth, data, *, palette=N
 create_optimized_png = "RawImage.create_optimized_png(**memory_options)"
 add_png_chunk = "RawImage.add_png_chunk(name, data)"
 add_icc_profile = "RawImage.add_icc_profile(data)"
+
+[exceptions]
+exposed = ["PngError"]
 
 [options.exposed]
 level = "Options::from_preset"

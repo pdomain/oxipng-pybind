@@ -8,6 +8,7 @@ project state.
 - [Optimize PNG files](usage/file-optimization.md)
 - [Optimize PNG data in memory](usage/memory-optimization.md)
 - [Create PNGs from raw pixels](usage/raw-image.md)
+- [Move from pyoxipng](usage/pyoxipng-migration.md)
 
 ## Architecture
 

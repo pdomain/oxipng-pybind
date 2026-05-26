@@ -3,7 +3,7 @@
 ## Goal
 
 Promote all remaining practical upstream `oxipng` 10.1.1 surfaces to stable
-Python API, except stdin/stdout.
+Python API, except stdin and stdout stream handling.
 
 ## Scope
 
@@ -16,7 +16,7 @@ Promote these surfaces:
 - `FilterStrategy::Predefined`
 - `OutFile::None`
 
-Keep stdin/stdout unsupported.
+Keep stdin and stdout stream handling caller-owned.
 
 ## Stable API Changes
 
@@ -128,7 +128,7 @@ The stable API must be warning-free.
 Only remaining compatibility-only paths emit the existing exact warning:
 
 ```text
-pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API.
+pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; this compatibility path will be removed in a future release.
 ```
 
 After this work, expected compatibility-only paths are:
@@ -137,8 +137,8 @@ After this work, expected compatibility-only paths are:
 - `RawImage(data, width, height, color_type=...)`
 - pyoxipng naming aliases such as `Interlacing.Off` and `Interlacing.Adam7`
 
-stdin/stdout stays unsupported and should not get a compatibility path in this
-work.
+stdin and stdout stream handling stays caller-owned and should not get a
+compatibility path in this work.
 
 ## Docs and Manifest
 
@@ -169,4 +169,4 @@ Inspect:
 
 - stable paths do not emit `DeprecationWarning`
 - remaining compatibility paths still warn
-- stdin/stdout remains documented as unsupported
+- stdin and stdout stream handling remains documented as caller-owned

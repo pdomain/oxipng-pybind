@@ -1,7 +1,18 @@
 # Local Development
 
-Use `make setup` before local work. It installs Python dependencies, builds the
-editable native extension, and installs pre-commit hooks.
+Use `make setup` before local work. It installs Rust `1.85.1` and
+`cargo-deny` if needed. It checks `uv.lock`, syncs locked Python dependencies,
+builds the editable native extension, and installs pre-commit hooks.
+
+`make setup` runs:
+
+```bash
+uv lock --check
+uv sync --locked --group dev --reinstall
+uv run --group dev maturin develop
+uv run --group dev pre-commit install --install-hooks
+uv run --group dev pre-commit install --hook-type commit-msg
+```
 
 ## Editable Extension
 
@@ -24,3 +35,9 @@ Python importing an older `_oxipng` extension. That usually appears as an
 
 The `make test-py` and `make coverage` targets already rebuild the extension and
 run pytest with `--no-sync`.
+
+`make test-py` runs the Python test suite with branch coverage, `pytest-xdist`,
+and `--cov-fail-under=80`.
+
+`make coverage` runs the same coverage gate and writes an HTML report to
+`htmlcov/`.

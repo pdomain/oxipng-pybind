@@ -5,13 +5,25 @@
 Add pyoxipng-style API paths for migration testing. These paths are not the
 supported long-term API.
 
+## Status
+
+This design was implemented first. Later work promoted some paths to stable API.
+`StripChunks.strip(...)`, `StripChunks.keep(...)`, `Deflaters.*`,
+advanced options, `timeout`, `max_decompressed_size`,
+`FilterStrategy.predefined(...)`, and `analyze(...)` are now stable and
+warning-free.
+
+The remaining warning paths are `ColorType` descriptor calls,
+`RawImage(data, width, height, color_type=...)`, `Interlacing.Off`,
+`Interlacing.Adam7`, and `RowFilter`.
+
 ## Policy
 
 The existing oxipng-pybind API remains the supported API. Compatibility paths
 help users port pyoxipng code and should be removed from user code after the
 port.
 
-Every compatibility callable must:
+Every compatibility-only callable must:
 
 - work where it maps cleanly to the current implementation;
 - emit `DeprecationWarning` when used;
@@ -70,8 +82,9 @@ Add compatibility factories for explicit chunk and deflater options:
 - `Deflaters.libdeflater(int)`
 - `Deflaters.zopfli(int)`
 
-Factories should validate inputs and warn when called. The implementation may
-use narrow compatibility objects if enum values cannot carry the needed data.
+These factories started as compatibility factories. They were later promoted to
+stable API. Current code must validate inputs and must not warn when these
+factories are used.
 
 ### Advanced Options
 
@@ -91,12 +104,15 @@ Start with boolean options that map directly to stable upstream fields. Treat
 `timeout` separately because it changes execution behavior and needs focused
 tests.
 
+These options were later promoted to stable API. Current code must not warn when
+callers use them.
+
 ## Warnings and Docs
 
-Warnings should use this exact text:
+Remaining compatibility warnings should use this exact text:
 
 ```text
-pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API.
+pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; this compatibility path will be removed in a future release.
 ```
 
 Docstrings should be one sentence unless a second sentence is needed to mention
@@ -115,7 +131,7 @@ Use test-driven development for each compatibility slice.
 
 Tests must prove:
 
-- compatibility calls emit `DeprecationWarning`;
+- compatibility-only calls emit `DeprecationWarning`;
 - stable API calls do not warn;
 - compatibility inputs produce valid optimized PNG output where applicable;
 - invalid compatibility inputs raise specific Python exceptions;
@@ -137,11 +153,11 @@ this implementation. Those remain separate milestones.
 
 ## Remaining Migration Expectations
 
-Users can use compatibility paths to test a port from pyoxipng. They should
-migrate to the stable oxipng-pybind API after that port works.
+Users can use remaining compatibility-only paths to test a port from pyoxipng.
+They should migrate to the stable oxipng-pybind API after that port works.
 
-Packaging parity, platform parity, stdin/stdout behavior, and migration-guide
-docs remain separate work.
+Packaging parity and platform parity remain separate work. Migration docs now
+exist. stdin and stdout stream handling stays caller-owned.
 
 ## Open Decisions
 

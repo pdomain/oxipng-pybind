@@ -5,6 +5,12 @@
 **Goal:** Add pyoxipng-style compatibility paths for API migration. Warn users
 to migrate to oxipng-pybind's stable API.
 
+**Current status:** This plan is complete. Later upstream surface promotion made
+the chunk factories, deflater factories, advanced options, `timeout`,
+`max_decompressed_size`, `FilterStrategy.predefined(...)`, and `analyze(...)`
+stable and warning-free. The historical task snippets below still show the
+first compatibility phase.
+
 **Architecture:** Keep the stable API unchanged. Add narrow Python facade
 objects for pyoxipng-style factories. Teach the Rust parser to recognize those
 objects and pyoxipng keyword names explicitly. Compatibility callables emit
@@ -29,10 +35,10 @@ in this plan.
 
 ## Shared Policy
 
-Use this exact warning text everywhere:
+Use this exact warning text for remaining compatibility-only paths:
 
 ```text
-pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API.
+pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; this compatibility path will be removed in a future release.
 ```
 
 Use concise one-sentence docstrings for new compatibility callables.
@@ -1231,10 +1237,13 @@ In `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`, update the `pyox
 
 ```markdown
 - Naming aliases, raw-image constructor compatibility, explicit strip/keep
-  chunk factories, deflater factories, and advanced option keywords now exist
-  as warning-emitting migration paths.
-- Compatibility paths emit `DeprecationWarning` and remain unsupported for new
-  code; users should migrate to the stable oxipng-pybind API.
+  chunk factories, deflater factories, and advanced option keywords now exist.
+- Later promotion made chunk factories, deflater factories, advanced options,
+  `timeout`, `max_decompressed_size`, `FilterStrategy.predefined(...)`, and
+  `analyze(...)` stable and warning-free.
+- Remaining compatibility-only paths emit `DeprecationWarning` and remain
+  unsupported for new code. Users should migrate to the stable oxipng-pybind
+  API.
 - Packaging parity, PyPI publishing, musllinux/32-bit wheels, and a migration
   guide remain open.
 ```
@@ -1339,7 +1348,10 @@ Placeholder scan:
 
 - No placeholder tasks remain.
 - Every task has exact file paths, commands, expected results, and concrete code snippets.
-- Open decisions from the spec are resolved in the plan: `RowFilter` is a distinct enum, `Deflaters` coexists with `Deflater`, compatibility objects are Python dataclasses parsed by Rust, and advanced options are implemented as warning-emitting keyword parameters.
+- Open decisions from the spec are resolved in the plan: `RowFilter` is a
+  distinct enum, `Deflaters` coexists with `Deflater`, and compatibility
+  objects are Python dataclasses parsed by Rust. Later work promoted advanced
+  options to stable warning-free keyword parameters.
 
 Type consistency:
 

@@ -44,6 +44,7 @@ Tests and docs are in place:
   docs, and stable scan output.
 - Documentation covers usage, architecture, API compatibility, option surface,
   release artifacts, upstream bumps, dependency health, and lint deviations.
+- The pyoxipng migration guide is at `docs/usage/pyoxipng-migration.md`.
 - Changelog entries record the memory API, raw image API, option surface, ABI3
   wheel metadata, wheel workflow scaffolding, and upstream scanner scaffolding.
 
@@ -63,6 +64,9 @@ Completed workflow pieces:
 - `upstream-bump.yml` covers version updates, manifest preparation, upstream
   surface scans, PR creation, triage issue upsert, wheel workflow waiting, and
   auto-merge.
+- Wheel smoke checks verify imports, typing files, file optimization, memory
+  optimization, `memoryview`, `RawImage`, custom PNG chunks, and Pillow-readable
+  output.
 
 Open CI and release work:
 
@@ -128,8 +132,9 @@ This project is not a full drop-in replacement for `pyoxipng`.
 - Platform coverage differs. `pyoxipng` publishes extra targets such as
   musllinux and 32-bit Windows. This project targets manylinux
   x86_64/aarch64, macOS x86_64/aarch64, and Windows x86_64.
-- A migration guide with side-by-side examples is not written yet.
-- stdin/stdout behavior remains unsupported.
+- A migration guide exists with side-by-side stable and compatibility examples.
+- stdin and stdout stream handling is caller-owned. Use `optimize_from_memory`
+  after reading bytes.
 - `backup` and `preserve_attrs` are wrapper-specific controls, not pyoxipng
   parity targets.
 
@@ -186,11 +191,10 @@ they do not create unsafe defaults.
    - `analyze(...)` exposes upstream `OutFile::None`.
 
 6. Behavior and migration parity:
-   - Add a migration guide with side-by-side pyoxipng and oxipng-pybind
-     examples.
+   - Keep the pyoxipng migration guide synced with stable API examples.
    - Add tests for pyoxipng-style examples from public docs, adapted only where
      behavior intentionally differs.
-   - Decide whether stdin/stdout workflows are required or remain unsupported.
+   - Keep stdin and stdout stream handling caller-owned.
 
 ## Future Work
 
@@ -200,10 +204,8 @@ Split future work into small phases:
   artifact metadata, and document the first release checklist.
 - PyPI phase: add Trusted Publishing, choose wheel-only or wheel-plus-sdist
   policy, and document rollback expectations.
-- Compatibility phase: add a migration guide and decide whether stdin/stdout
-  workflows are required.
-- Upstream option phase: keep stdin/stdout unsupported unless a focused design
-  approves process I/O behavior.
+- Compatibility phase: keep the migration guide synced with tested examples.
+- Upstream option phase: keep process stream handling outside this API.
 - Platform phase: decide whether musllinux, 32-bit Windows, or extra Linux
   architectures are in scope.
 - Documentation phase: keep stable API examples synchronized with any
@@ -216,11 +218,10 @@ Split future work into small phases:
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Choose the next milestone: PyPI packaging parity, migration docs, or a
-   stdin/stdout decision.
+4. Choose the next milestone: PyPI packaging parity or migration guide tests.
 5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
    verification first.
-6. If migration docs are chosen, write side-by-side pyoxipng and
-   oxipng-pybind examples. Make the warning-emitting compatibility paths clear.
+6. If migration guide tests are chosen, verify the examples against tests. Make
+   the warning-emitting compatibility paths clear.
 7. Turn the chosen milestone into a focused implementation plan before adding
    more API surface.

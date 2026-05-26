@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Promote all practical upstream `oxipng` 10.1.1 surfaces to stable Python API except stdin/stdout.
+**Goal:** Promote all practical upstream `oxipng` 10.1.1 surfaces to stable Python API except stdin and stdout stream handling.
 
 **Architecture:** Keep compatibility-only behavior only for pyoxipng constructor/naming aliases. Promote option keywords and factories by removing deprecation warnings, updating stubs, and parsing them as stable Rust options. Add `analyze(...)` as the stable wrapper for upstream `OutFile::None`.
 
@@ -376,7 +376,7 @@ Update docs to show:
 
 - `max_decompressed_size`, advanced options, explicit strip/keep chunks, deflater tuning, predefined filters, and `analyze` are stable API.
 - Remaining compatibility-only paths are `ColorType` descriptors, pyoxipng raw-image constructor, and naming aliases.
-- stdin/stdout remains unsupported.
+- stdin and stdout stream handling remains caller-owned.
 - `OutFile::None` is represented by `analyze`.
 - `FilterStrategy::Predefined` is represented by `FilterStrategy.predefined`.
 

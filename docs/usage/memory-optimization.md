@@ -36,7 +36,26 @@ optimized_from_view = optimize_from_memory(memoryview(png_bytes))
 members or string aliases. Common options include `interlace`, `strip`,
 `deflate`, `filter`, `fix_errors`, and `force`.
 
-stdin/stdout optimization is unsupported.
+Advanced options include `optimize_alpha`, `bit_depth_reduction`,
+`color_type_reduction`, `palette_reduction`, `grayscale_reduction`,
+`idat_recoding`, `scale_16`, `fast_evaluation`, `timeout`, and
+`max_decompressed_size`.
+
+`backup` and `preserve_attrs` are file-only options. `optimize_from_memory`
+rejects them.
+
+stdin and stdout optimization are not part of this API. Callers must decide
+when to read from stdin and when to write to stdout:
+
+```python
+import sys
+
+from oxipng import optimize_from_memory
+
+data = sys.stdin.buffer.read()
+optimized = optimize_from_memory(data)
+sys.stdout.buffer.write(optimized)
+```
 
 ## Errors
 

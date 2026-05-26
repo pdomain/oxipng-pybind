@@ -5,7 +5,7 @@
 Rewrite active documentation so it is clear, short, and easy to scan.
 
 The reader can use Python, run shell commands, and read basic API examples. Keep
-the prose near a 10th-grade reading level.
+the prose near a grade 7 reading level where practical.
 
 ## Scope
 
@@ -53,10 +53,11 @@ criteria intact.
 - Do not change API behavior.
 - Do not change implementation plan meaning.
 - Do not mark work complete unless the existing plan already marks it complete.
-- Keep pyoxipng status current: warning-emitting compatibility paths exist, but
-  stdin/stdout, migration docs, and packaging/platform parity remain open.
-- Keep archive references truthful. Link to archives when useful, but do not
-  edit archived prose for tone.
+- Keep pyoxipng status current: remaining compatibility-only paths warn. PyPI
+  publishing and extra platform targets remain open. Migration docs exist.
+  stdin and stdout stream handling stays caller-owned.
+- Keep archive references truthful. Link to archives when useful. Edit archives
+  only when they read as current policy or badly violate clarity rules.
 
 ## Rewrite Shape
 

@@ -4,9 +4,12 @@
 
 The workflow is artifact-only in this phase.
 
-It builds wheels with `PyO3/maturin-action@v1`. It uploads platform-specific
-wheel artifacts. It does not publish to PyPI or TestPyPI. It does not build or
-upload an sdist.
+It runs on `workflow_dispatch`, on `v*` tags, and on pull requests that touch
+release-relevant files.
+
+It builds wheels with `PyO3/maturin-action@v1` and Python 3.11. It uploads
+platform-specific wheel artifacts. It does not publish to PyPI or TestPyPI. It
+does not build or upload an sdist.
 
 ## Wheel Tags
 
@@ -30,7 +33,14 @@ Each wheel is installed into a clean virtual environment. Then
 `scripts/smoke_wheel.py` checks it.
 
 The smoke test imports the package. It optimizes files in place and to an output
-path. It optimizes bytes in memory. It verifies all outputs with Pillow.
+path. It optimizes bytes in memory from `bytearray` and `memoryview`. It creates
+a `RawImage`, adds a PNG chunk, and optimizes it. It verifies all outputs with
+Pillow.
+
+The smoke test also verifies wheel typing files:
+
+- `oxipng/__init__.pyi`
+- `oxipng/py.typed`
 
 Linux aarch64 uses GitHub's native `ubuntu-24.04-arm` runner. Runtime smoke
 testing gates that target.

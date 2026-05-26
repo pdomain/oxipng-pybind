@@ -23,7 +23,8 @@ png_bytes = raw.create_optimized_png(level=3)
 ## Options
 
 The `RawImage` constructor accepts width, height, color type, bit depth, and
-packed pixel data. Width and height are in pixels.
+packed pixel data. Width and height are in pixels. These values may be
+positional or keyword arguments.
 
 `color_type` accepts `ColorType` enum values or string aliases. `bit_depth`
 accepts `BitDepth` enum values or integer bit depths. Pixel data may be
@@ -69,7 +70,8 @@ rgb = RawImage(
 ```
 
 `transparent` is not accepted for indexed, grayscale-alpha, or RGBA images. Use
-alpha values in palette entries for indexed transparency.
+alpha values in palette entries for indexed transparency. Transparent values
+must fit the selected bit depth.
 
 Add an auxiliary PNG chunk before optimization:
 
@@ -81,8 +83,9 @@ raw.add_png_chunk(b"tEXt", b"Comment\x00created from raw pixels")
 png_bytes = raw.create_optimized_png()
 ```
 
-The binding accepts public, ancillary, safe-to-copy chunk names. It rejects
-structural chunks.
+The chunk name must be four ASCII letters. It must be public, ancillary, and
+safe to copy. The binding rejects structural chunks such as `IHDR`, `PLTE`,
+`IDAT`, `IEND`, `tRNS`, and `iCCP`.
 
 Attach an ICC profile before optimization:
 
@@ -97,9 +100,10 @@ png_bytes = raw.create_optimized_png()
 
 ## Errors
 
-Invalid raw image definitions raise `PngError` when upstream rejects the bit
-depth, color type, or data length. Invalid Python-side palette and transparency
-values raise `ValueError`.
+Invalid bit depths, color types, palette values, transparency values, and chunk
+names raise `ValueError`. Unsupported keywords raise `TypeError`. Invalid raw
+image data, such as the wrong data length for the image shape, raises
+`PngError`.
 
 ```python
 from oxipng import BitDepth, ColorType, PngError, RawImage
@@ -134,3 +138,5 @@ raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
 Do not mix the two shapes. For example, `RawImage(data, width, height,
 color_type=ColorType.rgba)` is rejected because pyoxipng order requires a
 `ColorType.rgba()` descriptor.
+
+See [Move from pyoxipng](pyoxipng-migration.md) for all migration rules.

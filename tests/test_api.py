@@ -472,6 +472,21 @@ def test_stable_raw_image_constructor_does_not_warn() -> None:
     assert_readable_png_bytes(raw.create_optimized_png())
 
 
+def test_stable_raw_image_constructor_accepts_keyword_arguments_without_warning() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        raw = RawImage(
+            width=1,
+            height=1,
+            color_type=ColorType.rgb,
+            bit_depth=BitDepth.eight,
+            data=bytes([255, 0, 0]),
+        )
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
 def test_raw_image_rgba_create_optimized_png_returns_readable_bytes() -> None:
     raw = RawImage(
         2,

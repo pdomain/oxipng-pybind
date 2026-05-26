@@ -859,6 +859,12 @@ git commit -m "feat: add pyoxipng raw image compatibility"
 
 Expected: commit succeeds.
 
+- [x] **Spec compliance follow-up: Preserve stable RawImage keyword construction**
+
+Added a regression test and adjusted the tuple/kwargs constructor parser so stable
+`RawImage` construction still accepts positional-or-keyword arguments without
+emitting `DeprecationWarning`.
+
 ## Task 4: Add Advanced Boolean Options and Timeout
 
 **Files:**

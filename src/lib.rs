@@ -686,14 +686,25 @@ struct PyRawImage {
 
 impl PyRawImage {
     fn new_stable(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let width: u32 = args.get_item(0)?.extract()?;
-        let height: u32 = args.get_item(1)?.extract()?;
-        let color_type = args.get_item(2)?;
-        let bit_depth = args.get_item(3)?;
-        let data = args.get_item(4)?;
+        Self::reject_extra_kwargs(
+            kwargs,
+            &[
+                "width",
+                "height",
+                "color_type",
+                "bit_depth",
+                "data",
+                "palette",
+                "transparent",
+            ],
+        )?;
+        let width: u32 = Self::raw_image_required_arg(args, kwargs, 0, "width")?.extract()?;
+        let height: u32 = Self::raw_image_required_arg(args, kwargs, 1, "height")?.extract()?;
+        let color_type = Self::raw_image_required_arg(args, kwargs, 2, "color_type")?;
+        let bit_depth = Self::raw_image_required_arg(args, kwargs, 3, "bit_depth")?;
+        let data = Self::raw_image_required_arg(args, kwargs, 4, "data")?;
         let palette = Self::raw_image_kwarg(kwargs, "palette")?;
         let transparent = Self::raw_image_kwarg(kwargs, "transparent")?;
-        Self::reject_extra_kwargs(kwargs, &["palette", "transparent"])?;
         Self::from_parts(
             width,
             height,
@@ -759,6 +770,32 @@ impl PyRawImage {
             .map(Option::flatten)
     }
 
+    fn raw_image_required_arg<'py>(
+        args: &Bound<'py, PyTuple>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+        index: usize,
+        name: &str,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let keyword_value = Self::raw_image_kwarg(kwargs, name)?;
+        if index < args.len() {
+            if keyword_value.is_some() {
+                return Err(PyTypeError::new_err(format!(
+                    "RawImage got multiple values for argument '{name}'"
+                )));
+            }
+            return args.get_item(index);
+        }
+        keyword_value.ok_or_else(|| {
+            PyTypeError::new_err(format!(
+                "RawImage missing required argument '{name}' for stable constructor"
+            ))
+        })
+    }
+
+    fn has_raw_image_kwarg(kwargs: Option<&Bound<'_, PyDict>>, name: &str) -> PyResult<bool> {
+        Ok(Self::raw_image_kwarg(kwargs, name)?.is_some())
+    }
+
     fn reject_extra_kwargs(kwargs: Option<&Bound<'_, PyDict>>, allowed: &[&str]) -> PyResult<()> {
         if let Some(dict) = kwargs {
             for key in dict.keys().iter() {
@@ -799,11 +836,11 @@ impl PyRawImage {
     #[new]
     #[pyo3(signature = (*args, **kwargs))]
     fn new(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        if args.len() == 5 {
-            return Self::new_stable(args, kwargs);
-        }
-        if args.len() == 3 {
+        if args.len() == 3 && Self::has_raw_image_kwarg(kwargs, "color_type")? {
             return Self::new_pyoxipng_compat(args, kwargs);
+        }
+        if args.len() <= 5 {
+            return Self::new_stable(args, kwargs);
         }
 
         Err(PyTypeError::new_err(

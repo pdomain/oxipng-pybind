@@ -8,9 +8,6 @@ the underlying issue before adding entries here.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `COM812` | `pyproject.toml` | Ruff formatter owns trailing-comma layout. |
-| `D100` | `pyproject.toml` | Public package and module docs live in README and `docs/`; file-level docstrings add noise. |
-| `D104` | `pyproject.toml` | Package docs live in README and `docs/`; `__init__` exports are documented by stubs. |
-| `D107` | `pyproject.toml` | Constructor behavior is covered by class/function docs and type stubs. |
 | `D203` | `pyproject.toml` | Incompatible with `D211`; the configured Google docstring convention uses `D211`. |
 | `D212` | `pyproject.toml` | Incompatible with `D213`; the configured Google docstring convention uses `D213`. |
 | `E501` | `pyproject.toml` | Ruff formatter owns line wrapping; long literals and URLs stay readable. |
@@ -21,7 +18,21 @@ the underlying issue before adding entries here.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `ANN`, `D`, `PLR2004`, `S101`, `S108` | `tests/**/*.py` in `pyproject.toml` | Tests intentionally use asserts, fixtures, magic sample values, temporary paths, and descriptive test names instead of production-style docstrings and full annotations. |
-| `D`, `S310`, `S603`, `T201` | `scripts/*.py` in `pyproject.toml` | Helper scripts are small command-line tools: docs live in command/help text, subprocess and URL calls are the intended behavior, and printing is their CLI interface. |
+| `S310`, `S603`, `T201` | `scripts/*.py` in `pyproject.toml` | Helper scripts intentionally perform URL calls, subprocess calls, and printing; docstrings remain enforced because these scripts encode release and CI policy. |
+
+## Docstring Policy
+
+Production Python and automation scripts are docstring-first. Public modules,
+packages, classes, functions, and methods need docstrings unless a narrower
+exception is documented here.
+
+Docstrings must be concise, specific, and concrete. Prefer one sentence. Name
+the contract or side effect. Avoid filler such as "This function", "Responsible
+for", "Handles", and broad summaries that restate the identifier.
+
+Tests are name-first. Test function names describe behavior, and `tests/**/*.py`
+keeps `D` ignored to avoid duplicate prose. Add test helper docstrings only
+when they clarify shared behavior.
 
 ## Inline Ruff Suppressions
 

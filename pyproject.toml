@@ -114,9 +114,6 @@ select = [
 ]
 ignore = [
     "COM812", # Formatter owns trailing-comma layout; recommended by Ruff formatter docs.
-    "D100", # Public package/module docs live in README/docs; file-level docstrings add noise here.
-    "D104", # Package docs live in README/docs; __init__ exports are documented by stubs.
-    "D107", # __init__ behavior is covered by class/function docs and type stubs.
     "D203", # Incompatible with D211; Google docstring convention uses D211.
     "D212", # Incompatible with D213; Google docstring convention uses D213.
     "E501", # Ruff formatter owns line wrapping; long literals and URLs stay readable.
@@ -130,9 +127,9 @@ convention = "google"
 # Tests intentionally use asserts, fixtures, magic sample values, and descriptive test names
 # instead of production-style docstrings and full annotations.
 "tests/**/*.py" = ["ANN", "D", "PLR2004", "S101", "S108"]
-# Helper scripts are small command-line tools: docs live in command/help text, subprocess and
-# URL calls are the intended behavior, and printing is their CLI interface.
-"scripts/*.py" = ["D", "S310", "S603", "T201"]
+# Helper scripts intentionally perform URL calls, subprocess calls, and printing.
+# Docstrings remain enforced because these scripts encode release and CI policy.
+"scripts/*.py" = ["S310", "S603", "T201"]
 
 [tool.basedpyright]
 include = ["oxipng", "tests", "scripts"]

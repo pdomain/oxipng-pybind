@@ -342,7 +342,7 @@ Expected: commit succeeds.
 - Verify: `docs/archive/**` is not rewritten.
 - Verify: git diff and recent commits.
 
-- [ ] **Step 1: Run full docs verification**
+- [x] **Step 1: Run full docs verification**
 
 Run:
 
@@ -356,7 +356,7 @@ Expected:
 - markdownlint passes.
 - `git diff --check` prints no whitespace errors.
 
-- [ ] **Step 2: Confirm archive files were not rewritten**
+- [x] **Step 2: Confirm archive files were not rewritten**
 
 Run:
 
@@ -366,7 +366,7 @@ git diff --name-only origin/main...HEAD | rg '^docs/archive/' || true
 
 Expected: no output, unless a deliberate archive index link correction was made.
 
-- [ ] **Step 3: Inspect final docs diff**
+- [x] **Step 3: Inspect final docs diff**
 
 Run:
 
@@ -381,7 +381,7 @@ Expected:
 - `docs/api-surface/oxipng-10.1.1.toml` is not listed.
 - `docs/archive/**` is not listed.
 
-- [ ] **Step 4: Commit final checklist**
+- [x] **Step 4: Commit final checklist**
 
 Run:
 

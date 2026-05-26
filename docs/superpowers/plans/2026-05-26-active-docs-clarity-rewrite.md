@@ -67,7 +67,7 @@ Apply these rules to every active doc:
 - Modify: `docs/usage/memory-optimization.md`
 - Modify: `docs/usage/raw-image.md`
 
-- [ ] **Step 1: Read current public API facts**
+- [x] **Step 1: Read current public API facts**
 
 Run:
 
@@ -80,7 +80,7 @@ sed -n '1,240p' docs/usage/raw-image.md
 
 Expected: API names and examples are visible before editing.
 
-- [ ] **Step 2: Rewrite `README.md`**
+- [x] **Step 2: Rewrite `README.md`**
 
 Rewrite `README.md` so it has these sections in this order:
 
@@ -103,7 +103,7 @@ Required facts:
 - pyoxipng compatibility paths emit `DeprecationWarning`.
 - stdin/stdout optimization is still unsupported.
 
-- [ ] **Step 3: Rewrite `docs/README.md`**
+- [x] **Step 3: Rewrite `docs/README.md`**
 
 Rewrite the docs index as grouped links with these sections:
 
@@ -117,7 +117,7 @@ Rewrite the docs index as grouped links with these sections:
 
 Keep every active docs link reachable from this index.
 
-- [ ] **Step 4: Rewrite usage docs**
+- [x] **Step 4: Rewrite usage docs**
 
 For each usage doc, use this shape:
 
@@ -129,7 +129,7 @@ For each usage doc, use this shape:
 
 Keep examples runnable and short. Keep API names exact.
 
-- [ ] **Step 5: Verify top-level and usage docs**
+- [x] **Step 5: Verify top-level and usage docs**
 
 Run:
 
@@ -143,7 +143,7 @@ Expected:
 - markdownlint passes.
 - `git diff --check` prints no whitespace errors.
 
-- [ ] **Step 6: Commit top-level and usage docs**
+- [x] **Step 6: Commit top-level and usage docs**
 
 Run:
 

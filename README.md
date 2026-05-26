@@ -1,74 +1,91 @@
 # oxipng-pybind
 
-`oxipng-pybind` is a focused Python wrapper around the Rust
-[`oxipng`](https://github.com/oxipng/oxipng) library.
-
-It supports file-based and in-memory PNG optimization while tracking current
-upstream `oxipng` releases.
+`oxipng-pybind` is a Python wrapper for the Rust `oxipng` PNG optimizer.
+It optimizes PNG files, PNG bytes, and raw pixel data through the `oxipng`
+Python module.
 
 ## Install
 
-Release artifacts use PyO3 ABI3 wheels for Python 3.11 and newer. Until PyPI
-publishing is enabled, install from a built wheel artifact or build locally with
-`make wheel`.
+The distribution name is `oxipng-pybind`. The import module is `oxipng`.
 
-## Supported API
+Release artifacts require Python 3.11 or newer. PyPI publishing is not enabled
+yet. Install from a built wheel artifact, or build a local wheel:
 
-The distribution is named `oxipng-pybind`, but the import module is `oxipng`.
+```bash
+make wheel
+```
+
+## Basic API
+
+The main entry points are `optimize`, `optimize_from_memory`, and `RawImage`.
 
 ```python
-from oxipng import Deflater, FilterStrategy, Interlacing, StripChunks
+from pathlib import Path
+
 from oxipng import BitDepth, ColorType, RawImage
 from oxipng import optimize, optimize_from_memory
 
+path = Path("cover.png")
 optimize(path, level=6)
-data = optimize_from_memory(png_bytes, strip=StripChunks.safe)
-raw_png = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
-optimized = raw_png.create_optimized_png()
+
+png_bytes = path.read_bytes()
+optimized_bytes = optimize_from_memory(png_bytes, strip="safe")
+
+raw = RawImage(
+    1,
+    1,
+    ColorType.rgba,
+    BitDepth.eight,
+    bytes([255, 0, 0, 255]),
+)
+raw_png = raw.create_optimized_png()
 ```
 
-Supported objects:
+`optimize` reads a PNG file. If `output` is omitted, it writes the optimized
+PNG back to the input path.
 
-- `oxipng.optimize(input, output=None, *, level=2, interlace=None, strip=None,
-  deflate=None, filter=None, fix_errors=False, force=False, backup=False,
-  preserve_attrs=False)`
-- `oxipng.optimize_from_memory(data, *, level=2, interlace=None, strip=None,
-  deflate=None, filter=None, fix_errors=False, force=False)`
-- `oxipng.PngError`
-- `oxipng.Interlacing`
-- `oxipng.StripChunks`
-- `oxipng.Deflater`
-- `oxipng.FilterStrategy`
-- `oxipng.ColorType`
-- `oxipng.BitDepth`
-- `oxipng.RawImage`
+```python
+optimize("cover.png", output="cover.optimized.png", level=4)
+```
 
-`input` and `output` may be strings, bytes paths, or `os.PathLike` values.
-When `output` is omitted, the input file is optimized in place.
+`optimize_from_memory` reads PNG data from `bytes`, `bytearray`, or
+`memoryview`. It returns optimized PNG data as `bytes`.
 
-`level` must be an integer from `0` through `6`. Enum-like options accept the
-documented enum members or their string aliases.
+```python
+optimized_bytes = optimize_from_memory(png_bytes, level=4)
+```
 
-## Unsupported pyoxipng APIs
+`RawImage` builds an optimized PNG from packed pixel bytes.
 
-This package is not a full `pyoxipng` replacement. These APIs are intentionally
-not provided:
+```python
+raw_png = raw.create_optimized_png(level=3)
+```
 
-- `RowFilter`
-- arbitrary chunk keep/strip lists
-- stdin/stdout optimization
-- lossy transparent-pixel optimization knobs
+PNG decode and optimization failures raise `PngError`. Caller errors raise
+standard Python exceptions such as `TypeError` or `ValueError`.
 
-Unsupported keyword arguments raise `TypeError`.
+## pyoxipng Compatibility
+
+Some `pyoxipng` compatibility paths exist for migration tests. These paths emit
+`DeprecationWarning`. New code should use the stable `oxipng-pybind` API.
+
+Compatibility-only paths include explicit chunk keep/strip lists and upstream
+alpha options. They emit `DeprecationWarning` and are not the stable API.
+
+stdin/stdout optimization is still unsupported.
 
 ## Development
 
-`make setup` installs the pinned Rust toolchain through `rustup` when needed,
-installs `cargo-deny`, syncs Python development dependencies, builds the editable
-extension, and installs pre-commit hooks.
+Set up the pinned Rust toolchain, Python dependencies, editable extension, and
+pre-commit hooks:
 
 ```bash
 make setup
+```
+
+Common checks:
+
+```bash
 make test
 make lint
 make typecheck
@@ -77,12 +94,12 @@ make ci
 
 ## Upstream Tracking
 
-Package versions mirror upstream `oxipng` versions when practical. The
-scheduled upstream bump workflow opens a pull request when a new upstream
-release is available. Auto-merge is enabled only after the repository's
-required checks pass.
+Project versions track upstream `oxipng` versions when practical. A scheduled
+workflow checks for new upstream releases and opens a pull request when an
+update is available.
 
 ## License
 
-This wrapper is released under the Unlicense. See `LICENSE`. Upstream `oxipng` is MIT
-licensed; see `THIRD_PARTY_NOTICES.md`.
+This wrapper is released under the Unlicense. See `LICENSE`.
+
+Upstream `oxipng` is MIT licensed. See `THIRD_PARTY_NOTICES.md`.

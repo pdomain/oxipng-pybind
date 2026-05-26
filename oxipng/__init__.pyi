@@ -10,15 +10,34 @@ class Interlacing(Enum):
     keep = "keep"
     off = "off"
     on = "on"
+    Off = "off"
+    Adam7 = "on"
 
 class StripChunks(Enum):
     none = "none"
     safe = "safe"
     all = "all"
 
+    @staticmethod
+    def strip(names: list[str] | tuple[str, ...] | set[str]) -> _CompatStripChunks:
+        """Create a pyoxipng-compatible strip-chunk option; emits DeprecationWarning."""
+
+    @staticmethod
+    def keep(names: list[str] | tuple[str, ...] | set[str]) -> _CompatStripChunks:
+        """Create a pyoxipng-compatible keep-chunk option; emits DeprecationWarning."""
+
 class Deflater(Enum):
     libdeflater = "libdeflater"
     zopfli = "zopfli"
+
+class Deflaters:
+    @staticmethod
+    def libdeflater(compression: int = 11) -> _CompatDeflater:
+        """Create a pyoxipng-compatible libdeflater option; emits DeprecationWarning."""
+
+    @staticmethod
+    def zopfli(iterations: int = 15) -> _CompatDeflater:
+        """Create a pyoxipng-compatible zopfli option; emits DeprecationWarning."""
 
 class FilterStrategy(Enum):
     none = "none"
@@ -32,12 +51,31 @@ class FilterStrategy(Enum):
     bigent = "bigent"
     brute = "brute"
 
-class ColorType(Enum):
-    grayscale = "grayscale"
-    rgb = "rgb"
-    indexed = "indexed"
-    grayscale_alpha = "grayscale_alpha"
-    rgba = "rgba"
+class RowFilter(Enum):
+    none = "none"
+    sub = "sub"
+    up = "up"
+    average = "average"
+    paeth = "paeth"
+    minsum = "minsum"
+    entropy = "entropy"
+    bigrams = "bigrams"
+    bigent = "bigent"
+    brute = "brute"
+
+class _CompatColorType:
+    kind: str
+    bit_depth: int
+    palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None
+    transparent: int | tuple[int, int, int] | None
+
+class _CompatStripChunks:
+    mode: str
+    names: tuple[str, ...]
+
+class _CompatDeflater:
+    kind: str
+    value: int
 
 class BitDepth(Enum):
     one = 1
@@ -45,6 +83,24 @@ class BitDepth(Enum):
     four = 4
     eight = 8
     sixteen = 16
+
+class ColorType(Enum):
+    grayscale = "grayscale"
+    rgb = "rgb"
+    indexed = "indexed"
+    grayscale_alpha = "grayscale_alpha"
+    rgba = "rgba"
+
+    def __call__(
+        self,
+        transparent: int
+        | tuple[int, int, int]
+        | list[tuple[int, int, int] | tuple[int, int, int, int]]
+        | None = None,
+        *,
+        bit_depth: BitDepth | int = BitDepth.eight,
+    ) -> _CompatColorType:
+        """Create a pyoxipng-compatible color descriptor; emits DeprecationWarning."""
 
 class PngError(Exception):
     """Raised when oxipng cannot optimize the input PNG."""

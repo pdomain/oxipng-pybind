@@ -42,7 +42,7 @@ Compatibility paths should work where they map cleanly, but they are not the sup
 - Modify: `oxipng/__init__.py`
 - Modify: `oxipng/__init__.pyi`
 
-- [ ] **Step 1: Write failing tests for compatibility exports, docstrings, and warnings**
+- [x] **Step 1: Write failing tests for compatibility exports, docstrings, and warnings**
 
 Add these imports to the existing `from oxipng import (...)` block in `tests/test_api.py`:
 
@@ -120,7 +120,7 @@ def test_pyoxipng_compatibility_factories_warn() -> None:
     assert zopfli.kind == "zopfli"
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -130,7 +130,7 @@ uv run --group dev pytest tests/test_api.py::test_pyoxipng_compatibility_exports
 
 Expected: fail because `RowFilter`, `Deflaters`, and compatibility factories do not exist.
 
-- [ ] **Step 3: Add compatibility objects in `oxipng/__init__.py`**
+- [x] **Step 3: Add compatibility objects in `oxipng/__init__.py`**
 
 Replace the imports at the top of `oxipng/__init__.py` with:
 
@@ -274,7 +274,7 @@ class Deflaters:
 
 Add `Deflaters` and `RowFilter` to `__all__`.
 
-- [ ] **Step 4: Update `oxipng/__init__.pyi` for scaffold types**
+- [x] **Step 4: Update `oxipng/__init__.pyi` for scaffold types**
 
 Add `Any` and overload imports:
 
@@ -342,7 +342,7 @@ Add this callable signature to `ColorType`:
         """Create a pyoxipng-compatible color descriptor; emits DeprecationWarning."""
 ```
 
-- [ ] **Step 5: Run facade tests**
+- [x] **Step 5: Run facade tests**
 
 Run:
 
@@ -352,7 +352,7 @@ uv run --group dev pytest tests/test_api.py::test_pyoxipng_compatibility_exports
 
 Expected: both tests pass.
 
-- [ ] **Step 6: Run Python lint and type checks**
+- [x] **Step 6: Run Python lint and type checks**
 
 Run:
 
@@ -363,7 +363,7 @@ uv run --group dev basedpyright
 
 Expected: Ruff reports `All checks passed!`; basedpyright reports `0 errors, 0 warnings, 0 notes`.
 
-- [ ] **Step 7: Commit facade scaffolding**
+- [x] **Step 7: Commit facade scaffolding**
 
 Run:
 

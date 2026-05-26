@@ -1,6 +1,7 @@
 """Supported public API tests."""
 
 import inspect
+import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any, TypeAlias, cast
@@ -12,16 +13,21 @@ from oxipng import (
     BitDepth,
     ColorType,
     Deflater,
+    Deflaters,
     FilterStrategy,
     Interlacing,
     PngError,
     RawImage,
+    RowFilter,
     StripChunks,
     optimize,
     optimize_from_memory,
 )
 
 Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
+PYROXIPNG_WARNING = (
+    "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
+)
 
 
 class CustomPathLike:
@@ -80,6 +86,68 @@ def test_public_callables_expose_runtime_docstrings() -> None:
     assert RawImage.add_png_chunk.__doc__ == "Add an auxiliary PNG chunk."
     assert RawImage.add_icc_profile.__doc__ == "Add an ICC profile."
     assert RawImage.create_optimized_png.__doc__ == "Return optimized PNG bytes."
+
+
+def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
+    assert RowFilter.none.value == "none"
+    assert RowFilter.brute.value == "brute"
+    assert Interlacing.Off.value == "off"
+    assert Interlacing.Adam7.value == "on"
+    assert callable(Deflaters.libdeflater)
+    assert callable(Deflaters.zopfli)
+    assert callable(StripChunks.strip)
+    assert callable(StripChunks.keep)
+    assert ColorType.rgb.__call__.__doc__ == (
+        "Create a pyoxipng-compatible color descriptor; emits DeprecationWarning."
+    )
+    assert (
+        StripChunks.strip.__doc__
+        == "Create a pyoxipng-compatible strip-chunk option; emits DeprecationWarning."
+    )
+    assert (
+        StripChunks.keep.__doc__
+        == "Create a pyoxipng-compatible keep-chunk option; emits DeprecationWarning."
+    )
+    assert Deflaters.libdeflater.__doc__ == (
+        "Create a pyoxipng-compatible libdeflater option; emits DeprecationWarning."
+    )
+    assert (
+        Deflaters.zopfli.__doc__
+        == "Create a pyoxipng-compatible zopfli option; emits DeprecationWarning."
+    )
+
+
+def test_pyoxipng_compatibility_factories_warn() -> None:
+    warnings.simplefilter("always", DeprecationWarning)
+
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        color_type = ColorType.rgb(None)
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        rgba = ColorType.rgba()
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        indexed = ColorType.indexed([(255, 0, 0)])
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        grayscale = ColorType.grayscale(None)
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        grayscale_alpha = ColorType.grayscale_alpha()
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        strip = StripChunks.strip(["tEXt"])
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        keep = StripChunks.keep({"iCCP"})
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        libdeflater = Deflaters.libdeflater(12)
+    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+        zopfli = Deflaters.zopfli(15)
+
+    assert color_type.kind == "rgb"
+    assert rgba.kind == "rgba"
+    assert indexed.kind == "indexed"
+    assert grayscale.kind == "grayscale"
+    assert grayscale_alpha.kind == "grayscale_alpha"
+    assert strip.mode == "strip"
+    assert keep.mode == "keep"
+    assert libdeflater.kind == "libdeflater"
+    assert zopfli.kind == "zopfli"
 
 
 def test_optimize_in_place_with_high_compression_level(png_path: Path) -> None:

@@ -89,6 +89,7 @@ Attach an ICC profile before optimization:
 ```python
 from oxipng import BitDepth, ColorType, RawImage
 
+icc_profile_bytes = b"example ICC profile bytes"
 raw = RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]))
 raw.add_icc_profile(icc_profile_bytes)
 png_bytes = raw.create_optimized_png()

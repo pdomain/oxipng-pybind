@@ -26,9 +26,10 @@ wrappers own ergonomic names and path handling.
 `entropy`, `bigrams`, `bigent`, and `brute`. String aliases also include
 numeric values `"0"` through `"9"` in that order.
 
-## Unexposed Options
+## Compatibility-Only Options
 
-These upstream `Options` fields are intentionally unexposed:
+These upstream `Options` fields are accepted only as pyoxipng compatibility
+paths. They emit `DeprecationWarning` and are not stable API:
 
 - `optimize_alpha`
 - `bit_depth_reduction`
@@ -39,9 +40,14 @@ These upstream `Options` fields are intentionally unexposed:
 - `scale_16`
 - `fast_evaluation`
 - `timeout`
+
+## Unexposed Options
+
+This upstream `Options` field is not exposed:
+
 - `max_decompressed_size`
 
-These upstream enum variants are intentionally unexposed:
+These upstream enum variants are not exposed as stable API:
 
 - `StripChunks::Strip`
 - `StripChunks::Keep`

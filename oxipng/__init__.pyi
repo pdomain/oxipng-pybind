@@ -115,6 +115,14 @@ class ColorType(Enum):
 class PngError(Exception):
     """Raised when oxipng cannot optimize the input PNG."""
 
+class OptimizationResult:
+    """PNG optimization sizes from a dry run."""
+
+    @property
+    def original_size(self) -> int: ...
+    @property
+    def optimized_size(self) -> int: ...
+
 class RawImage:
     @overload
     def __init__(
@@ -199,6 +207,33 @@ def optimize(
     max_decompressed_size: int | None = None,
 ) -> None:
     """Optimize a PNG file on disk."""
+
+def analyze(
+    input: StrOrBytesPath,
+    *,
+    level: int = 2,
+    interlace: Interlacing | str | None = None,
+    strip: StripChunks | _CompatStripChunks | str | None = None,
+    deflate: Deflater | _CompatDeflater | str | None = None,
+    filter: FilterOption
+    | list[FilterOption]
+    | tuple[FilterOption, ...]
+    | set[FilterOption]
+    | None = None,
+    fix_errors: bool = False,
+    force: bool = False,
+    optimize_alpha: bool | None = None,
+    bit_depth_reduction: bool | None = None,
+    color_type_reduction: bool | None = None,
+    palette_reduction: bool | None = None,
+    grayscale_reduction: bool | None = None,
+    idat_recoding: bool | None = None,
+    scale_16: bool | None = None,
+    fast_evaluation: bool | None = None,
+    timeout: float | None = None,
+    max_decompressed_size: int | None = None,
+) -> OptimizationResult:
+    """Return PNG optimization sizes without writing output."""
 
 def optimize_from_memory(
     data: BytesLike,

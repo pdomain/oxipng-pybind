@@ -532,6 +532,26 @@ fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
     Ok(backup)
 }
 
+/// PNG optimization sizes from a dry run.
+#[pyclass(name = "OptimizationResult", frozen)]
+struct PyOptimizationResult {
+    original_size: usize,
+    optimized_size: usize,
+}
+
+#[pymethods]
+impl PyOptimizationResult {
+    #[getter]
+    fn original_size(&self) -> usize {
+        self.original_size
+    }
+
+    #[getter]
+    fn optimized_size(&self) -> usize {
+        self.optimized_size
+    }
+}
+
 /// Optimize a PNG file on disk.
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
@@ -573,6 +593,31 @@ fn optimize(
     py.allow_threads(move || oxi::optimize(&input_file, &output_file, &parsed.options))
         .map_err(map_png_error)?;
     Ok(())
+}
+
+/// Return PNG optimization sizes without writing output.
+#[pyfunction]
+#[pyo3(signature = (input, **kwargs))]
+#[pyo3(
+    text_signature = "(input, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, max_decompressed_size=None)"
+)]
+fn analyze(
+    py: Python<'_>,
+    input: PathBuf,
+    kwargs: Option<&Bound<'_, PyDict>>,
+) -> PyResult<PyOptimizationResult> {
+    let parsed = parse_options(kwargs, ParseMode::Memory)?;
+    let input_file = oxi::InFile::Path(input);
+    let output_file = oxi::OutFile::None;
+
+    let (original_size, optimized_size) = py
+        .allow_threads(move || oxi::optimize(&input_file, &output_file, &parsed.options))
+        .map_err(map_png_error)?;
+
+    Ok(PyOptimizationResult {
+        original_size,
+        optimized_size,
+    })
 }
 
 fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
@@ -1066,6 +1111,8 @@ fn optimize_from_memory(
 fn _oxipng(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("PngError", py.get_type::<PngError>())?;
     module.add_class::<PyRawImage>()?;
+    module.add_class::<PyOptimizationResult>()?;
+    module.add_function(wrap_pyfunction!(analyze, module)?)?;
     module.add_function(wrap_pyfunction!(optimize, module)?)?;
     module.add_function(wrap_pyfunction!(optimize_from_memory, module)?)?;
     Ok(())

@@ -291,7 +291,7 @@ Expected: commit succeeds.
 - Modify: `tests/test_api.py`
 - Modify: `docs/superpowers/plans/2026-05-26-upstream-surface-promotion.md`
 
-- [ ] **Step 1: Add failing analyze tests**
+- [x] **Step 1: Add failing analyze tests**
 
 Add tests that:
 
@@ -304,7 +304,7 @@ Add tests that:
 - `analyze(png_path, preserve_attrs=True)` raises `TypeError`.
 - stable analyze calls do not emit `DeprecationWarning`.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run:
 
@@ -314,7 +314,7 @@ uv run --group dev pytest tests/test_api.py -q
 
 Expected: tests fail because `analyze` and `OptimizationResult` do not exist.
 
-- [ ] **Step 3: Add Rust result class and function**
+- [x] **Step 3: Add Rust result class and function**
 
 In `src/lib.rs`:
 
@@ -326,7 +326,7 @@ In `src/lib.rs`:
 - Return upstream optimization result sizes.
 - Add `OptimizationResult` and `analyze` to the module.
 
-- [ ] **Step 4: Update Python facade and stubs**
+- [x] **Step 4: Update Python facade and stubs**
 
 In `oxipng/__init__.py`:
 
@@ -337,7 +337,7 @@ In `oxipng/__init__.pyi`:
 - Add `OptimizationResult` with read-only `original_size` and `optimized_size` properties.
 - Add `analyze` signature with stable file options except `output`, `backup`, and `preserve_attrs`.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 Run:
 
@@ -348,7 +348,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -q
 
 Expected: tests pass.
 
-- [ ] **Step 6: Commit Task 4**
+- [x] **Step 6: Commit Task 4**
 
 Run:
 

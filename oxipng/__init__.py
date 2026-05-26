@@ -184,9 +184,23 @@ ColorType.__call__.__doc__ = (
 )
 
 if TYPE_CHECKING:
-    from .__init__ import PngError, RawImage, optimize, optimize_from_memory
+    from .__init__ import (
+        OptimizationResult,
+        PngError,
+        RawImage,
+        analyze,
+        optimize,
+        optimize_from_memory,
+    )
 else:
-    from _oxipng import PngError, RawImage, optimize, optimize_from_memory
+    from _oxipng import (
+        OptimizationResult,
+        PngError,
+        RawImage,
+        analyze,
+        optimize,
+        optimize_from_memory,
+    )
 
 __all__ = [
     "BitDepth",
@@ -195,10 +209,12 @@ __all__ = [
     "Deflaters",
     "FilterStrategy",
     "Interlacing",
+    "OptimizationResult",
     "PngError",
     "RawImage",
     "RowFilter",
     "StripChunks",
+    "analyze",
     "optimize",
     "optimize_from_memory",
 ]

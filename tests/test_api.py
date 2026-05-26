@@ -16,10 +16,12 @@ from oxipng import (
     Deflaters,
     FilterStrategy,
     Interlacing,
+    OptimizationResult,
     PngError,
     RawImage,
     RowFilter,
     StripChunks,
+    analyze,
     optimize,
     optimize_from_memory,
 )
@@ -53,8 +55,10 @@ def assert_readable_png_bytes(data: bytes) -> None:
 
 
 def test_import_supported_api() -> None:
+    assert callable(analyze)
     assert callable(optimize)
     assert callable(optimize_from_memory)
+    assert OptimizationResult.__name__ == "OptimizationResult"
     assert issubclass(PngError, Exception)
     assert Interlacing.keep.value == "keep"
     assert StripChunks.safe.value == "safe"
@@ -85,7 +89,18 @@ def test_optimize_from_memory_signature_matches_supported_api() -> None:
     )
 
 
+def test_analyze_signature_matches_supported_api() -> None:
+    assert str(inspect.signature(analyze)) == (
+        "(input, *, level=2, interlace=None, strip=None, deflate=None, filter=None, "
+        "fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, "
+        "color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, "
+        "idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, "
+        "max_decompressed_size=None)"
+    )
+
+
 def test_public_callables_expose_runtime_docstrings() -> None:
+    assert analyze.__doc__ == "Return PNG optimization sizes without writing output."
     assert optimize.__doc__ == "Optimize a PNG file on disk."
     assert optimize_from_memory.__doc__ == "Optimize PNG bytes in memory."
     assert RawImage.__doc__ == "Raw image data for creating optimized PNG bytes."
@@ -158,6 +173,41 @@ def test_optimize_to_output_path(png_path: Path, tmp_path: Path) -> None:
     assert output.exists()
     assert_readable_png_path(output)
     assert_readable_png_path(png_path)
+
+
+def test_analyze_returns_optimization_result_without_writing(png_path: Path) -> None:
+    original = png_path.read_bytes()
+
+    result = analyze(png_path)
+
+    assert isinstance(result, OptimizationResult)
+    assert isinstance(result.original_size, int)
+    assert isinstance(result.optimized_size, int)
+    assert result.original_size > 0
+    assert result.optimized_size > 0
+    assert png_path.read_bytes() == original
+
+
+def test_analyze_accepts_stable_options_without_warning(png_path: Path) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = analyze(
+            png_path,
+            level=1,
+            strip=StripChunks.safe,
+            filter=FilterStrategy.predefined(["none", "sub"]),
+            max_decompressed_size=10_000_000,
+        )
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert result.original_size > 0
+    assert result.optimized_size > 0
+
+
+@pytest.mark.parametrize("option", ["backup", "preserve_attrs"])
+def test_analyze_rejects_file_write_options(png_path: Path, option: str) -> None:
+    with pytest.raises(TypeError, match=f"unsupported option: {option}"):
+        cast("Any", analyze)(png_path, **{option: True})
 
 
 def test_optimize_accepts_string_paths(png_path: Path, tmp_path: Path) -> None:

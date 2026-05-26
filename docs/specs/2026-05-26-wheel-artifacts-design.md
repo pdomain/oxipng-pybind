@@ -53,24 +53,13 @@ but it keeps project metadata aligned with the artifact policy. CI must not run
 | Target | Runner | Build strategy | Smoke test |
 | --- | --- | --- | --- |
 | Linux x86_64 manylinux_2_28 | `ubuntu-latest` | `PyO3/maturin-action@v1` | required |
-| Linux aarch64 manylinux_2_28 | native ARM runner preferred | `PyO3/maturin-action@v1` | required on native ARM; explicit exception under QEMU |
+| Linux aarch64 manylinux_2_28 | `ubuntu-24.04-arm` | `PyO3/maturin-action@v1` | required |
 | macOS x86_64 | `macos-13` | `PyO3/maturin-action@v1` | required |
 | macOS aarch64 | `macos-latest` or ARM runner | `PyO3/maturin-action@v1` | required |
 | Windows x86_64 | `windows-latest` | `PyO3/maturin-action@v1` | required |
 
-If native Linux ARM runners are unavailable, build the Linux `aarch64` wheel
-with QEMU/cross support. If execution under QEMU is unstable, the workflow may
-upload the wheel after an archive-level verification step and mark runtime smoke
-testing as documented non-gating debt for that target.
-
-The QEMU exception is only valid when the workflow uploads a text artifact named
-`linux-aarch64-smoke-exception.txt` containing:
-
-- the wheel filename
-- the runner image
-- the failing smoke command
-- a short reason the failure is considered QEMU-specific
-- a link or issue number tracking native ARM smoke coverage
+Linux aarch64 uses a native ARM runner. The workflow must smoke-test the built
+wheel at runtime for that target.
 
 ## Workflow
 
@@ -201,10 +190,7 @@ Expected implementation files:
 
 - `maturin build --release` produces ABI3 wheels locally.
 - The wheel workflow builds all target wheels.
-- Every required wheel except any documented Linux `aarch64` QEMU exception is
-  smoke-tested after build.
-- Any Linux `aarch64` smoke exception uploads
-  `linux-aarch64-smoke-exception.txt` with the required fields.
+- Every required wheel is smoke-tested after build.
 - The workflow uploads wheel artifacts.
 - Wheel artifact names match the stable names in this spec.
 - `scripts/check_wheel_tags.py` rejects CPython-specific ABI tags.
@@ -212,3 +198,8 @@ Expected implementation files:
 - The generated wheels include `oxipng/__init__.pyi` and `oxipng/py.typed`.
 - The package can be imported from a clean virtual environment without the repo
   on `PYTHONPATH`.
+
+## Implementation Notes
+
+- Linux aarch64 wheel builds use GitHub's native `ubuntu-24.04-arm` runner, so
+  the wheel smoke test is gating and no QEMU exception artifact is produced.

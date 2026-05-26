@@ -158,10 +158,8 @@ Each wheel job should smoke-test its own wheel after building it by installing
 the wheel into a clean environment and running import, file optimization, and
 memory optimization checks.
 
-Linux `aarch64` should use a native ARM runner if one is available. Otherwise,
-try QEMU-based smoke testing. If QEMU proves brittle, the fallback is to
-build/upload-verify the `aarch64` wheel and document that execution is not yet a
-hard gate for that target.
+Linux `aarch64` uses a native ARM runner so its wheel smoke test is a hard gate
+for that target.
 
 PyPI publishing is a later phase. That later workflow should use PyPI Trusted
 Publishing with `id-token: write` and should publish wheels only unless an sdist
@@ -289,3 +287,5 @@ Upstream bump tests cover:
 
 - Public API coverage across Python 3.10 through 3.14 is implemented by
   `.github/workflows/api-matrix.yml`.
+- Linux aarch64 wheel smoke testing is implemented with GitHub's native
+  `ubuntu-24.04-arm` runner.

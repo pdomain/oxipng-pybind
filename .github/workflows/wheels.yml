@@ -35,10 +35,10 @@ jobs:
             expected-platform: manylinux_2_28_x86_64
             smoke: true
           - artifact: wheels-linux-aarch64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             expected-platform: manylinux_2_28_aarch64
-            smoke: false
+            smoke: true
           - artifact: wheels-macos-x86_64
             runner: macos-13
             target: x86_64-apple-darwin
@@ -82,24 +82,6 @@ jobs:
           fi
           "$smoke_python" -m pip install dist/*.whl pillow
           "$smoke_python" scripts/smoke_wheel.py
-      - name: Write Linux aarch64 smoke exception
-        if: matrix.artifact == 'wheels-linux-aarch64'
-        shell: bash
-        run: |
-          wheel="$(basename dist/*.whl)"
-          {
-            echo "wheel filename: $wheel"
-            echo "runner image: ${{ matrix.runner }}"
-            echo "failing smoke command: python scripts/smoke_wheel.py under QEMU"
-            echo "reason: Linux aarch64 wheel is cross-built and runtime smoke requires native ARM coverage."
-            echo "tracking issue: TODO create native ARM smoke coverage issue"
-          } > linux-aarch64-smoke-exception.txt
-      - name: Upload Linux aarch64 smoke exception
-        if: matrix.artifact == 'wheels-linux-aarch64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-aarch64-smoke-exception.txt
-          path: linux-aarch64-smoke-exception.txt
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

@@ -21,9 +21,5 @@ platform tags are:
 Each wheel is installed into a clean virtual environment and checked with
 `scripts/smoke_wheel.py`. The smoke test imports the package, optimizes files
 in place and to an output path, optimizes bytes in memory, and verifies all
-outputs with Pillow.
-
-If Linux aarch64 runtime smoke testing is blocked by QEMU-specific behavior,
-the workflow must upload `linux-aarch64-smoke-exception.txt` with the wheel
-filename, runner image, failing command, QEMU-specific reason, and tracking
-issue or link.
+outputs with Pillow. Linux aarch64 uses GitHub's native `ubuntu-24.04-arm`
+runner so runtime smoke testing is gating for that target.

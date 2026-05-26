@@ -106,7 +106,8 @@ uv run --no-sync --group dev maturin develop --quiet
 uv run --no-sync --group dev pytest -q
 ```
 
-Expected: all commands pass, and pytest reports coverage at or above 80%.
+Expected: all commands pass. Plain focused pytest runs do not enforce coverage;
+`make test-py` and `make coverage` enforce coverage at or above 80%.
 
 - [x] **Step 5: Commit**
 

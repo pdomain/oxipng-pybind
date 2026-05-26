@@ -22,10 +22,13 @@ The distribution is named `oxipng-pybind`, but the import module is `oxipng`.
 
 ```python
 from oxipng import Deflater, FilterStrategy, Interlacing, StripChunks
+from oxipng import BitDepth, ColorType, RawImage
 from oxipng import optimize, optimize_from_memory
 
 optimize(path, level=6)
 data = optimize_from_memory(png_bytes, strip=StripChunks.safe)
+raw_png = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+optimized = raw_png.create_optimized_png()
 ```
 
 Supported objects:
@@ -40,6 +43,9 @@ Supported objects:
 - `oxipng.StripChunks`
 - `oxipng.Deflater`
 - `oxipng.FilterStrategy`
+- `oxipng.ColorType`
+- `oxipng.BitDepth`
+- `oxipng.RawImage`
 
 `input` and `output` may be strings, bytes paths, or `os.PathLike` values.
 When `output` is omitted, the input file is optimized in place.
@@ -52,9 +58,6 @@ documented enum members or their string aliases.
 This package is not a full `pyoxipng` replacement. These APIs are intentionally
 not provided:
 
-- `optimize_from_memory`
-- `RawImage`
-- `ColorType`
 - `RowFilter`
 - arbitrary chunk keep/strip lists
 - stdin/stdout optimization

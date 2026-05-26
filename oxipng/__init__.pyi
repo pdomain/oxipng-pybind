@@ -32,8 +32,59 @@ class FilterStrategy(Enum):
     bigent = "bigent"
     brute = "brute"
 
+class ColorType(Enum):
+    grayscale = "grayscale"
+    rgb = "rgb"
+    indexed = "indexed"
+    grayscale_alpha = "grayscale_alpha"
+    rgba = "rgba"
+
+class BitDepth(Enum):
+    one = 1
+    two = 2
+    four = 4
+    eight = 8
+    sixteen = 16
+
 class PngError(Exception):
     """Raised when oxipng cannot optimize the input PNG."""
+
+class RawImage:
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        color_type: ColorType | str,
+        bit_depth: BitDepth | int,
+        data: BytesLike,
+        *,
+        palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None,
+        transparent: int | tuple[int, int, int] | None = None,
+    ) -> None:
+        """Create an optimized PNG from raw pixel data."""
+
+    def add_png_chunk(self, name: BytesLike, data: BytesLike) -> None:
+        """Add an auxiliary PNG chunk."""
+
+    def add_icc_profile(self, data: BytesLike) -> None:
+        """Add an ICC profile."""
+
+    def create_optimized_png(
+        self,
+        *,
+        level: int = 2,
+        interlace: Interlacing | str | None = None,
+        strip: StripChunks | str | None = None,
+        deflate: Deflater | str | None = None,
+        filter: FilterStrategy
+        | str
+        | list[FilterStrategy | str]
+        | tuple[FilterStrategy | str, ...]
+        | None = None,
+        fix_errors: bool = False,
+        force: bool = False,
+    ) -> bytes:
+        """Return optimized PNG bytes."""
 
 def optimize(
     input: StrOrBytesPath,

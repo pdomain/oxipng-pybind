@@ -28,7 +28,6 @@ The package identity stays unchanged:
 ## Non-Goals
 
 - Do not rename the package or repository.
-- Do not implement `RawImage` in this phase.
 - Do not publish to PyPI automatically in this phase.
 - Do not build or publish an sdist in this phase.
 - Do not auto-expose newly discovered upstream options or enum values.
@@ -38,7 +37,8 @@ The package identity stays unchanged:
 The public import remains `oxipng`.
 
 ```python
-from oxipng import Deflaters, Interlacing, PngError, RowFilter, StripChunks
+from oxipng import BitDepth, ColorType, Deflater, FilterStrategy
+from oxipng import Interlacing, PngError, RawImage, StripChunks
 from oxipng import optimize, optimize_from_memory
 ```
 
@@ -75,6 +75,19 @@ optimize_from_memory(
 ) -> bytes
 ```
 
+```python
+RawImage(
+    width,
+    height,
+    color_type,
+    bit_depth,
+    data,
+    *,
+    palette=None,
+    transparent=None,
+).create_optimized_png(...) -> bytes
+```
+
 The file API accepts string paths, bytes paths, and `os.PathLike` values. If
 `output` is omitted, the input file is optimized in place.
 
@@ -106,7 +119,7 @@ Example:
 
 ```python
 optimize("input.png", "output.png", strip="safe", filter="sub")
-optimize("input.png", "output.png", strip=StripChunks.safe, filter=RowFilter.sub)
+optimize("input.png", "output.png", strip=StripChunks.safe, filter=FilterStrategy.sub)
 ```
 
 The exposed enums intentionally include only values the wrapper commits to
@@ -278,7 +291,6 @@ Upstream bump tests cover:
 
 ## Open Follow-Up Work
 
-- `RawImage` support after the core API and wheel workflow are stable.
 - PyPI Trusted Publishing after the artifact-only wheel workflow is proven.
 - Optional sdist publishing only if fallback builds requiring Rust are
   intentionally accepted.
@@ -289,3 +301,5 @@ Upstream bump tests cover:
   `.github/workflows/api-matrix.yml`.
 - Linux aarch64 wheel smoke testing is implemented with GitHub's native
   `ubuntu-24.04-arm` runner.
+- `RawImage` support is implemented with `ColorType` and `BitDepth` helper
+  enums.

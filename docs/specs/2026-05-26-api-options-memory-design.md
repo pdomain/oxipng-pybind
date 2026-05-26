@@ -25,7 +25,6 @@ The local upstream checkout used for analysis lives under the ignored path
 
 ## Non-Goals
 
-- No `RawImage` support.
 - No stdin/stdout API.
 - No dry-run API.
 - No multi-file or directory API.
@@ -196,7 +195,6 @@ Supported compatibility surface:
 
 Intentionally unsupported:
 
-- `RawImage`
 - APIs that expose raw pixel buffers
 - arbitrary chunk keep/strip lists
 - stdin/stdout behavior

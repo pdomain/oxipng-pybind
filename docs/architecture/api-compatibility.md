@@ -19,10 +19,12 @@ Supported Python surface:
 - `StripChunks`
 - `Deflater`
 - `FilterStrategy`
+- `ColorType`
+- `BitDepth`
+- `RawImage`
 
 Unsupported compatibility surface:
 
-- `RawImage`
 - raw pixel buffer APIs
 - arbitrary chunk keep/strip lists
 - stdin/stdout behavior

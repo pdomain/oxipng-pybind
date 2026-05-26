@@ -286,6 +286,196 @@ fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
     ))
 }
 
+fn parse_bit_depth(value: &Bound<'_, PyAny>) -> PyResult<oxi::BitDepth> {
+    let raw_value = if let Ok(enum_value) = value.getattr("value") {
+        enum_value.extract::<u8>()
+    } else {
+        value.extract::<u8>()
+    }
+    .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
+
+    oxi::BitDepth::try_from(raw_value)
+        .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))
+}
+
+fn extract_u16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u16> {
+    let parsed: u32 = value
+        .extract()
+        .map_err(|_| PyValueError::new_err(format!("{context} must contain integers")))?;
+    u16::try_from(parsed)
+        .map_err(|_| PyValueError::new_err(format!("{context} values must fit in u16")))
+}
+
+fn extract_u8(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u8> {
+    let parsed: u32 = value
+        .extract()
+        .map_err(|_| PyValueError::new_err(format!("{context} must contain integers")))?;
+    u8::try_from(parsed)
+        .map_err(|_| PyValueError::new_err(format!("{context} values must fit in u8")))
+}
+
+fn parse_rgb16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<oxi::RGB16> {
+    let tuple = value
+        .downcast::<PyTuple>()
+        .map_err(|_| PyValueError::new_err(format!("{context} must be a 3-tuple")))?;
+    if tuple.len() != 3 {
+        return Err(PyValueError::new_err(format!(
+            "{context} must be a 3-tuple"
+        )));
+    }
+    Ok(oxi::RGB16::new(
+        extract_u16(&tuple.get_item(0)?, context)?,
+        extract_u16(&tuple.get_item(1)?, context)?,
+        extract_u16(&tuple.get_item(2)?, context)?,
+    ))
+}
+
+fn parse_palette_color(value: &Bound<'_, PyAny>) -> PyResult<oxi::RGBA8> {
+    let tuple = value
+        .downcast::<PyTuple>()
+        .map_err(|_| PyValueError::new_err("palette entries must be 3- or 4-tuples"))?;
+    if tuple.len() != 3 && tuple.len() != 4 {
+        return Err(PyValueError::new_err(
+            "palette entries must be 3- or 4-tuples",
+        ));
+    }
+    let alpha = if tuple.len() == 4 {
+        extract_u8(&tuple.get_item(3)?, "palette")?
+    } else {
+        255
+    };
+    Ok(oxi::RGBA8::new(
+        extract_u8(&tuple.get_item(0)?, "palette")?,
+        extract_u8(&tuple.get_item(1)?, "palette")?,
+        extract_u8(&tuple.get_item(2)?, "palette")?,
+        alpha,
+    ))
+}
+
+fn parse_palette(value: Option<&Bound<'_, PyAny>>) -> PyResult<Vec<oxi::RGBA8>> {
+    let Some(value) = value else {
+        return Err(PyValueError::new_err(
+            "palette is required for indexed raw images",
+        ));
+    };
+    let list = value
+        .downcast::<PyList>()
+        .map_err(|_| PyValueError::new_err("palette must be a list of colors"))?;
+    if list.is_empty() || list.len() > 256 {
+        return Err(PyValueError::new_err(
+            "palette must contain between 1 and 256 colors",
+        ));
+    }
+    list.iter().map(|item| parse_palette_color(&item)).collect()
+}
+
+fn parse_color_type(
+    color_type: &Bound<'_, PyAny>,
+    palette: Option<&Bound<'_, PyAny>>,
+    transparent: Option<&Bound<'_, PyAny>>,
+) -> PyResult<oxi::ColorType> {
+    match value_as_string(color_type, "color_type")?.as_str() {
+        "grayscale" => {
+            let transparent_shade = transparent
+                .map(|value| extract_u16(value, "transparent"))
+                .transpose()?;
+            Ok(oxi::ColorType::Grayscale { transparent_shade })
+        }
+        "rgb" => {
+            let transparent_color = transparent
+                .map(|value| parse_rgb16(value, "transparent"))
+                .transpose()?;
+            Ok(oxi::ColorType::RGB { transparent_color })
+        }
+        "indexed" => {
+            if transparent.is_some() {
+                return Err(PyValueError::new_err(
+                    "transparent is not supported for indexed raw images; use alpha values in palette entries",
+                ));
+            }
+            Ok(oxi::ColorType::Indexed {
+                palette: parse_palette(palette)?,
+            })
+        }
+        "grayscale_alpha" => {
+            if transparent.is_some() {
+                return Err(PyValueError::new_err(
+                    "transparent is not supported for grayscale_alpha raw images",
+                ));
+            }
+            Ok(oxi::ColorType::GrayscaleAlpha)
+        }
+        "rgba" => {
+            if transparent.is_some() {
+                return Err(PyValueError::new_err(
+                    "transparent is not supported for rgba raw images",
+                ));
+            }
+            Ok(oxi::ColorType::RGBA)
+        }
+        _ => Err(PyValueError::new_err(
+            "color_type must be one of: grayscale, rgb, indexed, grayscale_alpha, rgba",
+        )),
+    }
+}
+
+#[pyclass(name = "RawImage")]
+struct PyRawImage {
+    inner: oxi::RawImage,
+}
+
+#[pymethods]
+impl PyRawImage {
+    #[new]
+    #[pyo3(signature = (width, height, color_type, bit_depth, data, *, palette=None, transparent=None))]
+    fn new(
+        width: u32,
+        height: u32,
+        color_type: &Bound<'_, PyAny>,
+        bit_depth: &Bound<'_, PyAny>,
+        data: &Bound<'_, PyAny>,
+        palette: Option<&Bound<'_, PyAny>>,
+        transparent: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Self> {
+        let color_type = parse_color_type(color_type, palette, transparent)?;
+        let bit_depth = parse_bit_depth(bit_depth)?;
+        let data = bytes_like_to_vec(data)?;
+        let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
+            .map_err(map_png_error)?;
+        Ok(Self { inner })
+    }
+
+    fn add_png_chunk(&mut self, name: &Bound<'_, PyAny>, data: &Bound<'_, PyAny>) -> PyResult<()> {
+        let name = bytes_like_to_vec(name)?;
+        let data = bytes_like_to_vec(data)?;
+        let name: [u8; 4] = name
+            .try_into()
+            .map_err(|_| PyValueError::new_err("chunk name must be exactly 4 bytes"))?;
+        self.inner.add_png_chunk(name, data);
+        Ok(())
+    }
+
+    fn add_icc_profile(&mut self, data: &Bound<'_, PyAny>) -> PyResult<()> {
+        let data = bytes_like_to_vec(data)?;
+        self.inner.add_icc_profile(&data);
+        Ok(())
+    }
+
+    #[pyo3(signature = (**kwargs))]
+    #[pyo3(
+        text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False)"
+    )]
+    fn create_optimized_png(
+        &self,
+        py: Python<'_>,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Vec<u8>> {
+        let parsed = parse_options(kwargs, ParseMode::Memory)?;
+        py.allow_threads(|| self.inner.create_optimized_png(&parsed.options))
+            .map_err(map_png_error)
+    }
+}
+
 #[pyfunction]
 #[pyo3(signature = (data, **kwargs))]
 #[pyo3(
@@ -306,6 +496,7 @@ fn optimize_from_memory(
 #[pymodule]
 fn _oxipng(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("PngError", py.get_type::<PngError>())?;
+    module.add_class::<PyRawImage>()?;
     module.add_function(wrap_pyfunction!(optimize, module)?)?;
     module.add_function(wrap_pyfunction!(optimize_from_memory, module)?)?;
     Ok(())

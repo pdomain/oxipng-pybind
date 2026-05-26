@@ -42,16 +42,39 @@ class FilterStrategy(Enum):
     brute = "brute"
 
 
+class ColorType(Enum):
+    """Raw image color type."""
+
+    grayscale = "grayscale"
+    rgb = "rgb"
+    indexed = "indexed"
+    grayscale_alpha = "grayscale_alpha"
+    rgba = "rgba"
+
+
+class BitDepth(Enum):
+    """Raw image bit depth."""
+
+    one = 1
+    two = 2
+    four = 4
+    eight = 8
+    sixteen = 16
+
+
 if TYPE_CHECKING:
-    from .__init__ import PngError, optimize, optimize_from_memory
+    from .__init__ import PngError, RawImage, optimize, optimize_from_memory
 else:
-    from _oxipng import PngError, optimize, optimize_from_memory
+    from _oxipng import PngError, RawImage, optimize, optimize_from_memory
 
 __all__ = [
+    "BitDepth",
+    "ColorType",
     "Deflater",
     "FilterStrategy",
     "Interlacing",
     "PngError",
+    "RawImage",
     "StripChunks",
     "optimize",
     "optimize_from_memory",

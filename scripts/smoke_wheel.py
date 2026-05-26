@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 from PIL import Image, PngImagePlugin
 
 import oxipng
-from oxipng import PngError, optimize, optimize_from_memory
+from oxipng import BitDepth, ColorType, PngError, RawImage, optimize, optimize_from_memory
 
 
 def make_png_bytes() -> bytes:
@@ -53,10 +53,18 @@ def main() -> int:
         optimize(in_place, strip="safe")
         optimize(output_input, output, filter="none")
         memory_output = optimize_from_memory(data, level=2)
+        raw_output = RawImage(
+            1,
+            1,
+            ColorType.rgba,
+            BitDepth.eight,
+            bytes([255, 0, 0, 255]),
+        ).create_optimized_png()
 
         verify_png(in_place)
         verify_png(output)
         verify_png_bytes(memory_output)
+        verify_png_bytes(raw_output)
 
     return 0
 

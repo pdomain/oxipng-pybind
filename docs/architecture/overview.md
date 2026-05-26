@@ -47,6 +47,17 @@ then calls `oxipng::optimize_from_memory` and returns optimized PNG bytes.
 File-only options such as `backup` and `preserve_attrs` are rejected for memory
 optimization.
 
+## Raw Image Flow
+
+`RawImage(width, height, color_type, bit_depth, data, *, palette=None,
+transparent=None)` wraps upstream `oxipng::RawImage`. Python `ColorType` and
+`BitDepth` enum values are converted to upstream raw image metadata, and packed
+pixel bytes are copied before being passed to Rust.
+
+`RawImage.create_optimized_png(**options)` reuses the memory-mode option parser
+and returns PNG bytes. Auxiliary chunks can be added through `add_png_chunk`,
+and ICC profile data can be attached through `add_icc_profile`.
+
 ## Error Mapping
 
 The wrapper keeps caller mistakes distinct from image processing failures:

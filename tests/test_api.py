@@ -9,10 +9,13 @@ import pytest
 from PIL import Image
 
 from oxipng import (
+    BitDepth,
+    ColorType,
     Deflater,
     FilterStrategy,
     Interlacing,
     PngError,
+    RawImage,
     StripChunks,
     optimize,
     optimize_from_memory,
@@ -39,6 +42,9 @@ def test_import_supported_api() -> None:
     assert StripChunks.safe.value == "safe"
     assert Deflater.libdeflater.value == "libdeflater"
     assert FilterStrategy.brute.value == "brute"
+    assert ColorType.rgba.value == "rgba"
+    assert BitDepth.eight.value == 8
+    assert RawImage.__name__ == "RawImage"
 
 
 def test_optimize_signature_matches_supported_api() -> None:
@@ -243,3 +249,86 @@ def test_optimize_from_memory_memoryview_returns_readable_bytes(png_bytes: bytes
 def test_corrupt_memory_input_raises_png_error() -> None:
     with pytest.raises(PngError):
         optimize_from_memory(b"not a png")
+
+
+def test_raw_image_rgba_create_optimized_png_returns_readable_bytes() -> None:
+    raw = RawImage(
+        2,
+        2,
+        ColorType.rgba,
+        BitDepth.eight,
+        bytes(
+            [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255,
+                0,
+                0,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+            ]
+        ),
+    )
+
+    output = raw.create_optimized_png(strip=StripChunks.safe)
+
+    assert_readable_png_bytes(output)
+
+
+def test_raw_image_accepts_string_color_type_and_integer_bit_depth() -> None:
+    raw = RawImage(1, 1, "rgb", 8, bytes([255, 0, 0]))
+
+    output = raw.create_optimized_png(level=1)
+
+    assert_readable_png_bytes(output)
+
+
+def test_raw_image_indexed_palette_returns_readable_bytes() -> None:
+    raw = RawImage(
+        2,
+        1,
+        ColorType.indexed,
+        BitDepth.eight,
+        bytes([0, 1]),
+        palette=[(255, 0, 0), (0, 0, 255, 128)],
+    )
+
+    output = raw.create_optimized_png()
+
+    assert_readable_png_bytes(output)
+
+
+def test_raw_image_add_png_chunk_preserves_allowed_chunk() -> None:
+    raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+    raw.add_png_chunk(b"tEXt", b"Comment\x00hello")
+
+    output = raw.create_optimized_png(strip=StripChunks.none)
+
+    with Image.open(BytesIO(output)) as image:
+        assert cast("Any", image).text["Comment"] == "hello"
+
+
+def test_raw_image_invalid_data_length_raises_png_error() -> None:
+    with pytest.raises(PngError, match="Data length"):
+        RawImage(2, 2, ColorType.rgba, BitDepth.eight, b"too short")
+
+
+def test_raw_image_invalid_palette_raises_value_error() -> None:
+    with pytest.raises(ValueError, match="palette is required"):
+        RawImage(1, 1, ColorType.indexed, BitDepth.eight, bytes([0]))
+
+
+def test_raw_image_create_rejects_file_only_options() -> None:
+    raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+
+    with pytest.raises(TypeError, match="unsupported option: backup"):
+        cast("Any", raw.create_optimized_png)(backup=True)

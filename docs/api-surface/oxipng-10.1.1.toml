@@ -3,6 +3,9 @@ upstream_version = "10.1.1"
 [functions]
 exposed = ["optimize", "optimize_from_memory"]
 
+[classes]
+exposed = ["RawImage"]
+
 [options.exposed]
 level = "Options::from_preset"
 interlace = "Options.interlace"
@@ -57,12 +60,26 @@ brute = "FilterStrategy::Brute { num_lines: 3, level: 1 }"
 [enums.FilterStrategy.unexposed]
 Predefined = "requires per-row filter input API"
 
-[enums.RowFilter.exposed]
-None = "RowFilter::None"
-Sub = "RowFilter::Sub"
-Up = "RowFilter::Up"
-Average = "RowFilter::Average"
-Paeth = "RowFilter::Paeth"
+[enums.ColorType.exposed]
+grayscale = "ColorType::Grayscale"
+rgb = "ColorType::RGB"
+indexed = "ColorType::Indexed"
+grayscale_alpha = "ColorType::GrayscaleAlpha"
+rgba = "ColorType::RGBA"
+
+[enums.BitDepth.exposed]
+one = "BitDepth::One"
+two = "BitDepth::Two"
+four = "BitDepth::Four"
+eight = "BitDepth::Eight"
+sixteen = "BitDepth::Sixteen"
+
+[enums.RowFilter.unexposed]
+None = "exposed through FilterStrategy.none, not as a public RowFilter enum"
+Sub = "exposed through FilterStrategy.sub, not as a public RowFilter enum"
+Up = "exposed through FilterStrategy.up, not as a public RowFilter enum"
+Average = "exposed through FilterStrategy.average, not as a public RowFilter enum"
+Paeth = "exposed through FilterStrategy.paeth, not as a public RowFilter enum"
 
 [notes]
 interlacing = "Python Interlacing.keep maps to leaving Options.interlace unchanged as None."

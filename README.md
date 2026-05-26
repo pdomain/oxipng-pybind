@@ -8,13 +8,9 @@ upstream `oxipng` releases.
 
 ## Install
 
-```bash
-pip install oxipng-pybind
-```
-
 Release artifacts use PyO3 ABI3 wheels for Python 3.10 and newer. The current
-release workflow builds and uploads wheel artifacts before PyPI publishing is
-enabled.
+release workflow builds and uploads wheel artifacts, but PyPI publishing is not
+available yet. PyPI support is coming soon.
 
 ## Supported API
 

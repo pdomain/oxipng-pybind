@@ -52,6 +52,10 @@ class FilterStrategy(Enum):
     bigent = "bigent"
     brute = "brute"
 
+    @staticmethod
+    def predefined(filters: list[object] | tuple[object, ...]) -> _PredefinedFilters:
+        """Create a predefined row-filter sequence."""
+
 class RowFilter(Enum):
     none = "none"
     sub = "sub"
@@ -63,8 +67,6 @@ class RowFilter(Enum):
     bigrams = "bigrams"
     bigent = "bigent"
     brute = "brute"
-
-FilterOption = FilterStrategy | RowFilter | str
 
 class _CompatColorType:
     kind: str
@@ -79,6 +81,11 @@ class _CompatStripChunks:
 class _CompatDeflater:
     kind: str
     value: int
+
+class _PredefinedFilters:
+    filters: tuple[str, ...]
+
+FilterOption = FilterStrategy | RowFilter | _PredefinedFilters | str
 
 class BitDepth(Enum):
     one = 1

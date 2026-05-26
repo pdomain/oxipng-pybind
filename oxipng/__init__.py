@@ -77,6 +77,14 @@ class FilterStrategy(Enum):
     bigent = "bigent"
     brute = "brute"
 
+    @staticmethod
+    def predefined(filters: list[object] | tuple[object, ...]) -> "_PredefinedFilters":
+        """Create a predefined row-filter sequence."""
+        if not filters:
+            raise ValueError("predefined filter must not be empty")
+        parsed = tuple(_basic_row_filter_value(filter_value) for filter_value in filters)
+        return _PredefinedFilters(parsed)
+
 
 class RowFilter(Enum):
     """PNG row filter names."""
@@ -111,6 +119,20 @@ class _CompatStripChunks:
 class _CompatDeflater:
     kind: str
     value: int
+
+
+@dataclass(frozen=True)
+class _PredefinedFilters:
+    filters: tuple[str, ...]
+
+
+def _basic_row_filter_value(value: object) -> str:
+    raw_value = getattr(value, "value", value)
+    if not isinstance(raw_value, str):
+        raise TypeError("predefined filter entries must be row filter names")
+    if raw_value not in {"none", "sub", "up", "average", "paeth"}:
+        raise ValueError("predefined filter entries must be one of: none, sub, up, average, paeth")
+    return raw_value
 
 
 class BitDepth(Enum):

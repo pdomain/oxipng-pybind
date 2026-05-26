@@ -260,6 +260,34 @@ def test_filter_sequence_is_accepted(png_bytes: bytes) -> None:
     assert_readable_png_bytes(output)
 
 
+def test_predefined_filter_factory_uses_basic_filters_without_warning() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        predefined = FilterStrategy.predefined([RowFilter.none, "sub", FilterStrategy.up])
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert predefined.filters == ("none", "sub", "up")
+
+
+def test_predefined_filter_optimizes_memory(png_bytes: bytes) -> None:
+    predefined = FilterStrategy.predefined(["none", RowFilter.sub, FilterStrategy.up])
+
+    output = optimize_from_memory(png_bytes, filter=predefined)
+
+    assert_readable_png_bytes(output)
+
+
+def test_predefined_filter_rejects_empty_sequence() -> None:
+    with pytest.raises(ValueError, match="predefined filter must not be empty"):
+        FilterStrategy.predefined([])
+
+
+@pytest.mark.parametrize("value", ["minsum", FilterStrategy.entropy, "unknown"])
+def test_predefined_filter_rejects_non_basic_filters(value: object) -> None:
+    with pytest.raises(ValueError, match="predefined filter"):
+        FilterStrategy.predefined([value])
+
+
 def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
     output = optimize_from_memory(png_bytes, filter={RowFilter.none, RowFilter.sub})
 

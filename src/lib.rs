@@ -284,8 +284,43 @@ fn parse_filter_strategy(value: &Bound<'_, PyAny>) -> PyResult<oxi::FilterStrate
     }
 }
 
+fn parse_basic_row_filter(value: &str) -> PyResult<oxi::RowFilter> {
+    match value {
+        "none" | "0" => Ok(oxi::RowFilter::None),
+        "sub" | "1" => Ok(oxi::RowFilter::Sub),
+        "up" | "2" => Ok(oxi::RowFilter::Up),
+        "average" | "3" => Ok(oxi::RowFilter::Average),
+        "paeth" | "4" => Ok(oxi::RowFilter::Paeth),
+        _ => Err(PyValueError::new_err(
+            "predefined filter entries must be one of: none, sub, up, average, paeth, 0-4",
+        )),
+    }
+}
+
+fn parse_predefined_filters(value: &Bound<'_, PyAny>) -> PyResult<oxi::FilterStrategy> {
+    let filters = value
+        .getattr("filters")?
+        .downcast_into::<PyTuple>()
+        .map_err(|_| PyValueError::new_err("predefined filter entries must be a tuple"))?;
+    if filters.is_empty() {
+        return Err(PyValueError::new_err("predefined filter must not be empty"));
+    }
+
+    let mut parsed = Vec::with_capacity(filters.len());
+    for item in filters.iter() {
+        let filter: String = item.extract()?;
+        parsed.push(parse_basic_row_filter(&filter)?);
+    }
+    Ok(oxi::FilterStrategy::Predefined(parsed))
+}
+
 fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrategy>> {
     let mut filters = IndexSet::new();
+
+    if is_oxipng_compat_type(value, "_PredefinedFilters")? {
+        filters.insert(parse_predefined_filters(value)?);
+        return Ok(filters);
+    }
 
     if value.downcast::<PyString>().is_ok() || value.getattr("value").is_ok() {
         filters.insert(parse_filter_strategy(value)?);

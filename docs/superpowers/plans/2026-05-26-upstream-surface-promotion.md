@@ -209,7 +209,7 @@ Expected: commit succeeds.
 - Modify: `tests/test_api.py`
 - Modify: `docs/superpowers/plans/2026-05-26-upstream-surface-promotion.md`
 
-- [ ] **Step 1: Add failing predefined filter tests**
+- [x] **Step 1: Add failing predefined filter tests**
 
 Add tests that:
 
@@ -220,7 +220,7 @@ Add tests that:
 - Non-basic filters such as `"minsum"` raise `ValueError`.
 - Unknown strings raise `ValueError`.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run:
 
@@ -230,7 +230,7 @@ uv run --group dev pytest tests/test_api.py -q
 
 Expected: tests fail because `FilterStrategy.predefined` does not exist.
 
-- [ ] **Step 3: Add Python predefined object**
+- [x] **Step 3: Add Python predefined object**
 
 In `oxipng/__init__.py`:
 
@@ -241,7 +241,7 @@ In `oxipng/__init__.py`:
 - Raise `ValueError` for empty or invalid values.
 - Use docstring: `"""Create a predefined row-filter sequence."""`
 
-- [ ] **Step 4: Add stub support**
+- [x] **Step 4: Add stub support**
 
 In `oxipng/__init__.pyi`:
 
@@ -249,7 +249,7 @@ In `oxipng/__init__.pyi`:
 - Add `FilterStrategy.predefined(...) -> _PredefinedFilters`.
 - Include `_PredefinedFilters` in `FilterOption`.
 
-- [ ] **Step 5: Parse predefined filters in Rust**
+- [x] **Step 5: Parse predefined filters in Rust**
 
 In `src/lib.rs`:
 
@@ -259,7 +259,7 @@ In `src/lib.rs`:
 - Return `FilterStrategy::Predefined(Vec<RowFilter>)`.
 - Keep non-basic filters rejected in Python.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run:
 
@@ -270,7 +270,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -q
 
 Expected: tests pass.
 
-- [ ] **Step 7: Commit Task 3**
+- [x] **Step 7: Commit Task 3**
 
 Run:
 

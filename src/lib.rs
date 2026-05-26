@@ -3,7 +3,8 @@ use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyFileExistsError, PyOSError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyByteArray, PyBytes, PyDict, PyList, PyString, PyTuple};
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io;
 use std::path::PathBuf;
 
 create_exception!(oxipng, PngError, PyException);
@@ -231,6 +232,23 @@ fn map_png_error(error: oxi::PngError) -> PyErr {
     PngError::new_err(error.to_string())
 }
 
+fn backup_path_for(input: &std::path::Path) -> PathBuf {
+    let mut backup = input.as_os_str().to_os_string();
+    backup.push(".bak");
+    PathBuf::from(backup)
+}
+
+fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
+    let backup = backup_path_for(input);
+    let mut source = fs::File::open(input)?;
+    let mut destination = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&backup)?;
+    io::copy(&mut source, &mut destination)?;
+    Ok(backup)
+}
+
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
 #[pyo3(
@@ -251,11 +269,15 @@ fn optimize(
     }
 
     if parsed.backup {
-        let backup = PathBuf::from(format!("{}.bak", input.display()));
-        if backup.exists() {
-            return Err(PyFileExistsError::new_err(backup.display().to_string()));
-        }
-        fs::copy(&input, &backup).map_err(PyOSError::new_err)?;
+        let backup_input = input.clone();
+        py.allow_threads(move || create_backup(&backup_input))
+            .map_err(|error| {
+                if error.kind() == io::ErrorKind::AlreadyExists {
+                    PyFileExistsError::new_err(backup_path_for(&input).display().to_string())
+                } else {
+                    PyOSError::new_err(error)
+                }
+            })?;
     }
 
     let input_file = oxi::InFile::Path(input);

@@ -213,6 +213,19 @@ def test_backup_refuses_to_overwrite_existing_backup(png_path: Path) -> None:
         optimize(png_path, backup=True)
 
 
+@pytest.mark.skipif(not hasattr(__import__("os"), "symlink"), reason="symlink unavailable")
+def test_backup_refuses_existing_symlink_backup(png_path: Path, tmp_path: Path) -> None:
+    target = tmp_path / "target.txt"
+    target.write_text("do not overwrite", encoding="utf-8")
+    backup = png_path.with_name(f"{png_path.name}.bak")
+    backup.symlink_to(target)
+
+    with pytest.raises(FileExistsError):
+        optimize(png_path, backup=True)
+
+    assert target.read_text(encoding="utf-8") == "do not overwrite"
+
+
 def test_backup_creates_copy_for_in_place_optimization(png_path: Path) -> None:
     original = png_path.read_bytes()
 

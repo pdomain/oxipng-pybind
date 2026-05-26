@@ -671,7 +671,7 @@ git push origin main
 
 - Verify all files changed by Tasks 1-4.
 
-- [ ] **Step 1: Run full local verification**
+- [x] **Step 1: Run full local verification**
 
 Run:
 
@@ -685,7 +685,7 @@ make dependency-audit
 
 Expected: all commands pass.
 
-- [ ] **Step 2: Verify wheel tag and smoke test still pass**
+- [x] **Step 2: Verify wheel tag and smoke test still pass**
 
 Run:
 
@@ -702,7 +702,7 @@ rm -rf "$tmpdir"
 
 Expected: fresh wheel is `cp311-abi3`, tag check passes, and smoke exits 0.
 
-- [ ] **Step 3: Check final worktree**
+- [x] **Step 3: Check final worktree**
 
 Run:
 

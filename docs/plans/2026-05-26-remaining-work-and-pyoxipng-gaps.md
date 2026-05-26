@@ -195,8 +195,8 @@ Future work should be split into small, reviewable phases.
   pyoxipng-only API surface unless it graduates to the stable API.
 - Platform phase: decide whether musllinux, 32-bit Windows, or additional Linux
   architectures are in scope.
-- Documentation phase: add a migration guide for pyoxipng users if drop-in
-  compatibility becomes a product goal.
+- Documentation phase: keep stable API examples synchronized with any
+  compatibility-path behavior that graduates to supported API surface.
 - Observability phase: improve automated upstream bump reports so they include
   a concise list of exact new and removed items, not only the high-level PR body
   section.

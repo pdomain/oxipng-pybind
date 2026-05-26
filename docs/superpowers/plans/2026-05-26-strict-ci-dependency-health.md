@@ -205,11 +205,13 @@ Replace the local hook block with:
         entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" cargo fmt --all -- --check'
         language: system
         pass_filenames: false
+        files: ^(Cargo\.(toml|lock)|rust-toolchain\.toml|src/.*\.rs)$
       - id: cargo-clippy
         name: cargo clippy -D warnings
         entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" cargo clippy --workspace --all-targets -- -D warnings'
         language: system
         pass_filenames: false
+        files: ^(Cargo\.(toml|lock)|rust-toolchain\.toml|src/.*\.rs)$
       - id: uv-lock-check
         name: uv.lock is in sync with pyproject.toml
         entry: uv lock --check
@@ -221,7 +223,7 @@ Replace the local hook block with:
         entry: uv run --group dev basedpyright
         language: system
         pass_filenames: false
-        files: ^(oxipng|scripts|tests)/.*\.pyi?$
+        files: ^((oxipng|scripts|tests)/.*\.pyi?|pyproject\.toml|uv\.lock)$
 ```
 
 - [x] **Step 6: Add gitlint commit-msg hook**
@@ -266,9 +268,33 @@ uv run --group dev pre-commit install
 to:
 
 ```make
+uv lock --check
+uv sync --locked --group dev --reinstall
 uv run --group dev pre-commit install --install-hooks
 uv run --group dev pre-commit install --hook-type commit-msg
 ```
+
+- [x] **Step 7a: Run pre-commit in CI**
+
+In `Makefile`, update `ci` so CI runs the same repository hygiene hooks that
+developers run locally:
+
+```make
+ci: ## Run full CI
+    @$(MAKE) --no-print-directory setup
+    @$(MAKE) --no-print-directory pre-commit-check
+    @$(MAKE) --no-print-directory lint
+    @$(MAKE) --no-print-directory rust-deny
+    @$(MAKE) --no-print-directory typecheck
+    @$(MAKE) --no-print-directory test
+    @$(MAKE) --no-print-directory build
+```
+
+- [x] **Step 7b: Document markdownlint deviations**
+
+Add `MD013` and `MD033` entries to
+`docs/conventions/lint-deviations.md`, matching the existing disables in
+`.markdownlint-cli2.jsonc`.
 
 - [x] **Step 8: Run pre-commit validation**
 

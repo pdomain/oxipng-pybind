@@ -52,7 +52,8 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 	fi
 
 setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
-	uv sync --group dev --reinstall
+	uv lock --check
+	uv sync --locked --group dev --reinstall
 	uv run --group dev maturin develop
 	uv run --group dev pre-commit install --install-hooks
 	uv run --group dev pre-commit install --hook-type commit-msg
@@ -143,6 +144,7 @@ upgrade-deps: ## Upgrade Python and Rust lockfiles
 
 ci: ## Run full CI
 	@$(MAKE) --no-print-directory setup
+	@$(MAKE) --no-print-directory pre-commit-check
 	@$(MAKE) --no-print-directory lint
 	@$(MAKE) --no-print-directory rust-deny
 	@$(MAKE) --no-print-directory typecheck

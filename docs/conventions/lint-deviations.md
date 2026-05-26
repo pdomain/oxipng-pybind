@@ -47,3 +47,10 @@ No RustSec advisories are ignored. `deny.toml` keeps `[advisories].ignore` empty
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `body-is-missing` | `.gitlint` | Workspace conventional commits often use concise one-line messages; subject length, `WIP`, and body line length rules remain enforced. |
+
+## Markdownlint Ignores
+
+| Rule | Location | Justification |
+| --- | --- | --- |
+| `MD013` | `.markdownlint-cli2.jsonc` | Long URLs, command examples, tables, and generated plan excerpts are more readable unwrapped. |
+| `MD033` | `.markdownlint-cli2.jsonc` | Some docs include intentional inline HTML copied from upstream or generated tooling output. |

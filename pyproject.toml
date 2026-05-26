@@ -44,6 +44,7 @@ test = [
 lint = [
     "basedpyright>=1.39.4",
     "gitlint>=0.19.1",
+    "pip-audit>=2.9",
     "pre-commit>=4.3",
     "ruff>=0.13",
 ]

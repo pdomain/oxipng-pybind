@@ -337,7 +337,7 @@ git push origin main
 - Create: `docs/process/dependency-health.md`
 - Modify: `docs/README.md`
 
-- [ ] **Step 1: Add `pip-audit` to lint dependencies**
+- [x] **Step 1: Add `pip-audit` to lint dependencies**
 
 In `pyproject.toml`, add `pip-audit` to the `lint` dependency group:
 
@@ -351,7 +351,7 @@ lint = [
 ]
 ```
 
-- [ ] **Step 2: Tighten cargo-deny advisories and sources**
+- [x] **Step 2: Tighten cargo-deny advisories and sources**
 
 Replace `deny.toml` with:
 
@@ -370,6 +370,7 @@ allow = [
     "BSD-3-Clause",
     "ISC",
     "MIT",
+    "Unlicense",
     "Unicode-3.0",
     "Zlib",
 ]
@@ -386,7 +387,7 @@ allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = []
 ```
 
-- [ ] **Step 3: Add audit Make targets**
+- [x] **Step 3: Add audit Make targets**
 
 In `Makefile`, add `py-audit dependency-audit dependency-refresh-check` to the `.PHONY` list:
 
@@ -405,13 +406,13 @@ dependency-audit: rust-deny py-audit ## Run Rust and Python dependency vulnerabi
 dependency-refresh-check: ## Refresh lockfiles, then run audits and full CI
     uv lock --upgrade
     cargo update
-    uv sync --group dev
+    uv sync --locked --group dev
     uv run --group dev maturin develop
     @$(MAKE) --no-print-directory dependency-audit
     @$(MAKE) --no-print-directory ci
 ```
 
-- [ ] **Step 4: Add dependency audit to CI**
+- [x] **Step 4: Add dependency audit to CI**
 
 In `Makefile`, update `ci`:
 
@@ -426,7 +427,7 @@ ci: ## Run full CI
     @$(MAKE) --no-print-directory build
 ```
 
-- [ ] **Step 5: Document dependency health process**
+- [x] **Step 5: Document dependency health process**
 
 Create `docs/process/dependency-health.md`:
 
@@ -458,7 +459,7 @@ Do not ignore advisories in `deny.toml` without a dated comment and an issue.
 ```
 ````
 
-- [ ] **Step 6: Link dependency health docs**
+- [x] **Step 6: Link dependency health docs**
 
 In `docs/README.md`, add this bullet to the process/docs list:
 
@@ -466,13 +467,13 @@ In `docs/README.md`, add this bullet to the process/docs list:
 - [Dependency Health](process/dependency-health.md)
 ```
 
-- [ ] **Step 7: Run audit validation**
+- [x] **Step 7: Run audit validation**
 
 Run:
 
 ```bash
 uv lock
-uv sync --group dev
+uv sync --locked --group dev
 cargo deny check
 uv run --group dev pip-audit --local
 make md-lint
@@ -480,7 +481,7 @@ make md-lint
 
 Expected: all commands pass. If `pip-audit` reports a vulnerability, update the affected dependency and rerun the commands before committing.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 

@@ -391,6 +391,8 @@ fn validate_png_chunk_name(name: [u8; 4]) -> PyResult<[u8; 4]> {
 
 fn validate_indexed_pixels(
     data: &[u8],
+    width: u32,
+    height: u32,
     palette_len: usize,
     bit_depth: oxi::BitDepth,
 ) -> PyResult<()> {
@@ -401,44 +403,31 @@ fn validate_indexed_pixels(
         )));
     }
 
-    match bit_depth_value(bit_depth) {
-        8 => {
-            if data.iter().any(|index| usize::from(*index) >= palette_len) {
+    let bit_depth = usize::from(bit_depth_value(bit_depth));
+    if bit_depth > 8 {
+        return Ok(());
+    }
+    let width = width as usize;
+    let row_bytes = (width * bit_depth).div_ceil(8);
+    let mask = ((1_u16 << bit_depth) - 1) as u8;
+
+    for row in 0..height as usize {
+        let start = row * row_bytes;
+        let end = start + row_bytes;
+        if end > data.len() {
+            break;
+        }
+        let row_data = &data[start..end];
+        for x in 0..width {
+            let byte = row_data[x * bit_depth / 8];
+            let shift = 8 - bit_depth - (x * bit_depth % 8);
+            let index = (byte >> shift) & mask;
+            if usize::from(index) >= palette_len {
                 return Err(PyValueError::new_err(
                     "pixel index must be less than palette length",
                 ));
             }
         }
-        4 => {
-            for byte in data {
-                for index in [byte >> 4, byte & 0x0f] {
-                    if usize::from(index) >= palette_len {
-                        return Err(PyValueError::new_err(
-                            "pixel index must be less than palette length",
-                        ));
-                    }
-                }
-            }
-        }
-        2 => {
-            for byte in data {
-                for shift in [6, 4, 2, 0] {
-                    if usize::from((byte >> shift) & 0x03) >= palette_len {
-                        return Err(PyValueError::new_err(
-                            "pixel index must be less than palette length",
-                        ));
-                    }
-                }
-            }
-        }
-        1 => {
-            if palette_len < 2 && data.iter().any(|byte| *byte != 0) {
-                return Err(PyValueError::new_err(
-                    "pixel index must be less than palette length",
-                ));
-            }
-        }
-        _ => {}
     }
     Ok(())
 }
@@ -558,7 +547,7 @@ impl PyRawImage {
         let color_type = parse_color_type(color_type, bit_depth, palette, transparent)?;
         let data = bytes_like_to_vec(data)?;
         if let oxi::ColorType::Indexed { palette } = &color_type {
-            validate_indexed_pixels(&data, palette.len(), bit_depth)?;
+            validate_indexed_pixels(&data, width, height, palette.len(), bit_depth)?;
         }
         let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
             .map_err(map_png_error)?;

@@ -352,6 +352,41 @@ def test_raw_image_rejects_indexed_pixels_outside_palette() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("bit_depth", "data"),
+    [
+        (BitDepth.one, bytes([0b0001_1111])),
+        (BitDepth.two, bytes([0b0011_1111])),
+        (BitDepth.four, bytes([0x0F])),
+    ],
+)
+def test_raw_image_indexed_ignores_nonzero_padding_bits(bit_depth: BitDepth, data: bytes) -> None:
+    raw = RawImage(
+        1,
+        1,
+        ColorType.indexed,
+        bit_depth,
+        data,
+        palette=[(255, 0, 0)],
+    )
+
+    output = raw.create_optimized_png()
+
+    assert_readable_png_bytes(output)
+
+
+def test_raw_image_rejects_sub_byte_indexed_real_pixel_outside_palette() -> None:
+    with pytest.raises(ValueError, match="pixel index"):
+        RawImage(
+            2,
+            1,
+            ColorType.indexed,
+            BitDepth.two,
+            bytes([0b0001_0000]),
+            palette=[(255, 0, 0)],
+        )
+
+
 def test_raw_image_rejects_grayscale_transparency_above_bit_depth_range() -> None:
     with pytest.raises(ValueError, match="transparent"):
         RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]), transparent=256)

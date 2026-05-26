@@ -75,11 +75,6 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=oxipng",
-    "--cov=scripts",
-    "--cov-branch",
-    "--cov-report=term-missing:skip-covered",
-    "--cov-fail-under=80",
 ]
 testpaths = ["tests"]
 filterwarnings = ["error"]

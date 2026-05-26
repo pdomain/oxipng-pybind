@@ -48,9 +48,10 @@ line-length = 100
 target-version = "py311"
 ```
 
-- [x] **Step 2: Add coverage to default pytest options**
+- [x] **Step 2: Keep focused pytest runs usable and enforce coverage through Make**
 
-In `pyproject.toml`, replace the pytest `addopts` block with:
+In `pyproject.toml`, keep the default pytest `addopts` focused on strict test
+configuration only:
 
 ```toml
 [tool.pytest.ini_options]
@@ -58,17 +59,24 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=oxipng",
-    "--cov=scripts",
-    "--cov-branch",
-    "--cov-report=term-missing:skip-covered",
-    "--cov-fail-under=80",
 ]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 ```
 
-Do not add `htmlcov` to default pytest output. The terminal report is enough for CI and avoids unnecessary artifacts.
+Then update `Makefile` so `test-py`, and therefore `make ci`, enforces branch
+coverage on the full Python test suite:
+
+```make
+test-py: ## Run Python tests against editable extension
+    uv run --group dev maturin develop --quiet
+    uv run --group dev pytest -v -ra -n auto --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under=80
+```
+
+Do not add coverage fail-under to default pytest options. That makes focused
+commands such as `pytest tests/test_scan_upstream_surface.py -q` fail after
+their selected tests pass because project-wide coverage is measured from a
+partial run.
 
 - [x] **Step 3: Add an explicit coverage Make target**
 

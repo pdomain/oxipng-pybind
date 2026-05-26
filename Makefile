@@ -66,7 +66,7 @@ test-rust: ## Run Rust tests
 
 test-py: ## Run Python tests against editable extension
 	uv run --group dev maturin develop --quiet
-	uv run --group dev pytest -v -ra -n auto
+	uv run --group dev pytest -v -ra -n auto --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under=80
 
 coverage: ## Run pytest with branch coverage and HTML report
 	uv run --group dev maturin develop --quiet

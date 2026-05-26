@@ -54,7 +54,7 @@ Add these imports to the existing `from oxipng import (...)` block in `tests/tes
 Add this helper near the other test helpers:
 
 ```python
-PYROXIPNG_WARNING = (
+PYOXIPNG_WARNING = (
     "pyoxipng compatibility path is unsupported; "
     "migrate to oxipng-pybind's stable API."
 )
@@ -90,23 +90,23 @@ def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
 
 
 def test_pyoxipng_compatibility_factories_warn() -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.rgb(None)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         rgba = ColorType.rgba()
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         indexed = ColorType.indexed([(255, 0, 0)])
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale = ColorType.grayscale(None)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale_alpha = ColorType.grayscale_alpha()
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         strip = StripChunks.strip(["tEXt"])
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         keep = StripChunks.keep({"iCCP"})
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         libdeflater = Deflaters.libdeflater(12)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         zopfli = Deflaters.zopfli(15)
 
     assert color_type.kind == "rgb"
@@ -394,7 +394,7 @@ def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
 
 
 def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         strip = StripChunks.strip(["tEXt"])
 
     optimize(png_path, strip=strip)
@@ -403,7 +403,7 @@ def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
 
 
 def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         keep = StripChunks.keep({"iCCP"})
 
     optimize(png_path, strip=keep)
@@ -412,9 +412,9 @@ def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
 
 
 def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         libdeflater = Deflaters.libdeflater(12)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         zopfli = Deflaters.zopfli(1)
 
     assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=libdeflater))
@@ -426,7 +426,7 @@ def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
     png_bytes: bytes,
     names: list[str],
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         strip = StripChunks.strip(names)
 
     with pytest.raises(ValueError, match="chunk name"):
@@ -439,7 +439,7 @@ def test_pyoxipng_deflaters_reject_invalid_values(
     factory: Any,
     value: int,
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         deflater = factory(value)
 
     with pytest.raises(ValueError, match="deflate"):
@@ -647,9 +647,9 @@ Add these tests near the existing raw image tests:
 
 ```python
 def test_pyoxipng_raw_image_constructor_accepts_rgb_descriptor() -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.rgb(None)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         raw = RawImage(bytes([255, 0, 0]), 1, 1, color_type=color_type)
 
     output = raw.create_optimized_png()
@@ -658,25 +658,25 @@ def test_pyoxipng_raw_image_constructor_accepts_rgb_descriptor() -> None:
 
 
 def test_pyoxipng_raw_image_constructor_accepts_rgba_descriptor() -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.rgba()
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         raw = RawImage(bytes([255, 0, 0, 255]), 1, 1, color_type=color_type)
 
     assert_readable_png_bytes(raw.create_optimized_png())
 
 
 def test_pyoxipng_raw_image_constructor_accepts_indexed_descriptor() -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.indexed([(255, 0, 0)])
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         raw = RawImage(bytes([0]), 1, 1, color_type=color_type)
 
     assert_readable_png_bytes(raw.create_optimized_png())
 
 
 def test_pyoxipng_raw_image_constructor_requires_compat_color_type() -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         with pytest.raises(TypeError, match="color_type"):
             RawImage(bytes([255, 0, 0]), 1, 1, color_type="rgb")
 
@@ -895,14 +895,14 @@ def test_pyoxipng_advanced_bool_options_warn_and_optimize_memory(
     png_bytes: bytes,
     option: str,
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         output = optimize_from_memory(png_bytes, **{option: False})
 
     assert_readable_png_bytes(output)
 
 
 def test_pyoxipng_timeout_warns_and_optimizes_memory(png_bytes: bytes) -> None:
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         output = optimize_from_memory(png_bytes, timeout=1.0)
 
     assert_readable_png_bytes(output)

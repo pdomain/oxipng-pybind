@@ -1,7 +1,6 @@
 """Supported public API tests."""
 
 import inspect
-import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any, TypeAlias, cast
@@ -25,7 +24,7 @@ from oxipng import (
 )
 
 Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
-PYROXIPNG_WARNING = (
+PYOXIPNG_WARNING = (
     "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API."
 )
 
@@ -118,25 +117,23 @@ def test_pyoxipng_compatibility_exports_and_docstrings() -> None:
 
 
 def test_pyoxipng_compatibility_factories_warn() -> None:
-    warnings.simplefilter("always", DeprecationWarning)
-
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         color_type = ColorType.rgb(None)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         rgba = ColorType.rgba()
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         indexed = ColorType.indexed([(255, 0, 0)])
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale = ColorType.grayscale(None)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale_alpha = ColorType.grayscale_alpha()
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         strip = StripChunks.strip(["tEXt"])
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         keep = StripChunks.keep({"iCCP"})
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         libdeflater = Deflaters.libdeflater(12)
-    with pytest.warns(DeprecationWarning, match=PYROXIPNG_WARNING):
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         zopfli = Deflaters.zopfli(15)
 
     assert color_type.kind == "rgb"

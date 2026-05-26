@@ -463,6 +463,74 @@ def test_max_decompressed_size_optimizes_raw_image_without_warning() -> None:
 
 
 @pytest.mark.parametrize(
+    "option",
+    [
+        "optimize_alpha",
+        "bit_depth_reduction",
+        "color_type_reduction",
+        "palette_reduction",
+        "grayscale_reduction",
+        "idat_recoding",
+        "scale_16",
+        "fast_evaluation",
+    ],
+)
+def test_analyze_advanced_bool_options_without_warning(png_path: Path, option: str) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = cast("Any", analyze)(png_path, **{option: False})
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert result.original_size > 0
+    assert result.optimized_size > 0
+
+
+def test_analyze_timeout_without_warning(png_path: Path) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = analyze(png_path, timeout=1.0)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert result.original_size > 0
+    assert result.optimized_size > 0
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        "optimize_alpha",
+        "bit_depth_reduction",
+        "color_type_reduction",
+        "palette_reduction",
+        "grayscale_reduction",
+        "idat_recoding",
+        "scale_16",
+        "fast_evaluation",
+    ],
+)
+def test_raw_image_advanced_bool_options_without_warning(option: str) -> None:
+    raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output = cast("Any", raw.create_optimized_png)(**{option: False})
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output)
+
+
+def test_raw_image_timeout_without_warning() -> None:
+    raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output = raw.create_optimized_png(timeout=1.0)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output)
+
+
+@pytest.mark.parametrize(
     ("value", "error_type"),
     [(True, TypeError), (-1, ValueError), ("bad", TypeError)],
 )

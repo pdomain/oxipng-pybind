@@ -29,7 +29,7 @@ def test_check_wheel_tags_main_success(monkeypatch: pytest.MonkeyPatch) -> None:
             "check_wheel_tags.py",
             "--expected-platform",
             "manylinux_2_34_x86_64",
-            "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_34_x86_64.whl",
+            "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_34_x86_64.whl",
         ],
     )
 
@@ -53,19 +53,19 @@ def test_check_wheel_tags_main_reports_errors(
 
 
 def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
-    wheel.write_text("", encoding="utf-8")
-
-    errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310")
-
-    assert errors == [f"{wheel.name} uses Python tag cp311, expected cp310"]
-
-
-def test_check_wheel_tags_accepts_cp310_abi3(tmp_path: Path) -> None:
     wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
-    assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310") == []
+    errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311")
+
+    assert errors == [f"{wheel.name} uses Python tag cp310, expected cp311"]
+
+
+def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+    wheel.write_text("", encoding="utf-8")
+
+    assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311") == []
 
 
 def test_ai_filter_log_prints_tail(

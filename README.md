@@ -8,7 +8,7 @@ upstream `oxipng` releases.
 
 ## Install
 
-Release artifacts use PyO3 ABI3 wheels for Python 3.10 and newer. Until PyPI
+Release artifacts use PyO3 ABI3 wheels for Python 3.11 and newer. Until PyPI
 publishing is enabled, install from a built wheel artifact or build locally with
 `make wheel`.
 

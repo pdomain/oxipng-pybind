@@ -1,4 +1,5 @@
 use indexmap::IndexSet;
+use pyo3::buffer::PyBuffer;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyFileExistsError, PyOSError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
@@ -297,6 +298,9 @@ fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
     }
     if let Ok(bytearray) = data.downcast::<PyByteArray>() {
         return Ok(unsafe { bytearray.as_bytes() }.to_vec());
+    }
+    if let Ok(buffer) = PyBuffer::<u8>::get(data) {
+        return buffer.to_vec(data.py());
     }
     if let Ok(bytes) = data.call_method0("tobytes") {
         if let Ok(py_bytes) = bytes.downcast::<PyBytes>() {

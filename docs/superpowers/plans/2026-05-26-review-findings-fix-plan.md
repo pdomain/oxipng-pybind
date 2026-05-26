@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the public API small and explicit. Add Python-side validation before handing data to upstream oxipng, make file backup creation atomic, extend the upstream surface scanner to cover every upstream enum now exposed publicly, and harden release automation without changing the package import surface.
 
-**Tech Stack:** Rust, PyO3, upstream `oxi`, Python 3.10+, pytest, Pillow, tomlkit, GitHub Actions, maturin ABI3 wheels.
+**Tech Stack:** Rust, PyO3, upstream `oxi`, Python 3.11+, pytest, Pillow, tomlkit, GitHub Actions, maturin ABI3 wheels.
 
 ---
 
@@ -644,16 +644,16 @@ def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
     wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
-    errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310")
+    errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311")
 
-    assert errors == [f"{wheel.name} uses Python tag cp311, expected cp310"]
+    assert errors == [f"{wheel.name} uses Python tag cp311, expected cp311"]
 
 
-def test_check_wheel_tags_accepts_cp310_abi3(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
+def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
-    assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310") == []
+    assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311") == []
 ```
 
 - [ ] **Step 2: Run focused script tests and confirm failure**
@@ -699,7 +699,7 @@ def check_wheels(wheels: list[Path], expected_platform: str, expected_python: st
 Update CLI parsing:
 
 ```python
-parser.add_argument("--expected-python", default="cp310")
+parser.add_argument("--expected-python", default="cp311")
 errors = check_wheels(
     [Path(wheel) for wheel in args.wheels],
     args.expected_platform,
@@ -748,7 +748,7 @@ verify_png_bytes(raw_output)
 Change `.github/workflows/wheels.yml` wheel tag step:
 
 ```yaml
-run: python scripts/check_wheel_tags.py --expected-python cp310 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
+run: python scripts/check_wheel_tags.py --expected-python cp311 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
 ```
 
 - [ ] **Step 6: Run tests and local smoke script**
@@ -767,7 +767,7 @@ Expected: tests pass; smoke script passes against the editable install.
 In `docs/process/release-artifacts.md`, add:
 
 ```markdown
-Wheel tag validation requires the Python tag `cp310`, ABI tag `abi3`, and the
+Wheel tag validation requires the Python tag `cp311`, ABI tag `abi3`, and the
 expected platform tag for each matrix entry.
 ```
 
@@ -1047,7 +1047,7 @@ git push origin main
 Replace the README install block with:
 
 ```markdown
-Release artifacts use PyO3 ABI3 wheels for Python 3.10 and newer. Until PyPI
+Release artifacts use PyO3 ABI3 wheels for Python 3.11 and newer. Until PyPI
 publishing is enabled, install from a built wheel artifact or build locally with
 `make wheel`.
 ```
@@ -1302,7 +1302,7 @@ Run:
 
 ```bash
 make wheel
-python scripts/check_wheel_tags.py --expected-python cp310 --expected-platform manylinux_2_34_x86_64 target/wheels/*.whl
+python scripts/check_wheel_tags.py --expected-python cp311 --expected-platform manylinux_2_34_x86_64 target/wheels/*.whl
 python - <<'PY'
 from pathlib import Path
 from zipfile import ZipFile

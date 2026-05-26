@@ -42,13 +42,12 @@ When `output` is omitted, upstream writes in place through `OutFile::Path` with
 
 `optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
 `memoryview`. `bytes` and `bytearray` inputs are copied directly into owned Rust
-memory. `memoryview` and other objects exposing a `tobytes()` method are first
-materialized as Python `bytes`, then copied into owned Rust memory. This extra
-copy keeps the handoff simple with the pinned PyO3 ABI3 configuration, where the
-PyO3 buffer API is not available. The wrapper owns the copied bytes before
-releasing the GIL, then calls `oxipng::optimize_from_memory` and returns
-optimized PNG bytes. See the upstream `oxipng` crate documentation for optimizer
-behavior after this handoff.
+memory. Objects exposing a Python buffer compatible with `u8`, including
+`memoryview`, are copied once through PyO3's buffer API. Other objects exposing a
+`tobytes()` method are materialized as Python `bytes`, then copied into owned
+Rust memory. The wrapper owns the copied bytes before releasing the GIL, then
+calls `oxipng::optimize_from_memory` and returns optimized PNG bytes. See the
+upstream `oxipng` crate documentation for optimizer behavior after this handoff.
 
 File-only options such as `backup` and `preserve_attrs` are rejected for memory
 optimization.
@@ -75,8 +74,8 @@ The wrapper keeps caller mistakes distinct from image processing failures:
 
 ## Wheel Strategy
 
-PyO3 is configured with `abi3-py310`, so release wheels use one ABI3 extension
-per supported platform for Python 3.10 and newer. The wheel workflow uploads
+PyO3 is configured with `abi3-py311`, so release wheels use one ABI3 extension
+per supported platform for Python 3.11 and newer. The wheel workflow uploads
 artifacts only in this phase; it does not publish to PyPI and does not build an
 sdist.
 

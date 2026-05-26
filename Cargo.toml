@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 indexmap = "2.14.0"
 oxi = { package = "oxipng", version = "=10.1.1", default-features = false, features = ["parallel", "zopfli"] }
-pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py310"] }
+pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py311"] }
 
 [profile.release]
 lto = "fat"

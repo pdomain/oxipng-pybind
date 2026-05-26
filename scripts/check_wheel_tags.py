@@ -21,7 +21,7 @@ def parse_wheel_tags(path: Path) -> tuple[str, str, str]:
 
 
 def check_wheels(
-    wheels: list[Path], expected_platform: str, expected_python: str = "cp310"
+    wheels: list[Path], expected_platform: str, expected_python: str = "cp311"
 ) -> list[str]:
     """Return validation errors for wheel tags."""
     if not wheels:
@@ -50,7 +50,7 @@ def check_wheels(
 def main() -> int:
     """Run the wheel tag checker."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--expected-python", default="cp310")
+    parser.add_argument("--expected-python", default="cp311")
     parser.add_argument("--expected-platform", required=True)
     parser.add_argument("wheels", nargs="*")
     args = parser.parse_args()

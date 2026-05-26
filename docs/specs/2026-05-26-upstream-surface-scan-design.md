@@ -107,6 +107,9 @@ For upstream `oxipng` 10.1.1, scan these Rust items:
   - `RowFilter`
 - `src/headers.rs`
   - `StripChunks`
+- `src/colors.rs`
+  - `ColorType`
+  - `BitDepth`
 - `src/deflate/mod.rs`
   - `Deflater`
 - `src/lib.rs`

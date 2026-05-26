@@ -66,23 +66,29 @@ def parse_struct_fields(source: str, name: str) -> list[str]:
 def parse_enum_variants(source: str, name: str) -> list[str]:
     """Parse public enum variant names from a Rust enum."""
     block = extract_block(source, rf"pub\s+enum\s+{name}")
-    variants: list[str] = []
+    text = "\n".join(
+        line.split("//", 1)[0].strip()
+        for line in _strip_attributes(block.splitlines())
+        if line.split("//", 1)[0].strip() and not line.split("//", 1)[0].strip().startswith("///")
+    )
+    chunks: list[str] = []
+    start = 0
     depth = 0
-    pending: str | None = None
-    for raw_line in _strip_attributes(block.splitlines()):
-        line = raw_line.split("//", 1)[0].strip()
-        if not line or line.startswith("///"):
-            continue
-        if depth == 0:
-            match = re.match(r"([A-Z][A-Za-z0-9_]*)", line)
-            if match:
-                variant = match.group(1)
-                pending = variant
-                variants.append(variant)
-        depth += line.count("{") + line.count("(") - line.count("}") - line.count(")")
-        if depth <= 0 or (line.endswith(",") and pending is not None):
-            pending = None
-            depth = 0
+    for index, char in enumerate(text):
+        if char in "{(<[":
+            depth += 1
+        elif char in "})>]":
+            depth -= 1
+        elif char == "," and depth == 0:
+            chunks.append(text[start:index])
+            start = index + 1
+    chunks.append(text[start:])
+
+    variants: list[str] = []
+    for chunk in chunks:
+        match = re.match(r"\s*([A-Z][A-Za-z0-9_]*)", chunk)
+        if match:
+            variants.append(match.group(1))
     if not variants:
         raise ValueError(f"no variants found for {name}")
     return variants
@@ -101,6 +107,7 @@ def parse_upstream_surface(upstream: Path) -> UpstreamSurface:
     options_rs = (src / "options.rs").read_text(encoding="utf-8")
     filters_rs = (src / "filters.rs").read_text(encoding="utf-8")
     headers_rs = (src / "headers.rs").read_text(encoding="utf-8")
+    colors_rs = (src / "colors.rs").read_text(encoding="utf-8")
     deflater_rs = (src / "deflate/mod.rs").read_text(encoding="utf-8")
     lib_rs = (src / "lib.rs").read_text(encoding="utf-8")
 
@@ -116,6 +123,8 @@ def parse_upstream_surface(upstream: Path) -> UpstreamSurface:
             "RowFilter": parse_enum_variants(filters_rs, "RowFilter"),
             "StripChunks": parse_enum_variants(headers_rs, "StripChunks"),
             "Deflater": parse_enum_variants(deflater_rs, "Deflater"),
+            "ColorType": parse_enum_variants(colors_rs, "ColorType"),
+            "BitDepth": parse_enum_variants(colors_rs, "BitDepth"),
         },
         functions=functions,
     )

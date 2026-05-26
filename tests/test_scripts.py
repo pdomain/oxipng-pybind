@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from scripts import ai_filter_log, check_wheel_tags, smoke_wheel
+from scripts import ai_filter_log, check_wheel_tags, scan_upstream_surface, smoke_wheel
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -68,3 +68,44 @@ def test_ai_filter_log_reports_missing_file(
 
     assert ai_filter_log.main() == 1
     assert "log file not found" in capsys.readouterr().err
+
+
+def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -> None:
+    upstream = tmp_path / "upstream"
+    src = upstream / "src"
+    (src / "deflate").mkdir(parents=True)
+    (src / "options.rs").write_text("pub struct Options { pub force: bool }\n", encoding="utf-8")
+    (src / "filters.rs").write_text(
+        "pub enum FilterStrategy { MinSum }\npub enum RowFilter { None }\n",
+        encoding="utf-8",
+    )
+    (src / "headers.rs").write_text("pub enum StripChunks { None }\n", encoding="utf-8")
+    (src / "deflate/mod.rs").write_text("pub enum Deflater { Libdeflater }\n", encoding="utf-8")
+    (src / "lib.rs").write_text(
+        "pub fn optimize() {}\npub fn optimize_from_memory() {}\n",
+        encoding="utf-8",
+    )
+    (src / "colors.rs").write_text(
+        "pub enum ColorType { Grayscale, RGB, NewColor }\n"
+        "pub enum BitDepth { One = 1, Eight = 8, ThirtyTwo = 32 }\n",
+        encoding="utf-8",
+    )
+    manifest = {
+        "upstream_version": "test",
+        "options": {"exposed": {"force": "Options.force"}},
+        "functions": {"exposed": ["optimize", "optimize_from_memory"]},
+        "enums": {
+            "FilterStrategy": {"unexposed": {"MinSum": "known"}},
+            "RowFilter": {"unexposed": {"None": "known"}},
+            "StripChunks": {"unexposed": {"None": "known"}},
+            "Deflater": {"unexposed": {"Libdeflater": "known"}},
+            "ColorType": {"unexposed": {"Grayscale": "known", "RGB": "known"}},
+            "BitDepth": {"unexposed": {"One": "known", "Eight": "known"}},
+        },
+    }
+
+    surface = scan_upstream_surface.parse_upstream_surface(upstream)
+    report = scan_upstream_surface.compare_surface(surface, manifest)
+
+    assert report["enums"]["ColorType"]["new_upstream_variants"] == ["NewColor"]
+    assert report["enums"]["BitDepth"]["new_upstream_variants"] == ["ThirtyTwo"]

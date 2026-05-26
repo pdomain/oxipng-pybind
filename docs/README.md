@@ -10,3 +10,5 @@
 - [Release artifacts](process/release-artifacts.md)
 - [Upstream bump process](process/upstream-bumps.md)
 - [Lint deviations](conventions/lint-deviations.md)
+- [Remaining work and pyoxipng gaps](plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md)
+- [Archived planning docs](archive/README.md)

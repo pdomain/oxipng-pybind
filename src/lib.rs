@@ -83,6 +83,31 @@ fn parse_timeout(value: &Bound<'_, PyAny>) -> PyResult<Option<Duration>> {
     })
 }
 
+fn parse_max_decompressed_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usize>> {
+    if value.is_none() {
+        return Ok(None);
+    }
+
+    if value.is_instance_of::<PyBool>() {
+        return Err(PyTypeError::new_err(
+            "max_decompressed_size must be a non-negative integer or None",
+        ));
+    }
+
+    let parsed: i128 = value.extract().map_err(|_| {
+        PyTypeError::new_err("max_decompressed_size must be a non-negative integer or None")
+    })?;
+    if parsed < 0 {
+        return Err(PyValueError::new_err(
+            "max_decompressed_size must be a non-negative integer or None",
+        ));
+    }
+
+    usize::try_from(parsed).map(Some).map_err(|_| {
+        PyValueError::new_err("max_decompressed_size must be a non-negative integer or None")
+    })
+}
+
 fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
     PyErr::warn(
         py,
@@ -321,6 +346,7 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
     let mut scale_16 = None;
     let mut fast_evaluation = None;
     let mut timeout = None;
+    let mut max_decompressed_size = None;
 
     if let Some(dict) = kwargs {
         for (key, value) in dict.iter() {
@@ -383,6 +409,9 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
                 "timeout" => {
                     timeout = parse_timeout(&value)?;
                 }
+                "max_decompressed_size" => {
+                    max_decompressed_size = parse_max_decompressed_size(&value)?;
+                }
                 "backup" | "preserve_attrs" => {
                     return Err(PyTypeError::new_err(format!("unsupported option: {key}")));
                 }
@@ -419,6 +448,9 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
         options.fast_evaluation = value;
     }
     options.timeout = timeout;
+    if let Some(value) = max_decompressed_size {
+        options.max_decompressed_size = Some(value);
+    }
     if let Some(value) = interlace {
         options.interlace = value;
     }
@@ -469,7 +501,7 @@ fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
 #[pyo3(
-    text_signature = "(input, output=None, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
+    text_signature = "(input, output=None, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, max_decompressed_size=None)"
 )]
 fn optimize(
     py: Python<'_>,
@@ -964,7 +996,7 @@ impl PyRawImage {
     /// Return optimized PNG bytes.
     #[pyo3(signature = (**kwargs))]
     #[pyo3(
-        text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
+        text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, max_decompressed_size=None)"
     )]
     fn create_optimized_png(
         &self,
@@ -981,7 +1013,7 @@ impl PyRawImage {
 #[pyfunction]
 #[pyo3(signature = (data, **kwargs))]
 #[pyo3(
-    text_signature = "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
+    text_signature = "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, max_decompressed_size=None)"
 )]
 fn optimize_from_memory(
     py: Python<'_>,

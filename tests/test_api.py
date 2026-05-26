@@ -71,7 +71,7 @@ def test_optimize_signature_matches_supported_api() -> None:
         "filter=None, fix_errors=False, force=False, backup=False, preserve_attrs=False, "
         "optimize_alpha=None, bit_depth_reduction=None, color_type_reduction=None, "
         "palette_reduction=None, grayscale_reduction=None, idat_recoding=None, scale_16=None, "
-        "fast_evaluation=None, timeout=None)"
+        "fast_evaluation=None, timeout=None, max_decompressed_size=None)"
     )
 
 
@@ -80,7 +80,8 @@ def test_optimize_from_memory_signature_matches_supported_api() -> None:
         "(data, *, level=2, interlace=None, strip=None, deflate=None, filter=None, "
         "fix_errors=False, force=False, optimize_alpha=None, bit_depth_reduction=None, "
         "color_type_reduction=None, palette_reduction=None, grayscale_reduction=None, "
-        "idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None)"
+        "idat_recoding=None, scale_16=None, fast_evaluation=None, timeout=None, "
+        "max_decompressed_size=None)"
     )
 
 
@@ -348,6 +349,52 @@ def test_advanced_bool_none_optimizes_memory_without_warning(png_bytes: bytes) -
 
     assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
     assert_readable_png_bytes(output)
+
+
+@pytest.mark.parametrize("value", [None, 10_000_000])
+def test_max_decompressed_size_optimizes_memory_without_warning(
+    png_bytes: bytes,
+    value: int | None,
+) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output = optimize_from_memory(png_bytes, max_decompressed_size=value)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output)
+
+
+def test_max_decompressed_size_optimizes_file_without_warning(png_path: Path) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        optimize(png_path, max_decompressed_size=10_000_000)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_path(png_path)
+
+
+def test_max_decompressed_size_optimizes_raw_image_without_warning() -> None:
+    raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output = raw.create_optimized_png(max_decompressed_size=10_000_000)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output)
+
+
+@pytest.mark.parametrize(
+    ("value", "error_type"),
+    [(True, TypeError), (-1, ValueError), ("bad", TypeError)],
+)
+def test_max_decompressed_size_rejects_invalid_values(
+    png_bytes: bytes,
+    value: object,
+    error_type: type[Exception],
+) -> None:
+    with pytest.raises(error_type, match="max_decompressed_size"):
+        cast("Any", optimize_from_memory)(png_bytes, max_decompressed_size=value)
 
 
 @pytest.mark.parametrize("value", [float("inf"), 1e300])

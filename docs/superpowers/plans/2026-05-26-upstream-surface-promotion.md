@@ -136,7 +136,7 @@ Expected: commit succeeds.
 - Modify: `tests/test_api.py`
 - Modify: `docs/superpowers/plans/2026-05-26-upstream-surface-promotion.md`
 
-- [ ] **Step 1: Add failing tests for `max_decompressed_size`**
+- [x] **Step 1: Add failing tests for `max_decompressed_size`**
 
 Add tests that:
 
@@ -149,7 +149,7 @@ Add tests that:
   - `-1` -> `ValueError`
   - `"bad"` -> `TypeError`
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run:
 
@@ -159,7 +159,7 @@ uv run --group dev pytest tests/test_api.py -q
 
 Expected: tests fail with `unsupported option: max_decompressed_size`.
 
-- [ ] **Step 3: Implement Rust parsing**
+- [x] **Step 3: Implement Rust parsing**
 
 In `src/lib.rs`:
 
@@ -171,13 +171,13 @@ In `src/lib.rs`:
 - Store parsed value in `parse_options`.
 - Set `options.max_decompressed_size` when present.
 
-- [ ] **Step 4: Update stubs and signatures**
+- [x] **Step 4: Update stubs and signatures**
 
 In `oxipng/__init__.pyi`, ensure `max_decompressed_size` is present on all three option-bearing APIs.
 
 In `src/lib.rs`, update text signatures to include `max_decompressed_size=None`.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 Run:
 
@@ -188,7 +188,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -q
 
 Expected: tests pass.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 Run:
 

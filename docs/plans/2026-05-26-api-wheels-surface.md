@@ -741,7 +741,7 @@ Expected: workflow helper tests pass.
 
 - Modify as needed based on verification failures only.
 
-- [ ] **Step 1: Run full setup from a clean venv**
+- [x] **Step 1: Run full setup from a clean venv**
 
 Run:
 
@@ -753,7 +753,7 @@ make setup
 Expected: setup installs or reuses Rust, installs cargo-deny, syncs Python dev
 deps, builds editable extension, and installs pre-commit hooks.
 
-- [ ] **Step 2: Run full CI**
+- [x] **Step 2: Run full CI**
 
 Run:
 
@@ -764,7 +764,7 @@ make ci
 Expected: all Rust, Python, docs, cargo-deny, tests, and wheel build checks
 pass.
 
-- [ ] **Step 3: Run full pre-commit**
+- [x] **Step 3: Run full pre-commit**
 
 Run:
 
@@ -774,7 +774,7 @@ make pre-commit-check
 
 Expected: all hooks pass.
 
-- [ ] **Step 4: Run explicit format check**
+- [x] **Step 4: Run explicit format check**
 
 Run:
 
@@ -784,7 +784,7 @@ make format-check
 
 Expected: Rust and Python formatting checks pass.
 
-- [ ] **Step 5: Inspect wheel contents**
+- [x] **Step 5: Inspect wheel contents**
 
 Run:
 
@@ -794,7 +794,7 @@ python -m zipfile -l target/wheels/*.whl | grep -E '(_oxipng|oxipng/__init__\\.p
 
 Expected: wheel contains native extension, typing stub, and `py.typed`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 

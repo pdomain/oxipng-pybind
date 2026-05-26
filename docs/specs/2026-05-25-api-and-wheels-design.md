@@ -284,3 +284,8 @@ Upstream bump tests cover:
 - PyPI Trusted Publishing after the artifact-only wheel workflow is proven.
 - Optional sdist publishing only if fallback builds requiring Rust are
   intentionally accepted.
+
+## Implementation Notes
+
+- Public API coverage across Python 3.10 through 3.14 is implemented by
+  `.github/workflows/api-matrix.yml`.

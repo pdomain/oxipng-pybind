@@ -12,6 +12,10 @@ upstream `oxipng` releases.
 pip install oxipng-pybind
 ```
 
+Release artifacts use PyO3 ABI3 wheels for Python 3.10 and newer. The current
+release workflow builds and uploads wheel artifacts before PyPI publishing is
+enabled.
+
 ## Supported API
 
 The distribution is named `oxipng-pybind`, but the import module is `oxipng`.

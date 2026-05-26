@@ -1,0 +1,34 @@
+name: api-matrix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  public-api:
+    name: public api py${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.11.12
+      - uses: dtolnay/rust-toolchain@1.85.1
+      - name: Sync dependencies
+        run: uv sync --group dev
+      - name: Build editable extension
+        run: uv run --group dev maturin develop
+      - name: Run public API tests
+        run: uv run --group dev pytest tests/test_api.py -v -ra

@@ -29,7 +29,8 @@ def test_invalid_cpython_specific_abi_tag() -> None:
         "manylinux_2_34_x86_64",
     )
 
-    assert "non-ABI3 tag cp313-cp313" in errors[0]
+    assert any("uses Python tag cp313, expected cp310" in error for error in errors)
+    assert any("non-ABI3 tag cp313-cp313" in error for error in errors)
 
 
 def test_missing_expected_platform() -> None:

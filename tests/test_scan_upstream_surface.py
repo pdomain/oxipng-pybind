@@ -86,6 +86,11 @@ def test_parse_upstream_surface_from_fixture_tree(tmp_path: Path) -> None:
         "pub enum StripChunks { None, Strip(IndexSet<[u8; 4]>), Safe, Keep(IndexSet<[u8; 4]>), All, }",
         encoding="utf-8",
     )
+    (src / "colors.rs").write_text(
+        "pub enum ColorType { Grayscale, RGB, Indexed, GrayscaleAlpha, RGBA }\n"
+        "pub enum BitDepth { One = 1, Two = 2, Four = 4, Eight = 8, Sixteen = 16 }\n",
+        encoding="utf-8",
+    )
     (src / "deflate/mod.rs").write_text(
         "pub enum Deflater { Libdeflater { compression: u8 }, Zopfli(ZopfliOptions), }",
         encoding="utf-8",
@@ -104,6 +109,8 @@ pub fn optimize_from_memory(data: &[u8], opts: &Options) -> PngResult<Vec<u8>> {
     surface = parse_upstream_surface(tmp_path)
 
     assert surface.options_fields == ["fix_errors"]
+    assert surface.enums["ColorType"] == ["Grayscale", "RGB", "Indexed", "GrayscaleAlpha", "RGBA"]
+    assert surface.enums["BitDepth"] == ["One", "Two", "Four", "Eight", "Sixteen"]
     assert "optimize_from_memory" in surface.functions
 
 

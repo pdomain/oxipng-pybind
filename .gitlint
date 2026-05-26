@@ -1,0 +1,9 @@
+[general]
+ignore=body-is-missing
+# Match the workspace 100-char convention while keeping subjects compact.
+[title-max-length]
+line-length=72
+[title-must-not-contain-word]
+words=WIP
+[body-max-line-length]
+line-length=100

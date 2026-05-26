@@ -41,3 +41,9 @@ the underlying issue before adding entries here.
 ## Security Advisory Ignores
 
 No RustSec advisories are ignored. `deny.toml` keeps `[advisories].ignore` empty.
+
+## Gitlint Ignores
+
+| Rule | Location | Justification |
+| --- | --- | --- |
+| `body-is-missing` | `.gitlint` | Workspace conventional commits often use concise one-line messages; subject length, `WIP`, and body line length rules remain enforced. |

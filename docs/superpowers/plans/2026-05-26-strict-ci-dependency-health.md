@@ -127,6 +127,8 @@ git push origin main
 
 - Modify: `.pre-commit-config.yaml`
 - Modify: `Makefile`
+- Create: `.gitlint`
+- Modify: `docs/conventions/lint-deviations.md`
 
 - [x] **Step 1: Update pre-commit hook versions and install types**
 
@@ -234,6 +236,25 @@ Add this block at the end:
         stages: [commit-msg]
 ```
 
+- [x] **Step 6a: Add workspace gitlint configuration**
+
+Create `.gitlint` so the commit-msg hook follows the workspace convention:
+
+```ini
+[general]
+ignore=body-is-missing
+# Match the workspace 100-char convention while keeping subjects compact.
+[title-max-length]
+line-length=72
+[title-must-not-contain-word]
+words=WIP
+[body-max-line-length]
+line-length=100
+```
+
+Document the `body-is-missing` deviation in
+`docs/conventions/lint-deviations.md`.
+
 - [x] **Step 7: Ensure setup installs commit-msg hooks**
 
 In `Makefile`, change:
@@ -273,7 +294,7 @@ Expected: all hooks pass.
 Run:
 
 ```bash
-git add .pre-commit-config.yaml Makefile
+git add .pre-commit-config.yaml .gitlint Makefile docs/conventions/lint-deviations.md
 git commit -m "ci: add strict pre-commit hooks"
 git push origin main
 ```

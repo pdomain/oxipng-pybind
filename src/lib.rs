@@ -250,6 +250,7 @@ fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
     Ok(backup)
 }
 
+/// Optimize a PNG file on disk.
 #[pyfunction]
 #[pyo3(signature = (input, output=None, **kwargs))]
 #[pyo3(
@@ -556,6 +557,7 @@ fn parse_color_type(
     }
 }
 
+/// Raw image data for creating optimized PNG bytes.
 #[pyclass(name = "RawImage")]
 struct PyRawImage {
     inner: oxi::RawImage,
@@ -585,6 +587,7 @@ impl PyRawImage {
         Ok(Self { inner })
     }
 
+    /// Add an auxiliary PNG chunk.
     fn add_png_chunk(&mut self, name: &Bound<'_, PyAny>, data: &Bound<'_, PyAny>) -> PyResult<()> {
         let name = bytes_like_to_vec(name)?;
         let data = bytes_like_to_vec(data)?;
@@ -596,12 +599,14 @@ impl PyRawImage {
         Ok(())
     }
 
+    /// Add an ICC profile.
     fn add_icc_profile(&mut self, data: &Bound<'_, PyAny>) -> PyResult<()> {
         let data = bytes_like_to_vec(data)?;
         self.inner.add_icc_profile(&data);
         Ok(())
     }
 
+    /// Return optimized PNG bytes.
     #[pyo3(signature = (**kwargs))]
     #[pyo3(
         text_signature = "(*, level=2, interlace=None, strip=None, deflate=None, filter=None, fix_errors=False, force=False)"
@@ -617,6 +622,7 @@ impl PyRawImage {
     }
 }
 
+/// Optimize PNG bytes in memory.
 #[pyfunction]
 #[pyo3(signature = (data, **kwargs))]
 #[pyo3(

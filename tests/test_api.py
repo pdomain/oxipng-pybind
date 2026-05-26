@@ -73,6 +73,15 @@ def test_optimize_from_memory_signature_matches_supported_api() -> None:
     )
 
 
+def test_public_callables_expose_runtime_docstrings() -> None:
+    assert optimize.__doc__ == "Optimize a PNG file on disk."
+    assert optimize_from_memory.__doc__ == "Optimize PNG bytes in memory."
+    assert RawImage.__doc__ == "Raw image data for creating optimized PNG bytes."
+    assert RawImage.add_png_chunk.__doc__ == "Add an auxiliary PNG chunk."
+    assert RawImage.add_icc_profile.__doc__ == "Add an ICC profile."
+    assert RawImage.create_optimized_png.__doc__ == "Return optimized PNG bytes."
+
+
 def test_optimize_in_place_with_high_compression_level(png_path: Path) -> None:
     optimize(png_path, level=6)
 

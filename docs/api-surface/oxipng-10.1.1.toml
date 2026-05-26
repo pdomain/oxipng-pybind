@@ -1,10 +1,17 @@
 upstream_version = "10.1.1"
+manifest_scope = "Tracks upstream oxipng surface mapped or intentionally not mapped by this package. Python-only options such as backup and preserve_attrs are documented in stubs and usage docs."
 
 [functions]
 exposed = ["optimize", "optimize_from_memory"]
 
 [classes]
 exposed = ["RawImage"]
+
+[classes.RawImage.methods]
+constructor = "RawImage(width, height, color_type, bit_depth, data, *, palette=None, transparent=None)"
+create_optimized_png = "RawImage.create_optimized_png(**memory_options)"
+add_png_chunk = "RawImage.add_png_chunk(name, data)"
+add_icc_profile = "RawImage.add_icc_profile(data)"
 
 [options.exposed]
 level = "Options::from_preset"

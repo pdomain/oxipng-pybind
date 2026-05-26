@@ -61,7 +61,7 @@ class RawImage:
         palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None,
         transparent: int | tuple[int, int, int] | None = None,
     ) -> None:
-        """Create an optimized PNG from raw pixel data."""
+        """Create a raw image from packed pixel data."""
 
     def add_png_chunk(self, name: BytesLike, data: BytesLike) -> None:
         """Add an auxiliary PNG chunk."""

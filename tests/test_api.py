@@ -24,6 +24,16 @@ from oxipng import (
 Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
 
 
+class CustomPathLike:
+    path: Path
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def __fspath__(self) -> str:
+        return str(self.path)
+
+
 def assert_readable_png_path(path: Path) -> None:
     """Assert that Pillow can read the optimized PNG."""
     with Image.open(path) as image:
@@ -76,6 +86,22 @@ def test_optimize_to_output_path(png_path: Path, tmp_path: Path) -> None:
     assert output.exists()
     assert_readable_png_path(output)
     assert_readable_png_path(png_path)
+
+
+def test_optimize_accepts_string_paths(png_path: Path, tmp_path: Path) -> None:
+    output = tmp_path / "out.png"
+
+    optimize(str(png_path), str(output))
+
+    assert_readable_png_path(output)
+
+
+def test_optimize_accepts_custom_pathlike(png_path: Path, tmp_path: Path) -> None:
+    output = tmp_path / "out.png"
+
+    optimize(CustomPathLike(png_path), CustomPathLike(output))
+
+    assert_readable_png_path(output)
 
 
 def test_optimize_interlace_keep_is_accepted(png_path: Path) -> None:

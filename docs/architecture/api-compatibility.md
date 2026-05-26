@@ -25,7 +25,7 @@ Supported Python surface:
 
 Unsupported compatibility surface:
 
-- raw pixel buffer APIs
+- pyoxipng-specific raw buffer helpers beyond `RawImage`
 - arbitrary chunk keep/strip lists
 - stdin/stdout behavior
 - automatic exposure of every upstream `Options` field

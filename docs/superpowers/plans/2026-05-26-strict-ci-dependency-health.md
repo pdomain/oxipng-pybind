@@ -419,6 +419,7 @@ In `Makefile`, update `ci`:
 ```make
 ci: ## Run full CI
     @$(MAKE) --no-print-directory setup
+    @$(MAKE) --no-print-directory pre-commit-check
     @$(MAKE) --no-print-directory lint
     @$(MAKE) --no-print-directory rust-deny
     @$(MAKE) --no-print-directory py-audit
@@ -477,6 +478,7 @@ uv sync --locked --group dev
 cargo deny check
 uv run --group dev pip-audit --local
 make md-lint
+make dependency-audit
 ```
 
 Expected: all commands pass. If `pip-audit` reports a vulnerability, update the affected dependency and rerun the commands before committing.

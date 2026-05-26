@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- `pyproject.toml`: Python lint/type/test/audit dependency groups, basedpyright settings, and pytest coverage defaults.
+- `pyproject.toml`: Python lint/type/test/audit dependency groups, basedpyright settings, and strict pytest defaults.
 - `.pre-commit-config.yaml`: local hooks for formatting, linting, basedpyright type checking, lock sync, secret scan, and commit message linting.
 - `Makefile`: canonical local and CI targets for lint, typecheck, tests, coverage, audits, dependency refresh, and AI-filtered runs.
 - `deny.toml`: Rust dependency advisory/license/source policy.

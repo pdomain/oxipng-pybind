@@ -36,7 +36,7 @@ def latest_upstream_version() -> str:
 
 def update_pyproject_toml(path: Path, version: str) -> None:
     """Update the Python package version."""
-    import tomlkit  # noqa: PLC0415
+    import tomlkit  # noqa: PLC0415  # optional automation dependency is loaded only here
 
     document = tomlkit.parse(path.read_text(encoding="utf-8"))
     document["project"]["version"] = version
@@ -45,7 +45,7 @@ def update_pyproject_toml(path: Path, version: str) -> None:
 
 def update_cargo_toml(path: Path, version: str) -> None:
     """Update the Rust package and upstream dependency versions."""
-    import tomlkit  # noqa: PLC0415
+    import tomlkit  # noqa: PLC0415  # optional automation dependency is loaded only here
 
     document = tomlkit.parse(path.read_text(encoding="utf-8"))
     document["package"]["version"] = version

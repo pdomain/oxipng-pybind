@@ -30,7 +30,7 @@
 - Modify: `pyproject.toml`
 - Modify: `Makefile`
 
-- [ ] **Step 1: Update Ruff target to Python 3.11**
+- [x] **Step 1: Update Ruff target to Python 3.11**
 
 In `pyproject.toml`, change:
 
@@ -48,7 +48,7 @@ line-length = 100
 target-version = "py311"
 ```
 
-- [ ] **Step 2: Add coverage to default pytest options**
+- [x] **Step 2: Add coverage to default pytest options**
 
 In `pyproject.toml`, replace the pytest `addopts` block with:
 
@@ -70,7 +70,7 @@ filterwarnings = ["error"]
 
 Do not add `htmlcov` to default pytest output. The terminal report is enough for CI and avoids unnecessary artifacts.
 
-- [ ] **Step 3: Add an explicit coverage Make target**
+- [x] **Step 3: Add an explicit coverage Make target**
 
 In `Makefile`, add `coverage` to the `.PHONY` list:
 
@@ -86,7 +86,7 @@ coverage: ## Run pytest with branch coverage and HTML report
     uv run --group dev pytest --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=80
 ```
 
-- [ ] **Step 4: Run focused validation**
+- [x] **Step 4: Run focused validation**
 
 Run:
 
@@ -100,7 +100,7 @@ uv run --no-sync --group dev pytest -q
 
 Expected: all commands pass, and pytest reports coverage at or above 80%.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 

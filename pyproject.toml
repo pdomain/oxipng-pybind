@@ -75,13 +75,18 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
+    "--cov=oxipng",
+    "--cov=scripts",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-fail-under=80",
 ]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -112,21 +117,25 @@ select = [
     "W",
 ]
 ignore = [
-    "COM812",
-    "D100",
-    "D104",
-    "D107",
-    "D203",
-    "D212",
-    "E501",
-    "TRY003",
+    "COM812", # Formatter owns trailing-comma layout; recommended by Ruff formatter docs.
+    "D100", # Public package/module docs live in README/docs; file-level docstrings add noise here.
+    "D104", # Package docs live in README/docs; __init__ exports are documented by stubs.
+    "D107", # __init__ behavior is covered by class/function docs and type stubs.
+    "D203", # Incompatible with D211; Google docstring convention uses D211.
+    "D212", # Incompatible with D213; Google docstring convention uses D213.
+    "E501", # Ruff formatter owns line wrapping; long literals and URLs stay readable.
+    "TRY003", # Small wrapper errors are clearer inline than as single-use custom exception classes.
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+# Tests intentionally use asserts, fixtures, magic sample values, and descriptive test names
+# instead of production-style docstrings and full annotations.
 "tests/**/*.py" = ["ANN", "D", "PLR2004", "S101", "S108"]
+# Helper scripts are small command-line tools: docs live in command/help text, subprocess and
+# URL calls are the intended behavior, and printing is their CLI interface.
 "scripts/*.py" = ["D", "S310", "S603", "T201"]
 
 [tool.basedpyright]
@@ -137,7 +146,9 @@ failOnWarnings = true
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"
+# These remain disabled because the wrapper scripts parse dynamic JSON/TOML and many tests call
+# constructors only to assert validation errors. Narrowing every fixture and assigning every
+# intentionally unused return would make the tests less readable without improving API safety.
 reportAny = "none"
 reportExplicitAny = "none"
-reportMissingTypeStubs = "none"
 reportUnusedCallResult = "none"

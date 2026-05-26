@@ -8,3 +8,4 @@
 - [Options surface](architecture/options-surface.md)
 - [Release artifacts](process/release-artifacts.md)
 - [Upstream bump process](process/upstream-bumps.md)
+- [Lint deviations](conventions/lint-deviations.md)

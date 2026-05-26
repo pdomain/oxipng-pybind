@@ -16,7 +16,7 @@ $(_goals):
 
 else
 
-.PHONY: help bootstrap-rust setup develop test test-rust test-py lint lint-fix py-lint py-lint-fix \
+.PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
 	rust-deny pre-commit-check build wheel clean clean-cache reset remove-venv \
 	upgrade-deps ci
@@ -67,6 +67,10 @@ test-rust: ## Run Rust tests
 test-py: ## Run Python tests against editable extension
 	uv run --group dev maturin develop --quiet
 	uv run --group dev pytest -v -ra -n auto
+
+coverage: ## Run pytest with branch coverage and HTML report
+	uv run --group dev maturin develop --quiet
+	uv run --group dev pytest --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=80
 
 lint: rust-lint py-lint md-lint ## Run all lint checks
 

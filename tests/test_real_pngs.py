@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def make_real_png(mode: str) -> bytes:  # noqa: PLR0912
+def make_real_png(mode: str) -> bytes:  # noqa: PLR0912  # fixture needs explicit PNG modes
     """Create a PNG with real encoder output and non-trivial pixels."""
     info = PngImagePlugin.PngInfo()
     info.add_text("Comment", f"real png corpus {mode}")

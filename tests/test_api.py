@@ -3,7 +3,7 @@
 import inspect
 from io import BytesIO
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 import pytest
 from PIL import Image
@@ -20,6 +20,8 @@ from oxipng import (
     optimize,
     optimize_from_memory,
 )
+
+Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
 
 
 def assert_readable_png_path(path: Path) -> None:
@@ -347,7 +349,7 @@ def test_raw_image_rejects_invalid_chunk_names(name: bytes) -> None:
 
 
 def test_raw_image_rejects_too_many_palette_entries_for_bit_depth() -> None:
-    palette = [(index, index, index) for index in range(5)]
+    palette: Palette = [(index, index, index) for index in range(5)]
 
     with pytest.raises(ValueError, match="palette length"):
         RawImage(1, 1, ColorType.indexed, BitDepth.two, bytes([0]), palette=palette)
@@ -421,17 +423,23 @@ def test_raw_image_rejects_rgb_transparency_above_bit_depth_range() -> None:
     "color_type", [ColorType.indexed, ColorType.grayscale_alpha, ColorType.rgba]
 )
 def test_raw_image_rejects_transparency_for_unsupported_color_types(color_type: ColorType) -> None:
-    kwargs: dict[str, object] = {}
-    data = bytes([0])
     if color_type is ColorType.indexed:
-        kwargs["palette"] = [(0, 0, 0)]
+        with pytest.raises(ValueError, match="transparent is not supported"):
+            RawImage(
+                1,
+                1,
+                color_type,
+                BitDepth.eight,
+                bytes([0]),
+                transparent=0,
+                palette=[(0, 0, 0)],
+            )
     elif color_type is ColorType.grayscale_alpha:
-        data = bytes([0, 255])
+        with pytest.raises(ValueError, match="transparent is not supported"):
+            RawImage(1, 1, color_type, BitDepth.eight, bytes([0, 255]), transparent=0)
     else:
-        data = bytes([0, 0, 0, 255])
-
-    with pytest.raises(ValueError, match="transparent is not supported"):
-        RawImage(1, 1, color_type, BitDepth.eight, data, transparent=0, **kwargs)
+        with pytest.raises(ValueError, match="transparent is not supported"):
+            RawImage(1, 1, color_type, BitDepth.eight, bytes([0, 0, 0, 255]), transparent=0)
 
 
 def test_raw_image_invalid_data_length_raises_png_error() -> None:

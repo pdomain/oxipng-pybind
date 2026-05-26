@@ -87,8 +87,12 @@ def test_parse_upstream_surface_from_fixture_tree(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     (src / "colors.rs").write_text(
-        "pub enum ColorType { Grayscale, RGB, Indexed, GrayscaleAlpha, RGBA }\n"
-        "pub enum BitDepth { One = 1, Two = 2, Four = 4, Eight = 8, Sixteen = 16 }\n",
+        "\n".join(
+            [
+                "pub enum ColorType { Grayscale, RGB, Indexed, GrayscaleAlpha, RGBA }",
+                "pub enum BitDepth { One = 1, Two = 2, Four = 4, Eight = 8, Sixteen = 16 }",
+            ]
+        ),
         encoding="utf-8",
     )
     (src / "deflate/mod.rs").write_text(

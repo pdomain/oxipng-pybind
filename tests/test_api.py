@@ -366,7 +366,7 @@ def test_raw_image_rejects_structural_or_dedicated_chunks(name: bytes) -> None:
         raw.add_png_chunk(name, b"payload")
 
 
-@pytest.mark.parametrize("name", [b"abc", b"abcde", b"ab1d", b"ab_d", b"ab\x00d", b"abCd"])
+@pytest.mark.parametrize("name", [b"abc", b"abcde", b"ab1d", b"ab_d", b"ab\x00d", b"abCd", b"tEXE"])
 def test_raw_image_rejects_invalid_chunk_names(name: bytes) -> None:
     raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
 

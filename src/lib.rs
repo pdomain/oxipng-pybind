@@ -400,6 +400,11 @@ fn validate_png_chunk_name(name: [u8; 4]) -> PyResult<[u8; 4]> {
             "chunk name must use a valid reserved bit",
         ));
     }
+    if !name[3].is_ascii_lowercase() {
+        return Err(PyValueError::new_err(
+            "chunk name must be a safe-to-copy ancillary PNG chunk",
+        ));
+    }
     if matches!(
         &name,
         b"IHDR" | b"PLTE" | b"IDAT" | b"IEND" | b"tRNS" | b"iCCP"

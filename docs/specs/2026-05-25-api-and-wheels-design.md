@@ -5,7 +5,7 @@
 `oxipng-pybind` will grow from a focused file optimizer wrapper into a clean,
 oxipng-native Python binding with practical pyoxipng compatibility. This phase
 adds in-memory optimization, a conservative option surface, typed enum helpers,
-wheel artifact builds for Python 3.10+, and documentation that clearly records
+wheel artifact builds for Python 3.11+, and documentation that clearly records
 supported APIs and upstream gaps.
 
 The package identity stays unchanged:
@@ -22,7 +22,7 @@ The package identity stays unchanged:
 - Support a conservative, documented option set.
 - Accept both string values and typed enum values for option-like settings.
 - Build installable wheels so users on supported platforms do not need Rust.
-- Test every public API surface across Python 3.10 through 3.14.
+- Test every public API surface across Python 3.11 through 3.14.
 - Track upstream API surface changes without silently exposing new wrapper APIs.
 
 ## Non-Goals
@@ -152,7 +152,7 @@ Add an artifact-only wheel workflow before enabling PyPI publishing.
 
 Wheel requirements:
 
-- Use PyO3 `abi3-py310` so one wheel per OS/architecture supports Python 3.10+.
+- Use PyO3 `abi3-py311` so one wheel per OS/architecture supports Python 3.11+.
 - Build Linux `x86_64` `manylinux_2_28`.
 - Build Linux `aarch64` `manylinux_2_28`.
 - Build macOS `x86_64`.
@@ -189,8 +189,7 @@ Regular CI remains the main development gate:
 - `cargo-deny`
 - local wheel build
 
-Add Python-version testing for public APIs across Python 3.10, 3.11, 3.12,
-3.13, and 3.14. Since release wheels use `abi3-py310`, this verifies runtime
+Add Python-version testing for public APIs across Python 3.11, 3.12, 3.13, and 3.14. Since release wheels use `abi3-py311`, this verifies runtime
 compatibility without building separate wheels for each Python version.
 
 The upstream bump workflow should:
@@ -277,7 +276,7 @@ Unit and API tests cover:
 - corrupt PNG errors
 - type stubs and `py.typed`
 
-Matrix tests run the public API suite across Python 3.10 through 3.14.
+Matrix tests run the public API suite across Python 3.11 through 3.14.
 
 Wheel smoke tests install the built wheel into a clean environment, import
 `oxipng`, optimize a generated PNG file, optimize generated PNG bytes, and verify
@@ -297,7 +296,7 @@ Upstream bump tests cover:
 
 ## Implementation Notes
 
-- Public API coverage across Python 3.10 through 3.14 is implemented by
+- Public API coverage across Python 3.11 through 3.14 is implemented by
   `.github/workflows/api-matrix.yml`.
 - Linux aarch64 wheel smoke testing is implemented with GitHub's native
   `ubuntu-24.04-arm` runner.

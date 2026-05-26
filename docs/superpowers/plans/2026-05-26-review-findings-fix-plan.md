@@ -39,7 +39,7 @@
 - Modify: `tests/test_api.py`
 - Modify: `tests/test_real_pngs.py`
 
-- [ ] **Step 1: Add failing tests for invalid chunk names**
+- [x] **Step 1: Add failing tests for invalid chunk names**
 
 Add these tests to `tests/test_api.py` near the existing RawImage tests:
 
@@ -60,7 +60,7 @@ def test_raw_image_rejects_invalid_chunk_names(name: bytes) -> None:
         raw.add_png_chunk(name, b"payload")
 ```
 
-- [ ] **Step 2: Add failing tests for indexed palette limits and pixel indices**
+- [x] **Step 2: Add failing tests for indexed palette limits and pixel indices**
 
 Add these tests to `tests/test_api.py`:
 
@@ -84,7 +84,7 @@ def test_raw_image_rejects_indexed_pixels_outside_palette() -> None:
         )
 ```
 
-- [ ] **Step 3: Add failing transparency validation tests**
+- [x] **Step 3: Add failing transparency validation tests**
 
 Add these tests to `tests/test_api.py`:
 
@@ -121,7 +121,7 @@ def test_raw_image_rejects_transparency_for_unsupported_color_types(color_type: 
         RawImage(1, 1, color_type, BitDepth.eight, data, transparent=0, **kwargs)
 ```
 
-- [ ] **Step 4: Add real PNG tests for valid transparency**
+- [x] **Step 4: Add real PNG tests for valid transparency**
 
 Add these tests to `tests/test_real_pngs.py`:
 
@@ -155,7 +155,7 @@ def test_raw_image_rgb_transparency_preserves_pixels() -> None:
     )
 ```
 
-- [ ] **Step 5: Run focused tests and confirm failure**
+- [x] **Step 5: Run focused tests and confirm failure**
 
 Run:
 
@@ -165,7 +165,7 @@ uv run --no-sync --group dev pytest tests/test_api.py tests/test_real_pngs.py -k
 
 Expected: at least the new invalid chunk, indexed palette, indexed pixel, and transparency range tests fail against the current implementation.
 
-- [ ] **Step 6: Implement RawImage validation helpers**
+- [x] **Step 6: Implement RawImage validation helpers**
 
 In `src/lib.rs`, add helpers after `extract_u8`:
 
@@ -263,7 +263,7 @@ fn validate_indexed_pixels(data: &[u8], palette_len: usize, bit_depth: oxi::BitD
 }
 ```
 
-- [ ] **Step 7: Parse bit depth before color type and validate transparent values**
+- [x] **Step 7: Parse bit depth before color type and validate transparent values**
 
 Change `parse_color_type` to accept `bit_depth: oxi::BitDepth`, validate grayscale/RGB transparent values before constructing `oxi::ColorType`, and keep existing unsupported-transparent errors for indexed/alpha types.
 
@@ -352,7 +352,7 @@ fn parse_rgb16_with_depth(
 }
 ```
 
-- [ ] **Step 8: Wire validation into `RawImage.__new__` and `add_png_chunk`**
+- [x] **Step 8: Wire validation into `RawImage.__new__` and `add_png_chunk`**
 
 In `PyRawImage::new`, parse bit depth before color type and validate indexed image data:
 
@@ -374,7 +374,7 @@ let name = validate_png_chunk_name(name)?;
 self.inner.add_png_chunk(name, data);
 ```
 
-- [ ] **Step 9: Run focused tests and full Python tests**
+- [x] **Step 9: Run focused tests and full Python tests**
 
 Run:
 
@@ -385,7 +385,7 @@ uv run --no-sync --group dev pytest tests/test_api.py tests/test_real_pngs.py -v
 
 Expected: all selected tests pass.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 Run:
 
@@ -404,7 +404,7 @@ git push origin main
 - Modify: `src/lib.rs`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Add failing tests for existing backup behavior**
+- [x] **Step 1: Add failing tests for existing backup behavior**
 
 Keep `test_backup_refuses_to_overwrite_existing_backup` and add this symlink-specific test on Unix:
 
@@ -422,7 +422,7 @@ def test_backup_refuses_existing_symlink_backup(png_path: Path, tmp_path: Path) 
     assert target.read_text(encoding="utf-8") == "do not overwrite"
 ```
 
-- [ ] **Step 2: Run focused backup tests**
+- [x] **Step 2: Run focused backup tests**
 
 Run:
 
@@ -432,7 +432,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "backup" -v -ra
 
 Expected: existing tests pass; the new test documents the symlink refusal behavior before the implementation changes.
 
-- [ ] **Step 3: Implement atomic backup helper**
+- [x] **Step 3: Implement atomic backup helper**
 
 In `src/lib.rs`, replace `use std::fs;` with:
 
@@ -462,7 +462,7 @@ fn create_backup(input: &std::path::Path) -> io::Result<PathBuf> {
 }
 ```
 
-- [ ] **Step 4: Release the GIL around backup creation**
+- [x] **Step 4: Release the GIL around backup creation**
 
 Replace the current backup block in `optimize` with:
 
@@ -480,7 +480,7 @@ if parsed.backup {
 }
 ```
 
-- [ ] **Step 5: Run backup and file API tests**
+- [x] **Step 5: Run backup and file API tests**
 
 Run:
 
@@ -490,7 +490,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "backup or optimize_to_
 
 Expected: all selected tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 
@@ -511,7 +511,7 @@ git push origin main
 - Modify: `docs/api-surface/oxipng-10.1.1.toml`
 - Modify: `docs/specs/2026-05-26-upstream-surface-scan-design.md`
 
-- [ ] **Step 1: Add failing scanner test for `ColorType` and `BitDepth`**
+- [x] **Step 1: Add failing scanner test for `ColorType` and `BitDepth`**
 
 Add a test to `tests/test_scripts.py` that creates a fake upstream checkout with `src/colors.rs` and asserts the scanner reports new variants. Use the existing test style in that file.
 
@@ -563,7 +563,7 @@ def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -
     assert report["enums"]["BitDepth"]["new_upstream_variants"] == ["ThirtyTwo"]
 ```
 
-- [ ] **Step 2: Run scanner tests and confirm failure**
+- [x] **Step 2: Run scanner tests and confirm failure**
 
 Run:
 
@@ -573,7 +573,7 @@ uv run --no-sync --group dev pytest tests/test_scripts.py -k "surface" -v -ra
 
 Expected: the new test fails because `ColorType` and `BitDepth` are not parsed.
 
-- [ ] **Step 3: Extend the scanner**
+- [x] **Step 3: Extend the scanner**
 
 In `scripts/scan_upstream_surface.py`, read `colors.rs` in `parse_upstream_surface`:
 
@@ -588,7 +588,7 @@ Add these entries to the `enums` dict:
 "BitDepth": parse_enum_variants(colors_rs, "BitDepth"),
 ```
 
-- [ ] **Step 4: Update the surface design spec**
+- [x] **Step 4: Update the surface design spec**
 
 In `docs/specs/2026-05-26-upstream-surface-scan-design.md`, update the relevant Rust source list so it includes:
 
@@ -596,7 +596,7 @@ In `docs/specs/2026-05-26-upstream-surface-scan-design.md`, update the relevant 
 - `src/colors.rs`: `ColorType`, `BitDepth`
 ```
 
-- [ ] **Step 5: Run scanner against real upstream**
+- [x] **Step 5: Run scanner against real upstream**
 
 Run:
 
@@ -607,7 +607,7 @@ uv run --no-sync --group dev python scripts/scan_upstream_surface.py --update-do
 
 Expected: tests pass; real scan exits 0 and reports no blocking changes for oxipng 10.1.1.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Run:
 
@@ -629,7 +629,7 @@ git push origin main
 - Modify: `.github/workflows/wheels.yml`
 - Modify: `docs/process/release-artifacts.md`
 
-- [ ] **Step 1: Add failing wheel tag tests**
+- [x] **Step 1: Add failing wheel tag tests**
 
 Add tests to `tests/test_scripts.py`:
 
@@ -641,12 +641,12 @@ from scripts import ai_filter_log, bump_upstream, check_wheel_tags, scan_upstrea
 
 ```python
 def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
     errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311")
 
-    assert errors == [f"{wheel.name} uses Python tag cp311, expected cp311"]
+    assert errors == [f"{wheel.name} uses Python tag cp310, expected cp311"]
 
 
 def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
@@ -656,7 +656,7 @@ def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
     assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311") == []
 ```
 
-- [ ] **Step 2: Run focused script tests and confirm failure**
+- [x] **Step 2: Run focused script tests and confirm failure**
 
 Run:
 
@@ -666,7 +666,7 @@ uv run --no-sync --group dev pytest tests/test_scripts.py -k "wheel_tags" -v -ra
 
 Expected: tests fail because `check_wheels` does not accept the expected Python tag argument.
 
-- [ ] **Step 3: Add Python tag validation**
+- [x] **Step 3: Add Python tag validation**
 
 Change `scripts/check_wheel_tags.py`:
 
@@ -707,7 +707,7 @@ errors = check_wheels(
 )
 ```
 
-- [ ] **Step 4: Extend wheel smoke to verify packaged typing and RawImage paths**
+- [x] **Step 4: Extend wheel smoke to verify packaged typing and RawImage paths**
 
 In `scripts/smoke_wheel.py`, add imports:
 
@@ -743,7 +743,7 @@ verify_png_bytes(view_output)
 verify_png_bytes(raw_output)
 ```
 
-- [ ] **Step 5: Update wheel workflow to pass explicit Python tag**
+- [x] **Step 5: Update wheel workflow to pass explicit Python tag**
 
 Change `.github/workflows/wheels.yml` wheel tag step:
 
@@ -751,7 +751,7 @@ Change `.github/workflows/wheels.yml` wheel tag step:
 run: python scripts/check_wheel_tags.py --expected-python cp311 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
 ```
 
-- [ ] **Step 6: Run tests and local smoke script**
+- [x] **Step 6: Run tests and local smoke script**
 
 Run:
 
@@ -762,7 +762,7 @@ uv run --no-sync --group dev python scripts/smoke_wheel.py
 
 Expected: tests pass; smoke script passes against the editable install.
 
-- [ ] **Step 7: Update release artifact docs**
+- [x] **Step 7: Update release artifact docs**
 
 In `docs/process/release-artifacts.md`, add:
 
@@ -771,7 +771,7 @@ Wheel tag validation requires the Python tag `cp311`, ABI tag `abi3`, and the
 expected platform tag for each matrix entry.
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
@@ -792,7 +792,7 @@ git push origin main
 - Modify: `tests/test_scripts.py`
 - Modify: `docs/process/upstream-bumps.md`
 
-- [ ] **Step 1: Add release metadata helper tests**
+- [x] **Step 1: Add release metadata helper tests**
 
 Add tests to `tests/test_scripts.py`:
 
@@ -816,7 +816,7 @@ def test_issue_body_mentions_manual_surface_triage() -> None:
     assert "- [ ] reject as intentionally unsupported" in body
 ```
 
-- [ ] **Step 2: Run bump helper tests**
+- [x] **Step 2: Run bump helper tests**
 
 Run:
 
@@ -826,7 +826,7 @@ uv run --no-sync --group dev pytest tests/test_scripts.py -k "bump or issue_body
 
 Expected: tests pass before workflow refactoring.
 
-- [ ] **Step 3: Reduce default upstream bump permissions**
+- [x] **Step 3: Reduce default upstream bump permissions**
 
 Change `.github/workflows/upstream-bump.yml` top-level permissions to:
 
@@ -837,7 +837,7 @@ permissions:
 
 Move write permissions onto only the PR creation job added in the next step.
 
-- [ ] **Step 4: Split upstream bump into read-only prepare job and write-scoped publish job**
+- [x] **Step 4: Split upstream bump into read-only prepare job and write-scoped publish job**
 
 Restructure `.github/workflows/upstream-bump.yml` into two jobs:
 
@@ -969,7 +969,7 @@ jobs:
 
 When applying this step, preserve the exact current commands from the original workflow for setup, scan, CI, PR creation, issue creation, and auto-merge.
 
-- [ ] **Step 5: Gate auto-merge on wheel checks**
+- [x] **Step 5: Gate auto-merge on wheel checks**
 
 Add this step before `Enable auto-merge` in the `publish` job:
 
@@ -995,7 +995,7 @@ Add this step before `Enable auto-merge` in the `publish` job:
     exit 1
 ```
 
-- [ ] **Step 6: Document action pinning follow-up policy inside the repo**
+- [x] **Step 6: Document action pinning follow-up policy inside the repo**
 
 Add this paragraph to `docs/process/upstream-bumps.md`:
 
@@ -1007,7 +1007,7 @@ release-hardening maintenance, and the resolved SHAs should be reviewed before
 merge.
 ```
 
-- [ ] **Step 7: Run YAML and Python checks**
+- [x] **Step 7: Run YAML and Python checks**
 
 Run:
 
@@ -1019,7 +1019,7 @@ uv run --no-sync --group dev basedpyright
 
 Expected: all commands pass.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
@@ -1042,7 +1042,7 @@ git push origin main
 - Modify: `oxipng/__init__.pyi`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Fix install wording**
+- [x] **Step 1: Fix install wording**
 
 Replace the README install block with:
 
@@ -1054,7 +1054,7 @@ publishing is enabled, install from a built wheel artifact or build locally with
 
 Remove the `pip install oxipng-pybind` code block until publishing is enabled.
 
-- [ ] **Step 2: Fix RawImage compatibility wording**
+- [x] **Step 2: Fix RawImage compatibility wording**
 
 In `docs/architecture/api-compatibility.md`, replace:
 
@@ -1068,7 +1068,7 @@ with:
 - pyoxipng-specific raw buffer helpers beyond `RawImage`
 ```
 
-- [ ] **Step 3: Document RawImage transparency, chunks, and ICC**
+- [x] **Step 3: Document RawImage transparency, chunks, and ICC**
 
 In `docs/usage/raw-image.md`, add after the palette section:
 
@@ -1097,7 +1097,7 @@ raw.add_icc_profile(icc_profile_bytes)
 ```
 ````
 
-- [ ] **Step 4: Clarify stub constructor docstring**
+- [x] **Step 4: Clarify stub constructor docstring**
 
 In `oxipng/__init__.pyi`, change the `RawImage.__init__` docstring to:
 
@@ -1105,7 +1105,7 @@ In `oxipng/__init__.pyi`, change the `RawImage.__init__` docstring to:
 """Create a raw image from packed pixel data."""
 ```
 
-- [ ] **Step 5: Make manifest scope explicit**
+- [x] **Step 5: Make manifest scope explicit**
 
 In `docs/api-surface/oxipng-10.1.1.toml`, add under `upstream_version`:
 
@@ -1123,7 +1123,7 @@ add_png_chunk = "RawImage.add_png_chunk(name, data)"
 add_icc_profile = "RawImage.add_icc_profile(data)"
 ```
 
-- [ ] **Step 6: Add path-like coverage tests**
+- [x] **Step 6: Add path-like coverage tests**
 
 Add to `tests/test_api.py`:
 
@@ -1152,7 +1152,7 @@ def test_optimize_accepts_custom_pathlike(png_path: Path, tmp_path: Path) -> Non
     assert_readable_png_path(output)
 ```
 
-- [ ] **Step 7: Run docs and API tests**
+- [x] **Step 7: Run docs and API tests**
 
 Run:
 
@@ -1163,7 +1163,7 @@ make md-lint
 
 Expected: tests pass; markdown lint passes.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
@@ -1183,7 +1183,7 @@ git push origin main
 - Modify: `tests/test_api.py`
 - Modify: `docs/architecture/overview.md`
 
-- [ ] **Step 1: Add regression tests for bytearray and memoryview**
+- [x] **Step 1: Add regression tests for bytearray and memoryview**
 
 Keep the existing bytearray and memoryview tests. Add a non-contiguous memoryview rejection test if the implementation moves to `PyBuffer`:
 
@@ -1195,7 +1195,7 @@ def test_optimize_from_memory_rejects_non_contiguous_memoryview(png_bytes: bytes
         optimize_from_memory(view)
 ```
 
-- [ ] **Step 2: Measure current copy behavior manually**
+- [x] **Step 2: Measure current copy behavior manually**
 
 Run:
 
@@ -1216,7 +1216,7 @@ PY
 
 Expected: command completes and prints three lines.
 
-- [ ] **Step 3: Implement `PyBuffer` fast path only if it stays simple**
+- [x] **Step 3: Implement `PyBuffer` fast path only if it stays simple**
 
 If PyO3 `PyBuffer<u8>` is available with the pinned dependency set, replace the `memoryview` `tobytes()` path in `bytes_like_to_vec` with direct contiguous buffer copying. Keep the owned `Vec<u8>` handoff to upstream unless a borrowed slice can be safely held through `allow_threads` without unsound lifetime work.
 
@@ -1235,7 +1235,7 @@ if let Ok(buffer) = pyo3::buffer::PyBuffer::<u8>::get(data) {
 
 If this does not compile cleanly with the pinned PyO3 version, do not force the refactor. Keep the current copying behavior and document the current cost in `docs/architecture/overview.md`.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run:
 
@@ -1246,7 +1246,7 @@ cargo test
 
 Expected: all commands pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 If code changed, run:
 
@@ -1272,7 +1272,7 @@ git push origin main
 
 - Verify all modified files from Tasks 1-7.
 
-- [ ] **Step 1: Check worktree**
+- [x] **Step 1: Check worktree**
 
 Run:
 
@@ -1282,7 +1282,7 @@ git status --short
 
 Expected: clean or only intentional uncommitted plan checkbox updates.
 
-- [ ] **Step 2: Run full verification**
+- [x] **Step 2: Run full verification**
 
 Run:
 
@@ -1296,7 +1296,7 @@ uv run --no-sync --group dev pytest --cov=oxipng --cov=scripts --cov-report=term
 
 Expected: all commands pass.
 
-- [ ] **Step 3: Build and inspect wheel**
+- [x] **Step 3: Build and inspect wheel**
 
 Run:
 
@@ -1320,7 +1320,7 @@ PY
 
 Expected: tag checker passes and wheel inspection prints the wheel filename.
 
-- [ ] **Step 4: Smoke installed wheel**
+- [x] **Step 4: Smoke installed wheel**
 
 Run:
 
@@ -1334,7 +1334,7 @@ rm -rf "$tmpdir"
 
 Expected: smoke script exits 0.
 
-- [ ] **Step 5: Final commit and push if needed**
+- [x] **Step 5: Final commit and push if needed**
 
 If verification produced intentional changes, commit them explicitly:
 

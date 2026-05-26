@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Finish the remaining concrete gaps from `docs/specs/2026-05-25-api-and-wheels-design.md`: public API tests across Python 3.10 through 3.14 and the architecture overview document.
+**Goal:** Finish the remaining concrete gaps from `docs/specs/2026-05-25-api-and-wheels-design.md`: public API tests across Python 3.11 through 3.14 and the architecture overview document.
 
-**Architecture:** Keep regular source CI fast on Python 3.13, and add a separate API matrix workflow that builds the editable extension and runs the public API test suite on Python 3.10, 3.11, 3.12, 3.13, and 3.14. Add `docs/architecture/overview.md` as the human-readable package layout and data-flow overview linked from the docs index.
+**Architecture:** Keep regular source CI fast on Python 3.13, and add a separate API matrix workflow that builds the editable extension and runs the public API test suite on Python 3.11, 3.12, 3.13, and 3.14. Add `docs/architecture/overview.md` as the human-readable package layout and data-flow overview linked from the docs index.
 
 **Tech Stack:** GitHub Actions, uv, Rust 1.85.1, maturin, pytest, markdownlint.
 
@@ -64,7 +64,7 @@ Expected: docs navigation exposes the overview.
 
 - [x] **Step 3: Mention wheel availability in README**
 
-Update `README.md` to state that ABI3 wheels target Python 3.10+ and are
+Update `README.md` to state that ABI3 wheels target Python 3.11+ and are
 produced by the artifact workflow before PyPI publishing is enabled.
 
 Expected: the README matches the 2026-05-25 spec's documentation split.
@@ -95,7 +95,7 @@ Create `.github/workflows/api-matrix.yml` with:
 
 - `push` and `pull_request` triggers for `main`
 - `workflow_dispatch`
-- Python matrix `["3.10", "3.11", "3.12", "3.13", "3.14"]`
+- Python matrix `["3.11", "3.12", "3.13", "3.14"]`
 - `actions/checkout@v6`
 - `astral-sh/setup-uv@v7`
 - `dtolnay/rust-toolchain@1.85.1`

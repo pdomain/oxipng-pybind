@@ -429,7 +429,7 @@ Expected: markdownlint passes.
 Update `Cargo.toml`:
 
 ```toml
-pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py310"] }
+pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py311"] }
 ```
 
 - [x] **Step 2: Restrict maturin includes to wheels**

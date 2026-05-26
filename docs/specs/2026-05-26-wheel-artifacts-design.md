@@ -10,7 +10,7 @@ publish to PyPI and does not build an sdist.
 ## Goals
 
 - Build wheels users can install without a local Rust toolchain.
-- Use PyO3 `abi3-py310` so one wheel per platform supports Python 3.10+.
+- Use PyO3 `abi3-py311` so one wheel per platform supports Python 3.11+.
 - Build and smoke-test wheels before any PyPI publishing workflow exists.
 - Keep release artifact production separate from regular source CI.
 - Avoid source distributions in this phase.
@@ -29,10 +29,10 @@ publish to PyPI and does not build an sdist.
 `Cargo.toml` must enable ABI3:
 
 ```toml
-pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py310"] }
+pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py311"] }
 ```
 
-`pyproject.toml` keeps `requires-python = ">=3.10"` and `module-name =
+`pyproject.toml` keeps `requires-python = ">=3.11"` and `module-name =
 "_oxipng"`.
 
 The maturin include list should only claim wheel inclusion in this phase:
@@ -82,7 +82,7 @@ permissions:
 The workflow should:
 
 1. Check out the repository.
-2. Set up Python 3.10 for build orchestration.
+2. Set up Python 3.11 for build orchestration.
 3. Set up Rust 1.85.1 or the repo-pinned Rust toolchain.
 4. Build wheels with maturin.
 5. Upload wheel artifacts.
@@ -95,7 +95,7 @@ Required `maturin-action` inputs:
 uses: PyO3/maturin-action@v1
 with:
   command: build
-  args: --release --out dist --interpreter python3.10
+  args: --release --out dist --interpreter python3.11
   manylinux: "2_28"
   target: ${{ matrix.target }}
 ```
@@ -133,11 +133,11 @@ for the matrix row is absent. `EXPECTED_PLATFORM` is one of:
 The exact platform tags may vary with maturin and runner images, but the Python
 ABI tag must be ABI3:
 
-- `cp310-abi3-manylinux_2_28_x86_64`
-- `cp310-abi3-manylinux_2_28_aarch64`
-- `cp310-abi3-macosx_*_x86_64`
-- `cp310-abi3-macosx_*_arm64`
-- `cp310-abi3-win_amd64`
+- `cp311-abi3-manylinux_2_28_x86_64`
+- `cp311-abi3-manylinux_2_28_aarch64`
+- `cp311-abi3-macosx_*_x86_64`
+- `cp311-abi3-macosx_*_arm64`
+- `cp311-abi3-win_amd64`
 
 The workflow must fail if a generated wheel is tagged with a CPython-specific
 ABI such as `cp313-cp313`.

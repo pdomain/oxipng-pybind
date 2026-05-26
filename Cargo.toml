@@ -2,7 +2,7 @@
 name = "oxipng-pybind"
 version = "10.1.1"
 edition = "2021"
-license = "MIT"
+license = "Unlicense"
 description = "Focused Python wrapper for oxipng"
 repository = "https://github.com/ConcaveTrillion/oxipng-pybind"
 rust-version = "1.85.1"

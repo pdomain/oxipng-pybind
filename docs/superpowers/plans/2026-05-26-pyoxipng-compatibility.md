@@ -376,7 +376,7 @@ Expected: commit succeeds.
 - Modify: `src/lib.rs`
 - Modify: `oxipng/__init__.pyi`
 
-- [ ] **Step 1: Write failing tests for `RowFilter`, `StripChunks`, and `Deflaters` parsing**
+- [x] **Step 1: Write failing tests for `RowFilter`, `StripChunks`, and `Deflaters` parsing**
 
 Add these tests near the existing option parsing tests:
 
@@ -440,7 +440,7 @@ def test_pyoxipng_deflaters_reject_invalid_values(
         optimize_from_memory(png_bytes, deflate=deflater)
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -451,7 +451,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_rowfilter or 
 
 Expected: fail because Rust parsing does not recognize sets of enum values or compatibility objects.
 
-- [ ] **Step 3: Add Rust compatibility helpers**
+- [x] **Step 3: Add Rust compatibility helpers**
 
 In `src/lib.rs`, add imports:
 
@@ -497,7 +497,7 @@ where
 }
 ```
 
-- [ ] **Step 4: Support sets in `parse_filters` and RowFilter values**
+- [x] **Step 4: Support sets in `parse_filters` and RowFilter values**
 
 Update imports to include `PySet`:
 
@@ -521,7 +521,7 @@ In `parse_filters`, treat `PySet` like list and tuple:
 
 No warning is required for `RowFilter` at parse time because it is an enum-style compatibility alias, not a callable.
 
-- [ ] **Step 5: Parse `_CompatStripChunks`**
+- [x] **Step 5: Parse `_CompatStripChunks`**
 
 Add this helper above `parse_strip`:
 
@@ -558,7 +558,7 @@ Update `parse_strip` before the existing string match:
     }
 ```
 
-- [ ] **Step 6: Parse `_CompatDeflater`**
+- [x] **Step 6: Parse `_CompatDeflater`**
 
 Update `parse_deflater` before the existing string match:
 
@@ -592,7 +592,7 @@ Update `parse_deflater` before the existing string match:
     }
 ```
 
-- [ ] **Step 7: Run compatibility option tests**
+- [x] **Step 7: Run compatibility option tests**
 
 Run:
 
@@ -603,7 +603,7 @@ uv run --no-sync --group dev pytest tests/test_api.py -k "pyoxipng_rowfilter or 
 
 Expected: selected tests pass.
 
-- [ ] **Step 8: Run lint and type checks**
+- [x] **Step 8: Run lint and type checks**
 
 Run:
 
@@ -616,7 +616,7 @@ uv run --group dev basedpyright
 
 Expected: all commands pass.
 
-- [ ] **Step 9: Commit compatibility option parsing**
+- [x] **Step 9: Commit compatibility option parsing**
 
 Run:
 

@@ -262,6 +262,65 @@ def test_filter_sequence_is_accepted(png_bytes: bytes) -> None:
     assert_readable_png_bytes(output)
 
 
+def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
+    output = optimize_from_memory(png_bytes, filter={RowFilter.none, RowFilter.sub})
+
+    assert_readable_png_bytes(output)
+
+
+def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        strip = StripChunks.strip(["tEXt"])
+
+    optimize(png_path, strip=strip)
+
+    assert_readable_png_path(png_path)
+
+
+def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        keep = StripChunks.keep({"iCCP"})
+
+    optimize(png_path, strip=keep)
+
+    assert_readable_png_path(png_path)
+
+
+def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        libdeflater = Deflaters.libdeflater(12)
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        zopfli = Deflaters.zopfli(1)
+
+    assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=libdeflater))
+    assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=zopfli))
+
+
+@pytest.mark.parametrize("names", [["abc"], ["abcde"], ["ab1d"]])
+def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
+    png_bytes: bytes,
+    names: list[str],
+) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        strip = StripChunks.strip(names)
+
+    with pytest.raises(ValueError, match="chunk name"):
+        optimize_from_memory(png_bytes, strip=strip)
+
+
+@pytest.mark.parametrize(("factory", "value"), [(Deflaters.libdeflater, 13), (Deflaters.zopfli, 0)])
+def test_pyoxipng_deflaters_reject_invalid_values(
+    png_bytes: bytes,
+    factory: Any,
+    value: int,
+) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        deflater = factory(value)
+
+    with pytest.raises(ValueError, match="deflate"):
+        optimize_from_memory(png_bytes, deflate=deflater)
+
+
 @pytest.mark.parametrize("level", [-1, 7])
 def test_invalid_level_raises_value_error(png_path: Path, level: int) -> None:
     with pytest.raises(ValueError, match="level must be between 0 and 6"):

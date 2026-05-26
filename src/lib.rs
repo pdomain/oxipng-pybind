@@ -3,9 +3,10 @@ use pyo3::buffer::PyBuffer;
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyFileExistsError, PyOSError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyByteArray, PyBytes, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyBool, PyByteArray, PyBytes, PyDict, PyList, PySet, PyString, PyTuple};
 use std::fs::{self, OpenOptions};
 use std::io;
+use std::num::NonZeroU64;
 use std::path::PathBuf;
 
 create_exception!(oxipng, PngError, PyException);
@@ -45,6 +46,24 @@ fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
     value.extract()
 }
 
+fn object_type_name(value: &Bound<'_, PyAny>) -> PyResult<String> {
+    value.get_type().qualname().map(|name| name.to_string())
+}
+
+fn py_string_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<String>> {
+    match value.getattr(name) {
+        Ok(attr) => Ok(Some(attr.extract()?)),
+        Err(_) => Ok(None),
+    }
+}
+
+fn py_int_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<i64>> {
+    match value.getattr(name) {
+        Ok(attr) => Ok(Some(attr.extract()?)),
+        Err(_) => Ok(None),
+    }
+}
+
 fn parse_level(value: &Bound<'_, PyAny>) -> PyResult<u8> {
     let parsed: i64 = value
         .extract()
@@ -70,7 +89,43 @@ fn parse_interlace(value: &Bound<'_, PyAny>) -> PyResult<Option<bool>> {
     }
 }
 
+fn parse_chunk_name_text(name: &str) -> PyResult<[u8; 4]> {
+    let bytes = name.as_bytes();
+    let name: [u8; 4] = bytes
+        .try_into()
+        .map_err(|_| PyValueError::new_err("chunk name must be exactly 4 ASCII letters"))?;
+    if !name.iter().all(u8::is_ascii_alphabetic) {
+        return Err(PyValueError::new_err(
+            "chunk name must be exactly 4 ASCII letters",
+        ));
+    }
+    Ok(name)
+}
+
 fn parse_strip(value: &Bound<'_, PyAny>) -> PyResult<oxi::StripChunks> {
+    if object_type_name(value)?.ends_with("_CompatStripChunks") {
+        let mode = py_string_attr(value, "mode")?
+            .ok_or_else(|| PyValueError::new_err("strip compatibility object missing mode"))?;
+        let names = value
+            .getattr("names")?
+            .downcast_into::<PyTuple>()
+            .map_err(|_| {
+                PyValueError::new_err("strip compatibility object names must be a tuple")
+            })?;
+        let mut parsed = IndexSet::new();
+        for item in names.iter() {
+            let name: String = item.extract()?;
+            parsed.insert(parse_chunk_name_text(&name)?);
+        }
+        return match mode.as_str() {
+            "strip" => Ok(oxi::StripChunks::Strip(parsed)),
+            "keep" => Ok(oxi::StripChunks::Keep(parsed)),
+            _ => Err(PyValueError::new_err(
+                "strip compatibility mode must be strip or keep",
+            )),
+        };
+    }
+
     match value_as_string(value, "strip")?.as_str() {
         "none" => Ok(oxi::StripChunks::None),
         "safe" => Ok(oxi::StripChunks::Safe),
@@ -85,6 +140,42 @@ fn parse_deflater(
     value: &Bound<'_, PyAny>,
     preset_deflater: oxi::Deflater,
 ) -> PyResult<oxi::Deflater> {
+    if object_type_name(value)?.ends_with("_CompatDeflater") {
+        let kind = py_string_attr(value, "kind")?
+            .ok_or_else(|| PyValueError::new_err("deflate compatibility object missing kind"))?;
+        let raw_value = py_int_attr(value, "value")?
+            .ok_or_else(|| PyValueError::new_err("deflate compatibility object missing value"))?;
+        return match kind.as_str() {
+            "libdeflater" => {
+                let compression = u8::try_from(raw_value).map_err(|_| {
+                    PyValueError::new_err("deflate libdeflater compression must be 0-12")
+                })?;
+                if compression > 12 {
+                    return Err(PyValueError::new_err(
+                        "deflate libdeflater compression must be 0-12",
+                    ));
+                }
+                Ok(oxi::Deflater::Libdeflater { compression })
+            }
+            "zopfli" => {
+                let iterations = u8::try_from(raw_value)
+                    .ok()
+                    .map(u64::from)
+                    .and_then(NonZeroU64::new)
+                    .ok_or_else(|| {
+                        PyValueError::new_err("deflate zopfli iterations must be 1-255")
+                    })?;
+                Ok(oxi::Deflater::Zopfli(oxi::ZopfliOptions {
+                    iteration_count: iterations,
+                    ..Default::default()
+                }))
+            }
+            _ => Err(PyValueError::new_err(
+                "deflate compatibility kind must be libdeflater or zopfli",
+            )),
+        };
+    }
+
     match value_as_string(value, "deflate")?.as_str() {
         "libdeflater" => Ok(preset_deflater),
         "zopfli" => Ok(oxi::Deflater::Zopfli(Default::default())),
@@ -138,6 +229,16 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
             return Err(PyValueError::new_err("filter must not be empty"));
         }
         for item in tuple.iter() {
+            filters.insert(parse_filter_strategy(&item)?);
+        }
+        return Ok(filters);
+    }
+
+    if let Ok(set) = value.downcast::<PySet>() {
+        if set.is_empty() {
+            return Err(PyValueError::new_err("filter must not be empty"));
+        }
+        for item in set.iter() {
             filters.insert(parse_filter_strategy(&item)?);
         }
         return Ok(filters);

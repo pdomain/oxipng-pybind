@@ -63,6 +63,8 @@ class RowFilter(Enum):
     bigent = "bigent"
     brute = "brute"
 
+FilterOption = FilterStrategy | RowFilter | str
+
 class _CompatColorType:
     kind: str
     bit_depth: int
@@ -130,12 +132,12 @@ class RawImage:
         *,
         level: int = 2,
         interlace: Interlacing | str | None = None,
-        strip: StripChunks | str | None = None,
-        deflate: Deflater | str | None = None,
-        filter: FilterStrategy
-        | str
-        | list[FilterStrategy | str]
-        | tuple[FilterStrategy | str, ...]
+        strip: StripChunks | _CompatStripChunks | str | None = None,
+        deflate: Deflater | _CompatDeflater | str | None = None,
+        filter: FilterOption
+        | list[FilterOption]
+        | tuple[FilterOption, ...]
+        | set[FilterOption]
         | None = None,
         fix_errors: bool = False,
         force: bool = False,
@@ -148,12 +150,12 @@ def optimize(
     *,
     level: int = 2,
     interlace: Interlacing | str | None = None,
-    strip: StripChunks | str | None = None,
-    deflate: Deflater | str | None = None,
-    filter: FilterStrategy
-    | str
-    | list[FilterStrategy | str]
-    | tuple[FilterStrategy | str, ...]
+    strip: StripChunks | _CompatStripChunks | str | None = None,
+    deflate: Deflater | _CompatDeflater | str | None = None,
+    filter: FilterOption
+    | list[FilterOption]
+    | tuple[FilterOption, ...]
+    | set[FilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
@@ -167,12 +169,12 @@ def optimize_from_memory(
     *,
     level: int = 2,
     interlace: Interlacing | str | None = None,
-    strip: StripChunks | str | None = None,
-    deflate: Deflater | str | None = None,
-    filter: FilterStrategy
-    | str
-    | list[FilterStrategy | str]
-    | tuple[FilterStrategy | str, ...]
+    strip: StripChunks | _CompatStripChunks | str | None = None,
+    deflate: Deflater | _CompatDeflater | str | None = None,
+    filter: FilterOption
+    | list[FilterOption]
+    | tuple[FilterOption, ...]
+    | set[FilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,

@@ -1014,10 +1014,24 @@ Add variables in `parse_options` after `preserve_attrs`:
 Add this helper near `parse_bool`:
 
 ```rust
+fn parse_advanced_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<Option<bool>> {
+    if value.is_none() {
+        return Ok(None);
+    }
+    parse_bool(value, option).map(Some)
+}
+
 fn parse_timeout(value: &Bound<'_, PyAny>) -> PyResult<Option<Duration>> {
     if value.is_none() {
         return Ok(None);
     }
+
+    if value.is_instance_of::<PyBool>() {
+        return Err(PyTypeError::new_err(
+            "timeout must be a non-negative number of seconds or None",
+        ));
+    }
+
     let seconds: f64 = value
         .extract()
         .map_err(|_| PyTypeError::new_err("timeout must be a non-negative number of seconds or None"))?;
@@ -1026,7 +1040,9 @@ fn parse_timeout(value: &Bound<'_, PyAny>) -> PyResult<Option<Duration>> {
             "timeout must be a non-negative number of seconds or None",
         ));
     }
-    Ok(Some(Duration::from_secs_f64(seconds)))
+    Duration::try_from_secs_f64(seconds).map(Some).map_err(|_| {
+        PyValueError::new_err("timeout must be a non-negative number of seconds or None")
+    })
 }
 ```
 
@@ -1035,35 +1051,35 @@ Add match arms in `parse_options`:
 ```rust
                 "optimize_alpha" => {
                     warn_pyoxipng_compat(value.py())?;
-                    optimize_alpha = Some(parse_bool(&value, "optimize_alpha")?);
+                    optimize_alpha = parse_advanced_bool(&value, "optimize_alpha")?;
                 }
                 "bit_depth_reduction" => {
                     warn_pyoxipng_compat(value.py())?;
-                    bit_depth_reduction = Some(parse_bool(&value, "bit_depth_reduction")?);
+                    bit_depth_reduction = parse_advanced_bool(&value, "bit_depth_reduction")?;
                 }
                 "color_type_reduction" => {
                     warn_pyoxipng_compat(value.py())?;
-                    color_type_reduction = Some(parse_bool(&value, "color_type_reduction")?);
+                    color_type_reduction = parse_advanced_bool(&value, "color_type_reduction")?;
                 }
                 "palette_reduction" => {
                     warn_pyoxipng_compat(value.py())?;
-                    palette_reduction = Some(parse_bool(&value, "palette_reduction")?);
+                    palette_reduction = parse_advanced_bool(&value, "palette_reduction")?;
                 }
                 "grayscale_reduction" => {
                     warn_pyoxipng_compat(value.py())?;
-                    grayscale_reduction = Some(parse_bool(&value, "grayscale_reduction")?);
+                    grayscale_reduction = parse_advanced_bool(&value, "grayscale_reduction")?;
                 }
                 "idat_recoding" => {
                     warn_pyoxipng_compat(value.py())?;
-                    idat_recoding = Some(parse_bool(&value, "idat_recoding")?);
+                    idat_recoding = parse_advanced_bool(&value, "idat_recoding")?;
                 }
                 "scale_16" => {
                     warn_pyoxipng_compat(value.py())?;
-                    scale_16 = Some(parse_bool(&value, "scale_16")?);
+                    scale_16 = parse_advanced_bool(&value, "scale_16")?;
                 }
                 "fast_evaluation" => {
                     warn_pyoxipng_compat(value.py())?;
-                    fast_evaluation = Some(parse_bool(&value, "fast_evaluation")?);
+                    fast_evaluation = parse_advanced_bool(&value, "fast_evaluation")?;
                 }
                 "timeout" => {
                     warn_pyoxipng_compat(value.py())?;

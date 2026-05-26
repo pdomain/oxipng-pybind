@@ -43,11 +43,15 @@ not provided:
 - `RowFilter`
 - `Interlacing`
 - `StripChunks`
-- `Deflaters`
+- `Deflater`
 
 Unsupported keyword arguments to `optimize()` raise `TypeError`.
 
 ## Development
+
+`make setup` installs the pinned Rust toolchain through `rustup` when needed,
+installs `cargo-deny`, syncs Python development dependencies, builds the editable
+extension, and installs pre-commit hooks.
 
 ```bash
 make setup

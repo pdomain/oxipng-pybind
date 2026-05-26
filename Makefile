@@ -2,6 +2,8 @@ export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 AI ?=
 LOG := .ci-ai.log
+RUST_VERSION := 1.85.1
+CARGO_DENY_VERSION := 0.19.7
 
 ifdef AI
 _goals := $(or $(MAKECMDGOALS),ci)
@@ -10,11 +12,11 @@ $(_goals):
 	@rm -f $(LOG)
 	@$(MAKE) --no-print-directory AI= $@ > $(LOG) 2>&1 \
 		&& echo "$@ passed (log: $(LOG))" \
-		|| (echo "$@ failed:"; uv run scripts/ai_filter_log.py $(LOG); echo "(full log: $(LOG))"; exit 1)
+		|| (echo "$@ failed:"; uv run --group dev scripts/ai_filter_log.py $(LOG); echo "(full log: $(LOG))"; exit 1)
 
 else
 
-.PHONY: help setup develop test test-rust test-py lint lint-fix py-lint py-lint-fix \
+.PHONY: help bootstrap-rust setup develop test test-rust test-py lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
 	rust-deny pre-commit-check build wheel clean clean-cache reset remove-venv \
 	upgrade-deps ci
@@ -23,13 +25,39 @@ help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Sync deps, build editable extension, and install pre-commit hooks
-	uv sync --group dev
-	uv run maturin develop
-	uv run pre-commit install
+bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
+	@if ! command -v rustup >/dev/null 2>&1; then \
+		echo "Installing rustup"; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none; \
+	fi
+	rustup toolchain install $(RUST_VERSION) --profile minimal --component rustfmt --component clippy
+	rustup default $(RUST_VERSION)
+	@if ! command -v cargo-deny >/dev/null 2>&1; then \
+		set -eu; \
+		case "$$(uname -s)-$$(uname -m)" in \
+			Linux-x86_64) cargo_deny_target="x86_64-unknown-linux-musl" ;; \
+			Linux-aarch64|Linux-arm64) cargo_deny_target="aarch64-unknown-linux-musl" ;; \
+			Darwin-x86_64) cargo_deny_target="x86_64-apple-darwin" ;; \
+			Darwin-arm64) cargo_deny_target="aarch64-apple-darwin" ;; \
+			*) echo "Unsupported cargo-deny platform: $$(uname -s)-$$(uname -m)" >&2; exit 1 ;; \
+		esac; \
+		tmp_dir="$$(mktemp -d)"; \
+		trap 'rm -rf "$$tmp_dir"' EXIT; \
+		archive="cargo-deny-$(CARGO_DENY_VERSION)-$$cargo_deny_target.tar.gz"; \
+		url="https://github.com/EmbarkStudios/cargo-deny/releases/download/$(CARGO_DENY_VERSION)/$$archive"; \
+		curl --proto '=https' --tlsv1.2 -LsSf "$$url" -o "$$tmp_dir/$$archive"; \
+		tar -xzf "$$tmp_dir/$$archive" -C "$$tmp_dir"; \
+		install -d "$(HOME)/.cargo/bin"; \
+		install "$$(find "$$tmp_dir" -type f -name cargo-deny | head -n 1)" "$(HOME)/.cargo/bin/cargo-deny"; \
+	fi
+
+setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
+	uv sync --group dev --reinstall
+	uv run --group dev maturin develop
+	uv run --group dev pre-commit install
 
 develop: ## Build and install the editable extension
-	uv run maturin develop
+	uv run --group dev maturin develop
 
 test: test-rust test-py ## Run all tests
 
@@ -37,8 +65,8 @@ test-rust: ## Run Rust tests
 	cargo test
 
 test-py: ## Run Python tests against editable extension
-	uv run maturin develop --quiet
-	uv run pytest -v -ra -n auto
+	uv run --group dev maturin develop --quiet
+	uv run --group dev pytest -v -ra -n auto
 
 lint: rust-lint py-lint md-lint ## Run all lint checks
 
@@ -51,40 +79,40 @@ rust-lint-fix: ## Run cargo clippy --fix
 	cargo clippy --workspace --all-targets --fix --allow-dirty --allow-staged -- -D warnings
 
 py-lint: ## Run ruff check
-	uv run ruff check .
+	uv run --group dev ruff check .
 
 py-lint-fix: ## Run ruff format and ruff check --fix
-	uv run ruff format
-	uv run ruff check --fix .
+	uv run --group dev ruff format
+	uv run --group dev ruff check --fix .
 
 md-lint: ## Run markdownlint via pre-commit
-	uv run pre-commit run markdownlint-cli2 --all-files
+	uv run --group dev pre-commit run markdownlint-cli2 --all-files
 
 md-lint-fix: ## Run markdownlint auto-fix via pre-commit
 	@echo "No markdownlint auto-fix hook is configured."
 
 format: ## Format Rust and Python, then run lint
 	cargo fmt --all
-	uv run ruff format
+	uv run --group dev ruff format
 	@$(MAKE) --no-print-directory lint
 
 format-check: ## Check formatting without writes
 	cargo fmt --all -- --check
-	uv run ruff format --check .
+	uv run --group dev ruff format --check .
 
 typecheck: ## Run basedpyright
-	uv run basedpyright
+	uv run --group dev basedpyright
 
 rust-deny: ## Run cargo deny
 	cargo deny check
 
 pre-commit-check: ## Run all pre-commit hooks
-	uv run pre-commit run --all-files
+	uv run --group dev pre-commit run --all-files
 
 build: wheel ## Build release artifacts
 
 wheel: ## Build optimized Python wheel
-	uv run maturin build --release
+	uv run --group dev maturin build --release
 
 clean: ## Remove generated files and build artifacts
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -106,7 +134,7 @@ upgrade-deps: ## Upgrade Python and Rust lockfiles
 	uv lock --upgrade
 	cargo update
 	uv sync --group dev
-	uv run maturin develop
+	uv run --group dev maturin develop
 
 ci: ## Run full CI
 	@$(MAKE) --no-print-directory setup

@@ -19,6 +19,7 @@ project state.
 ## Process
 
 - [Dependency health](process/dependency-health.md)
+- [Local development](process/local-development.md)
 - [Release artifacts](process/release-artifacts.md)
 - [Upstream bump process](process/upstream-bumps.md)
 - [Lint deviations](conventions/lint-deviations.md)

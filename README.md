@@ -57,6 +57,10 @@ make typecheck
 make ci
 ```
 
+Python tests import the compiled `_oxipng` extension. Use `make test-py` or
+rebuild with `maturin develop` before running focused pytest commands. See
+`docs/process/local-development.md`.
+
 ## Upstream Tracking
 
 Project versions track upstream `oxipng` versions when practical. A scheduled

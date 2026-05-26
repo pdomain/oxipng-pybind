@@ -1,88 +1,89 @@
 # Architecture Overview
 
-`oxipng-pybind` publishes the `oxipng` Python import package and delegates PNG
-optimization to the upstream Rust `oxipng` crate.
+`oxipng-pybind` is a Python package over the upstream Rust `oxipng` crate.
+The package name is `oxipng-pybind`, and the import name is `oxipng`.
 
 ## Package Layout
 
-- `oxipng/__init__.py` is the Python facade. It exposes public enum helpers and
+- `oxipng/__init__.py` is the Python wrapper. It exposes public names and
   imports native functions from `_oxipng`.
-- `oxipng/__init__.pyi` is the typing contract for the public API.
-- `oxipng/py.typed` marks the package as typed for static analyzers.
-- `src/lib.rs` is the PyO3 extension. It parses Python arguments, builds
-  upstream `oxipng::Options`, calls upstream optimization functions, and maps
-  errors back to Python.
+- `oxipng/__init__.pyi` defines the typed Python API.
+- `oxipng/py.typed` tells type checkers that the package is typed.
+- `src/lib.rs` is the Rust extension built with PyO3.
 - `.github/workflows/ci.yml` runs source checks.
-- `.github/workflows/wheels.yml` builds artifact-only release wheels.
+- `.github/workflows/wheels.yml` builds release wheel artifacts.
 - `.github/workflows/upstream-bump.yml` updates the pinned upstream version and
-  runs the surface scanner.
+  scans the upstream API surface.
 
 ## Rust/Python Boundary
 
-Python owns public convenience objects such as `Interlacing`, `StripChunks`,
-`Deflater`, and `FilterStrategy`. Rust accepts strings and enum `.value`
-strings, so option parsing does not depend on Python enum object identity.
+The Python wrapper owns ergonomic names and path handling. This includes
+`Interlacing`, `StripChunks`, `Deflater`, `FilterStrategy`, and path-like input
+objects.
 
-The extension starts from `oxipng::Options::from_preset(level)` and applies only
-the documented overrides. Unsupported keyword names raise `TypeError`, invalid
-recognized values raise `ValueError`, and upstream PNG failures raise
-`PngError`.
+The Rust extension owns validation for native options. It accepts strings and
+enum `.value` strings, builds `oxipng::Options`, calls upstream `oxipng`, and
+maps errors back to Python.
 
-## File Optimization Flow
+Unsupported keyword names raise `TypeError`. Invalid known values raise
+`ValueError`. Upstream PNG failures raise `PngError`.
 
-`optimize(input, output=None, *, ...)` receives path-like objects from Python.
-The wrapper validates file-only controls such as `backup` and `preserve_attrs`,
-copies `<input>.bak` before in-place optimization when requested, and then calls
-`oxipng::optimize` while the GIL is released.
+## File Flow
 
-When `output` is omitted, upstream writes in place through `OutFile::Path` with
-`path: None`. When `output` is provided, upstream writes to that path.
+`optimize(input, output=None, *, ...)` receives path-like objects in Python.
+The wrapper handles file-only controls such as `backup` and `preserve_attrs`.
 
-## Memory Optimization Flow
+When `backup=True`, Python copies `<input>.bak` before in-place optimization.
+Then Rust calls `oxipng::optimize` while the GIL is released. The GIL is the
+Python lock that normally prevents Python code from running in parallel.
+
+If `output` is omitted, upstream writes in place. If `output` is set, upstream
+writes to that path.
+
+## Memory Flow
 
 `optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
-`memoryview`. `bytes` and `bytearray` inputs are copied directly into owned Rust
-memory. Objects exposing a Python buffer compatible with `u8`, including
-`memoryview`, are copied once through PyO3's buffer API. Other objects exposing a
-`tobytes()` method are materialized as Python `bytes`, then copied into owned
-Rust memory. The wrapper owns the copied bytes before releasing the GIL, then
-calls `oxipng::optimize_from_memory` and returns optimized PNG bytes. See the
-upstream `oxipng` crate documentation for optimizer behavior after this handoff.
+`memoryview`. It also accepts objects that expose a compatible buffer or a
+`tobytes()` method.
 
-File-only options such as `backup` and `preserve_attrs` are rejected for memory
-optimization.
+Python-visible data is copied into owned Rust memory before the GIL is released.
+Rust then calls `oxipng::optimize_from_memory` and returns optimized PNG bytes.
+
+File-only options such as `backup` and `preserve_attrs` are rejected in memory
+mode.
 
 ## Raw Image Flow
 
 `RawImage(width, height, color_type, bit_depth, data, *, palette=None,
 transparent=None)` wraps upstream `oxipng::RawImage`. Python `ColorType` and
-`BitDepth` enum values are converted to upstream raw image metadata, and packed
-pixel bytes are copied before being passed to Rust.
+`BitDepth` values become upstream raw image metadata. Packed pixel bytes are
+copied before Rust receives them.
 
-`RawImage.create_optimized_png(**options)` reuses the memory-mode option parser
-and returns PNG bytes. Auxiliary chunks can be added through `add_png_chunk`,
-and ICC profile data can be attached through `add_icc_profile`.
+`RawImage.create_optimized_png(**options)` uses the memory-mode option parser
+and returns PNG bytes. `add_png_chunk` adds auxiliary chunks. `add_icc_profile`
+attaches ICC profile data.
 
 ## Error Mapping
 
-The wrapper keeps caller mistakes distinct from image processing failures:
+The wrapper keeps caller mistakes separate from image failures:
 
-- invalid Python types use `TypeError`;
-- invalid recognized values use `ValueError`;
-- existing backup paths use `FileExistsError`;
-- upstream `oxipng::PngError` values become `oxipng.PngError`.
+- Invalid Python types use `TypeError`.
+- Invalid known values use `ValueError`.
+- Existing backup paths use `FileExistsError`.
+- Upstream `oxipng::PngError` values become `oxipng.PngError`.
 
 ## Wheel Strategy
 
-PyO3 is configured with `abi3-py311`, so release wheels use one ABI3 extension
-per supported platform for Python 3.11 and newer. The wheel workflow uploads
-artifacts only in this phase; it does not publish to PyPI and does not build an
-sdist.
+PyO3 uses `abi3-py311`. Release wheels use one ABI3 extension per supported
+platform for Python 3.11 and newer.
+
+The wheel workflow uploads artifacts only. It does not publish to PyPI. It does
+not build an sdist.
 
 ## Upstream Surface Policy
 
-The wrapper intentionally exposes a conservative subset of upstream `oxipng`.
-The checked-in API surface manifest records exposed and intentionally unexposed
-items. During upstream bumps, `scripts/scan_upstream_surface.py` reports new or
-removed upstream surface area and updates docs for human triage without
-automatically exposing new Python API.
+The wrapper exposes a small subset of upstream `oxipng`. The checked-in API
+surface manifest records exposed and intentionally unexposed items.
+
+During upstream bumps, `scripts/scan_upstream_surface.py` reports new or removed
+upstream surface area. It does not expose new Python API by itself.

@@ -1,16 +1,13 @@
 # API Compatibility
 
-`oxipng-pybind` exposes a small Python API over upstream `oxipng`. It does not
-try to mirror every CLI flag or Rust type.
+`oxipng-pybind` exposes a small stable API over upstream `oxipng`. A stable API
+is an API that callers can use without compatibility warnings.
 
-Upstream `oxipng` provides Rust APIs for file optimization, memory optimization,
-raw image construction, stdin/stdout, and detailed `Options` fields.
+Stable API calls must remain warning-free.
 
-`pyoxipng` exposes a broader Python compatibility surface including raw image
-helpers. `oxipng-pybind` only targets practical compatibility for path-based
-optimization and common enum-like options.
+## Stable API
 
-Supported Python surface:
+The supported Python surface is:
 
 - `optimize`
 - `optimize_from_memory`
@@ -23,12 +20,29 @@ Supported Python surface:
 - `BitDepth`
 - `RawImage`
 
-Unsupported compatibility surface:
+These names are the public contract for normal use. They do not try to mirror
+every upstream CLI flag, Rust type, or `Options` field.
+
+## pyoxipng Compatibility
+
+`pyoxipng` exposed a broader Python API. `oxipng-pybind` keeps practical
+compatibility paths for path-based optimization, enum-like options, explicit
+chunk keep/strip lists, raw-image construction, and upstream option keywords.
+
+Compatibility paths emit `DeprecationWarning`. They are unsupported migration
+paths. A migration path is a short-term bridge for old callers, not a stable API.
+
+## Unsupported Paths
+
+These paths are not supported:
 
 - pyoxipng-specific raw buffer helpers beyond `RawImage`
-- arbitrary chunk keep/strip lists
 - stdin/stdout behavior
-- automatic exposure of every upstream `Options` field
+- automatic stable exposure of every upstream `Options` field
+
+Unsupported paths may fail, warn, or stay absent.
+
+## Source Of Truth
 
 The machine-readable compatibility source of truth for upstream `oxipng`
 10.1.1 is [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).

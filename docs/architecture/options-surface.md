@@ -1,7 +1,12 @@
 # Options Surface
 
-Options start from `oxipng::Options::from_preset(level)` and then apply explicit
-Python overrides.
+Python options map to upstream `oxipng::Options`.
+
+Rust starts with `oxipng::Options::from_preset(level)`. Then it applies explicit
+Python overrides. The Rust extension owns validation for native options. Python
+wrappers own ergonomic names and path handling.
+
+## Supported Options
 
 | Python option | Supported values |
 | --- | --- |
@@ -15,11 +20,15 @@ Python overrides.
 | `backup` | `bool`, file API only |
 | `preserve_attrs` | `bool`, file API only |
 
+## Filter Values
+
 `FilterStrategy` exposes `none`, `sub`, `up`, `average`, `paeth`, `minsum`,
 `entropy`, `bigrams`, `bigent`, and `brute`. String aliases also include
 numeric values `"0"` through `"9"` in that order.
 
-Intentionally unexposed upstream `Options` fields:
+## Unexposed Options
+
+These upstream `Options` fields are intentionally unexposed:
 
 - `optimize_alpha`
 - `bit_depth_reduction`
@@ -32,11 +41,13 @@ Intentionally unexposed upstream `Options` fields:
 - `timeout`
 - `max_decompressed_size`
 
-Intentionally unexposed upstream enum variants:
+These upstream enum variants are intentionally unexposed:
 
 - `StripChunks::Strip`
 - `StripChunks::Keep`
 - `FilterStrategy::Predefined`
+
+## Source Of Truth
 
 The machine-readable compatibility source of truth is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).

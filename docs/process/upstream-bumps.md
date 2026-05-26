@@ -2,7 +2,9 @@
 
 `oxipng-pybind` tracks upstream `oxipng` releases.
 
-The scheduled `upstream-bump.yml` workflow:
+## Scheduled Check
+
+The scheduled `.github/workflows/upstream-bump.yml` workflow:
 
 1. Reads the latest release from `oxipng/oxipng`.
 2. Updates `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, and `uv.lock`.
@@ -18,15 +20,17 @@ The scheduled `upstream-bump.yml` workflow:
 
 The workflow does not push directly to `main`.
 
-The upstream bump workflow keeps dependency update, source scan, and CI execution
-in a read-only job. Only the PR/issue publication job receives write
-permissions. Mutable action tags should be replaced with full commit SHAs during
-release-hardening maintenance, and the resolved SHAs should be reviewed before
-merge.
+The upstream bump workflow keeps dependency updates, source scans, and CI in a
+read-only job. Only the PR and issue publication job receives write
+permissions.
+
+Mutable action tags should be replaced with full commit SHAs during
+release-hardening maintenance. Review the resolved SHAs before merge.
 
 ## Required Repository Settings
 
-Enable these GitHub settings for CI-gated auto-merge:
+Enable these GitHub settings for CI-gated auto-merge. CI is continuous
+integration.
 
 - Add an `UPSTREAM_BUMP_TOKEN` repository secret. The token must be able to
   create pull requests and enable auto-merge so bump PRs trigger normal PR CI

@@ -166,7 +166,7 @@ Expected: commit succeeds.
 - Modify: `docs/process/upstream-bumps.md`
 - Modify: `docs/conventions/lint-deviations.md`
 
-- [ ] **Step 1: Read current architecture and process docs**
+- [x] **Step 1: Read current architecture and process docs**
 
 Run:
 
@@ -182,7 +182,7 @@ sed -n '1,180p' docs/conventions/lint-deviations.md
 
 Expected: current facts are visible before editing.
 
-- [ ] **Step 2: Rewrite architecture docs**
+- [x] **Step 2: Rewrite architecture docs**
 
 Use these purposes:
 
@@ -198,7 +198,7 @@ Required facts:
 - The Rust extension owns validation for native options.
 - Python wrappers own ergonomic names and path handling.
 
-- [ ] **Step 3: Rewrite process and convention docs**
+- [x] **Step 3: Rewrite process and convention docs**
 
 Use these purposes:
 
@@ -209,7 +209,7 @@ Use these purposes:
 
 Keep commands exact. Keep policy facts unchanged.
 
-- [ ] **Step 4: Verify architecture and process docs**
+- [x] **Step 4: Verify architecture and process docs**
 
 Run:
 
@@ -223,7 +223,7 @@ Expected:
 - markdownlint passes.
 - `git diff --check` prints no whitespace errors.
 
-- [ ] **Step 5: Commit architecture and process docs**
+- [x] **Step 5: Commit architecture and process docs**
 
 Run:
 

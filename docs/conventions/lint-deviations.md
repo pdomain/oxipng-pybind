@@ -1,7 +1,10 @@
 # Lint Deviations
 
-This file records intentional lint and type-checking deviations. Prefer fixing
-the underlying issue before adding entries here.
+This file records intentional lint and type-checking deviations. A deviation is
+a rule exception that stays in the project.
+
+Prefer fixing the underlying issue before adding an entry here. When an
+exception is needed, document the rule, location, and reason.
 
 ## Ruff Global Ignores
 
@@ -23,8 +26,8 @@ the underlying issue before adding entries here.
 ## Docstring Policy
 
 Production Python and automation scripts are docstring-first. Public modules,
-packages, classes, functions, and methods need docstrings unless a narrower
-exception is documented here.
+packages, classes, functions, and methods need docstrings unless this file
+documents a narrower exception.
 
 Docstrings must be concise, specific, and concrete. Prefer one sentence. Name
 the contract or side effect. Avoid filler such as "This function", "Responsible

@@ -34,6 +34,10 @@ implementation plans.
   `strip`, `deflate`, `filter`, `fix_errors`, and `force`.
 - Supported option values accept stable strings and Python enum `.value`
   strings rather than depending on enum object identity in Rust.
+- pyoxipng-style naming aliases, raw-image constructor compatibility,
+  `ColorType` descriptor factories, explicit strip/keep chunk factories,
+  deflater tuning factories, and advanced option keywords exist as
+  warning-emitting migration paths.
 - Public API tests cover imports, signatures, aliases, file optimization,
   memory optimization, raw image creation, validation errors, and corrupt PNG
   failures.
@@ -114,25 +118,14 @@ replacement.
 - Platform coverage differs. `pyoxipng` publishes additional targets such as
   musllinux and 32-bit Windows on PyPI; this project currently targets
   manylinux x86_64/aarch64, macOS x86_64/aarch64, and Windows x86_64.
-- Raw image constructor compatibility differs. `pyoxipng` documents
-  `RawImage(data, width, height, ...)`; this project implements
-  `RawImage(width, height, color_type, bit_depth, data, *, ...)`.
-- Color type API differs. `pyoxipng` documents callable descriptors such as
-  `ColorType.rgb(...)` and `ColorType.rgba()`. This project uses enum values
-  plus separate `palette` and `transparent` keyword arguments.
-- Filter API differs. `pyoxipng` documents `RowFilter` values; this project
-  exposes `FilterStrategy` and intentionally does not expose a standalone
-  `RowFilter` enum.
-- Strip chunk API differs. `pyoxipng` documents `StripChunks.strip(...)` and
-  `StripChunks.keep(...)` for arbitrary chunk-name lists; this project only
-  exposes `none`, `safe`, and `all`.
-- Deflater tuning differs. `pyoxipng` documents `Deflaters.libdeflater(int)`
-  and `Deflaters.zopfli(int)`; this project exposes `Deflater.libdeflater` and
-  `Deflater.zopfli` without compression-level or iteration tuning.
-- Advanced option coverage differs. `pyoxipng` documents `optimize_alpha`,
-  `bit_depth_reduction`, `color_type_reduction`, `palette_reduction`,
-  `grayscale_reduction`, `idat_recoding`, `scale_16`, `fast_evaluation`, and
-  `timeout`; this project intentionally leaves those upstream fields unexposed.
+- API compatibility paths now exist for pyoxipng-style naming aliases,
+  `RawImage(data, width, height, color_type=...)`, callable `ColorType`
+  descriptors, `RowFilter`, explicit `StripChunks.strip(...)` and
+  `StripChunks.keep(...)`, `Deflaters.libdeflater(int)`,
+  `Deflaters.zopfli(int)`, advanced boolean option keywords, and `timeout`.
+- Compatibility paths emit `DeprecationWarning` and remain unsupported for new
+  code; users should migrate to the stable oxipng-pybind API.
+- A migration guide with side-by-side examples is not written yet.
 - stdin/stdout behavior remains unsupported here.
 - This project adds file-focused controls, including `backup` and
   `preserve_attrs`, that are wrapper-specific rather than pyoxipng parity
@@ -152,37 +145,33 @@ where they do not create unsafe defaults.
    - Add or explicitly reject musllinux and 32-bit Windows wheel targets.
 
 2. Naming and enum parity:
-   - Add pyoxipng-style enum names as aliases, including `Interlacing.Off`,
-     `Interlacing.Adam7`, and `RowFilter`.
-   - Decide whether `FilterStrategy` remains the primary internal name with
-     `RowFilter` as a compatibility alias.
-   - Add tests that pyoxipng-style names and current stable strings parse to the
-     same upstream options.
+   - pyoxipng-style `Interlacing.Off`, `Interlacing.Adam7`, and `RowFilter`
+     exist as compatibility paths.
+   - `FilterStrategy` remains the stable internal name, and `RowFilter` is a
+     compatibility enum.
 
 3. Raw image constructor parity:
-   - Add a compatibility constructor path for `RawImage(data, width, height,
-     color_type=...)`.
-   - Add `ColorType` helper constructors such as `rgb(...)`, `rgba()`,
-     `indexed(...)`, `grayscale(...)`, and `grayscale_alpha()`.
-   - Keep the existing explicit constructor path documented for users who
-     prefer enum values and keyword arguments.
+   - `RawImage(data, width, height, color_type=...)` exists as a warning-emitting
+     compatibility constructor.
+   - `ColorType` helper constructors such as `rgb(...)`, `rgba()`,
+     `indexed(...)`, `grayscale(...)`, and `grayscale_alpha()` exist as
+     warning-emitting compatibility factories.
+   - The existing explicit constructor path remains the stable API.
 
 4. Option object parity:
-   - Add `StripChunks.strip(...)` and `StripChunks.keep(...)` compatibility
-     constructors for explicit chunk-name lists.
-   - Add `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` compatibility
-     constructors with range validation.
-   - Decide whether these become public classes, enum-like factories, or narrow
-     accepted input objects.
+   - `StripChunks.strip(...)` and `StripChunks.keep(...)` compatibility
+     constructors exist for explicit chunk-name lists.
+   - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` compatibility
+     constructors exist with range validation.
+   - Compatibility factories produce narrow accepted input objects.
 
 5. Advanced option parity:
-   - Evaluate `optimize_alpha`, `bit_depth_reduction`,
-     `color_type_reduction`, `palette_reduction`, `grayscale_reduction`,
-     `idat_recoding`, `scale_16`, `fast_evaluation`, and `timeout` one at a
-     time.
-   - Start with boolean options that map directly to stable upstream fields.
-   - Treat `timeout` separately because it changes execution behavior and needs
-     clear tests for partial optimization.
+   - `optimize_alpha`, `bit_depth_reduction`, `color_type_reduction`,
+     `palette_reduction`, `grayscale_reduction`, `idat_recoding`, `scale_16`,
+     `fast_evaluation`, and `timeout` exist as warning-emitting compatibility
+     keywords.
+   - `timeout` rejects booleans, negative values, non-finite values, and
+     out-of-range values with Python exceptions.
 
 6. Behavior and migration parity:
    - Add a migration guide with side-by-side pyoxipng and oxipng-pybind
@@ -200,12 +189,10 @@ Future work should be split into small, reviewable phases.
   artifact metadata, and document the first release checklist.
 - PyPI phase: add Trusted Publishing, choose wheel-only or wheel-plus-sdist
   policy, and document rollback expectations.
-- Compatibility phase: decide whether pyoxipng-style constructor helpers,
-  `RowFilter`, `StripChunks.strip`, `StripChunks.keep`, and deflater tuning are
-  worth implementing.
-- Upstream option phase: evaluate intentionally unexposed upstream `Options`
-  fields one by one, starting with fields that are stable, easy to validate, and
-  useful without surprising data loss.
+- Compatibility phase: add a migration guide and decide whether stdin/stdout
+  workflows are required for parity.
+- Upstream option phase: continue using compatibility warnings for any future
+  pyoxipng-only API surface unless it graduates to the stable API.
 - Platform phase: decide whether musllinux, 32-bit Windows, or additional Linux
   architectures are in scope.
 - Documentation phase: add a migration guide for pyoxipng users if drop-in
@@ -219,10 +206,11 @@ Future work should be split into small, reviewable phases.
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Choose the next milestone: PyPI packaging parity or API compatibility parity.
+4. Choose the next milestone: PyPI packaging parity, migration-guide docs, or
+   stdin/stdout compatibility.
 5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
    verification first.
-6. If API compatibility parity is chosen, start with naming and enum aliases,
-   then raw image constructor compatibility.
+6. If migration docs are chosen, write side-by-side pyoxipng and oxipng-pybind
+   examples that emphasize warning-emitting compatibility paths.
 7. Turn the chosen milestone into a focused implementation plan before adding
    more API surface.

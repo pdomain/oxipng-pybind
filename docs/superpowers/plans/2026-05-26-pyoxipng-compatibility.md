@@ -1219,7 +1219,7 @@ Expected: commit succeeds.
 - Verify: `src/lib.rs`
 - Verify: `tests/test_api.py`
 
-- [ ] **Step 1: Update the remaining-work plan**
+- [x] **Step 1: Update the remaining-work plan**
 
 In `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`, update the `pyoxipng Compatibility Gaps` and `pyoxipng Parity Roadmap` sections:
 
@@ -1233,7 +1233,7 @@ In `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`, update the `pyox
   guide remain open.
 ```
 
-- [ ] **Step 2: Run markdown lint**
+- [x] **Step 2: Run markdown lint**
 
 Run:
 
@@ -1247,7 +1247,7 @@ Expected:
 markdownlint-cli2........................................................Passed
 ```
 
-- [ ] **Step 3: Run full verification**
+- [x] **Step 3: Run full verification**
 
 Run:
 
@@ -1270,7 +1270,7 @@ Expected:
 - basedpyright reports `0 errors, 0 warnings, 0 notes`;
 - markdownlint passes.
 
-- [ ] **Step 4: Inspect compatibility docstrings manually**
+- [x] **Step 4: Inspect compatibility docstrings manually**
 
 Run:
 
@@ -1296,7 +1296,7 @@ PY
 
 Expected: every printed docstring is one concise sentence and mentions `DeprecationWarning`.
 
-- [ ] **Step 5: Inspect final diff**
+- [x] **Step 5: Inspect final diff**
 
 Run:
 
@@ -1306,7 +1306,7 @@ git diff -- oxipng/__init__.py oxipng/__init__.pyi src/lib.rs tests/test_api.py 
 
 Expected: diff only adds pyoxipng compatibility paths, warnings, docstrings, tests, docs, and plan checkboxes.
 
-- [ ] **Step 6: Commit docs and final checklist**
+- [x] **Step 6: Commit docs and final checklist**
 
 Run:
 

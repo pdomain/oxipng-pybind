@@ -327,6 +327,31 @@ def test_pyoxipng_timeout_warns_and_optimizes_memory(png_bytes: bytes) -> None:
     assert_readable_png_bytes(output)
 
 
+def test_pyoxipng_advanced_bool_none_warns_and_optimizes_memory(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        output = optimize_from_memory(png_bytes, optimize_alpha=None)
+
+    assert_readable_png_bytes(output)
+
+
+@pytest.mark.parametrize("value", [float("inf"), 1e300])
+def test_pyoxipng_timeout_rejects_out_of_range_values(png_bytes: bytes, value: float) -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(ValueError, match="timeout"),
+    ):
+        optimize_from_memory(png_bytes, timeout=value)
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_pyoxipng_timeout_rejects_bool(png_bytes: bytes, value: bool) -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(TypeError, match="timeout"),
+    ):
+        cast("Any", optimize_from_memory)(png_bytes, timeout=value)
+
+
 @pytest.mark.parametrize("option", ["optimize_alpha", "bit_depth_reduction", "timeout"])
 def test_pyoxipng_advanced_options_reject_invalid_values(option: str, png_bytes: bytes) -> None:
     value: object = "bad"

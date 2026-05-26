@@ -2,9 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make docstring linting enforce concise, specific public API documentation for production Python and automation scripts while keeping tests name-first.
+**Goal:** Enforce concise public API docstrings for production Python and
+automation scripts. Keep tests name-first.
 
-**Architecture:** Use Ruff `D` rules as the mechanical gate for production Python and scripts. Keep tests exempt from `D` rules because test names are the behavior contract. Document the policy in `docs/conventions/lint-deviations.md` so future suppressions stay narrow and justified.
+**Architecture:** Use Ruff `D` rules as the gate for production Python and
+scripts. Keep tests exempt from `D` rules because test names state the
+behavior. Record the policy in `docs/conventions/lint-deviations.md` so future
+exceptions stay narrow and justified.
 
 **Tech Stack:** Ruff pydocstyle rules, pyproject lint configuration, markdown docs, uv, pre-commit.
 
@@ -18,7 +22,7 @@ Modify existing files:
 - `pyproject.toml`: remove broad docstring ignores for scripts; narrow global docstring ignores.
 - `docs/conventions/lint-deviations.md`: update the lint deviation record and add docstring quality rules.
 
-No source API behavior should change.
+Do not change source API behavior.
 
 ## Policy
 
@@ -27,7 +31,7 @@ Production Python and automation scripts are docstring-first:
 - public modules, packages, classes, functions, and methods get docstrings;
 - docstrings are concise, specific, and concrete;
 - one sentence is preferred;
-- docstrings name the contract or side effect, not the implementation mechanics;
+- docstrings name the contract or side effect, not implementation mechanics;
 - avoid filler such as "This function...", "Responsible for...", "Handles...", or broad LLM-style summaries;
 - private helpers get docstrings only when they encode policy, parsing rules, external assumptions, or non-obvious behavior.
 
@@ -36,7 +40,7 @@ Tests are name-first:
 - test function names describe behavior;
 - test module docstrings are enough for file-level context;
 - helper docstrings are allowed when they clarify shared fixtures or assertions;
-- do not add docstrings to every test function just to satisfy lint.
+- do not add docstrings to every test function only to satisfy lint.
 
 ## Task 1: Add the Missing Scripts Package Docstring
 
@@ -342,7 +346,7 @@ Expected: commit succeeds.
 
 Spec coverage:
 
-- PEP 257-style production/script docstring enforcement is covered by Tasks 1,
+- PEP 257 production/script docstring enforcement is covered by Tasks 1,
   2, and 4.
 - Test name-first policy is preserved by Tasks 2 and 4.
 - Concise, specific, concrete docstring quality is documented by Tasks 3 and 4.

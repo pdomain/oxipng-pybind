@@ -1,168 +1,176 @@
 # Remaining Work and pyoxipng Gaps
 
-This scan reconciles the checked-in docs with the current workspace state on
-2026-05-26. It captures completed work, remaining gaps, known differences from
-`pyoxipng`, and future work.
+This roadmap records the project state on 2026-05-26. It lists finished work,
+open release work, pyoxipng compatibility status, and the recommended next
+order.
 
-`pyoxipng` comparison notes use the current PyPI project page for
-`pyoxipng` 9.1.1, released 2025-08-21:
-[pyoxipng on PyPI](https://pypi.org/project/pyoxipng/).
+`pyoxipng` comparison notes use the PyPI page for `pyoxipng` 9.1.1, released
+2025-08-21: [pyoxipng on PyPI](https://pypi.org/project/pyoxipng/).
 
-## Completed Workspace Items
+## Current Status
 
-The repository has completed the main items described by the archived specs and
-implementation plans.
+The package shape is in place:
 
-- Public package shape is implemented: the distribution remains
-  `oxipng-pybind`, the import package remains `oxipng`, and the native module is
-  `_oxipng`.
-- The package version and upstream Rust dependency are pinned to upstream
-  `oxipng` 10.1.1 in `pyproject.toml`, `Cargo.toml`, and the API surface
-  manifest.
-- The Python facade exports `optimize`, `optimize_from_memory`, `PngError`,
-  option enums, raw-image enums, and `RawImage`.
-- Type stubs, `py.typed`, and runtime docstrings are present for the supported
-  public API.
-- File optimization supports in-place and explicit-output workflows, path-like
-  inputs, `backup`, `preserve_attrs`, level validation, option parsing, and
-  predictable Python exceptions.
-- Memory optimization supports `bytes`, `bytearray`, and `memoryview` inputs.
-- `RawImage` support is implemented with `ColorType`, `BitDepth`, packed pixel
-  data, indexed palettes, transparency validation, ancillary chunk insertion,
-  ICC profile insertion, and `create_optimized_png`.
-- The conservative option surface is implemented for `level`, `interlace`,
-  `strip`, `deflate`, `filter`, `fix_errors`, and `force`.
+- The distribution name is `oxipng-pybind`.
+- The import package is `oxipng`.
+- The native module is `_oxipng`.
+- The package version and Rust `oxipng` dependency are pinned to upstream
+  `oxipng` 10.1.1.
+- The API surface manifest records the same upstream version.
+
+The public Python API is in place:
+
+- `optimize`, `optimize_from_memory`, `PngError`, option enums, raw-image
+  enums, and `RawImage` are exported.
+- Type stubs, `py.typed`, and runtime docstrings exist for the supported API.
+- File optimization supports in-place writes, explicit output paths,
+  path-like inputs, `backup`, `preserve_attrs`, level checks, option parsing,
+  and predictable Python exceptions.
+- Memory optimization supports `bytes`, `bytearray`, and `memoryview`.
+- `RawImage` supports `ColorType`, `BitDepth`, packed pixel data, indexed
+  palettes, transparency checks, ancillary chunks, ICC profiles, and
+  `create_optimized_png`.
+- The option surface includes `level`, `interlace`, `strip`, `deflate`,
+  `filter`, `fix_errors`, and `force`.
 - Supported option values accept stable strings and Python enum `.value`
-  strings rather than depending on enum object identity in Rust.
-- pyoxipng-style naming aliases, raw-image constructor compatibility,
-  `ColorType` descriptor factories, explicit strip/keep chunk factories,
-  deflater tuning factories, and advanced option keywords exist as
-  warning-emitting migration paths.
+  strings. Rust code does not depend on Python enum object identity.
+
+Tests and docs are in place:
+
 - Public API tests cover imports, signatures, aliases, file optimization,
   memory optimization, raw image creation, validation errors, and corrupt PNG
   failures.
-- Scanner tests cover Rust surface parsing, comparison reports, generated docs,
-  and deterministic scan outputs.
+- Scanner tests cover Rust surface parsing, comparison reports, generated
+  docs, and stable scan output.
+- Documentation covers usage, architecture, API compatibility, option surface,
+  release artifacts, upstream bumps, dependency health, and lint deviations.
+- Changelog entries record the memory API, raw image API, option surface, ABI3
+  wheel metadata, wheel workflow scaffolding, and upstream scanner scaffolding.
+
+## CI and Release Workflow Status
+
+The workflow files exist, but hosted runs still need proof.
+
+Completed workflow pieces:
+
 - Wheel tag and smoke-test helper scripts exist.
-- Artifact-only wheel workflow exists for Linux x86_64, Linux aarch64, macOS
-  x86_64, macOS aarch64, and Windows x86_64.
+- `wheels.yml` builds artifact-only wheels for Linux x86_64, Linux aarch64,
+  macOS x86_64, macOS aarch64, and Windows x86_64.
 - Wheel builds use PyO3 ABI3 for Python 3.11 and newer.
-- API matrix workflow exists for Python 3.11, 3.12, 3.13, and 3.14.
-- Dependency health workflow exists for scheduled lockfile refreshes, audits,
-  and CI-gated dependency refresh PRs.
-- Upstream bump workflow exists for version updates, manifest preparation,
-  upstream surface scanning, PR creation, triage issue upsert, wheel workflow
-  waiting, and auto-merge.
-- Documentation now covers usage, architecture, API compatibility, option
-  surface, release artifacts, upstream bumps, dependency health, and lint
-  deviations.
-- Changelog entries record the new memory API, raw image API, option surface,
-  ABI3 wheel metadata, wheel workflow scaffolding, and upstream scanner
-  scaffolding.
+- `api-matrix.yml` covers Python 3.11, 3.12, 3.13, and 3.14.
+- `dependency-health.yml` covers scheduled lockfile refreshes, audits, and
+  CI-gated dependency refresh PRs.
+- `upstream-bump.yml` covers version updates, manifest preparation, upstream
+  surface scans, PR creation, triage issue upsert, wheel workflow waiting, and
+  auto-merge.
 
-## Remaining Tasks
+Open CI and release work:
 
-These are the concrete gaps still visible after comparing docs to workspace
-state.
-
-- Prove workflows in GitHub Actions, especially `wheels.yml`,
-  `api-matrix.yml`, `dependency-health.yml`, and `upstream-bump.yml`. The files
-  exist locally, but the docs do not record successful hosted runs.
-- Exercise the first real upstream bump after 10.1.1. This should validate
-  release discovery, manifest copying, scanner output, docs updates, issue
-  upsert behavior, wheel workflow waiting, and auto-merge conditions.
-- Confirm repository secrets and settings outside the workspace:
-  `UPSTREAM_BUMP_TOKEN`, `DEPENDENCY_REFRESH_TOKEN`, Actions PR permissions,
-  branch protection, required checks, and repository auto-merge.
+- Prove `wheels.yml`, `api-matrix.yml`, `dependency-health.yml`, and
+  `upstream-bump.yml` in GitHub Actions.
+- Run the first real upstream bump after 10.1.1. This should prove release
+  discovery, manifest copying, scanner output, docs updates, issue upsert,
+  wheel workflow waiting, and auto-merge conditions.
+- Confirm repository settings outside the workspace: `UPSTREAM_BUMP_TOKEN`,
+  `DEPENDENCY_REFRESH_TOKEN`, Actions PR permissions, branch protection,
+  required checks, and repository auto-merge.
 - Replace mutable GitHub Action references with pinned full commit SHAs before
-  release hardening. The upstream-bump docs already call this out.
+  release hardening.
 - Decide whether the project should publish to PyPI. Current wheel work is
   artifact-only by design.
-- If PyPI publishing is approved, add a Trusted Publishing workflow and decide
-  whether publishing remains wheel-only.
-- Decide whether to add an sdist. Current docs intentionally defer sdist support
-  because source installs require Rust and a compatible build environment.
-- Add release notes for first public artifacts once the wheel workflow has
-  produced verified artifacts.
-- Verify whether local and hosted wheel artifacts include all expected metadata,
-  especially `oxipng/__init__.pyi`, `oxipng/py.typed`, license files, and
-  platform tags.
-- Consider adding tests for `preserve_attrs` behavior. The option is passed to
-  upstream, but workspace tests focus on argument validation and readable PNG
-  output.
-- Consider adding tests for `add_icc_profile`. The method is implemented, but
-  the current public API test file focuses chunk preservation more than ICC
-  profile output.
-- Consider adding tests for `optimize_from_memory(memoryview(...))` with
-  non-trivial buffer views if supporting sliced or non-contiguous buffers is a
-  product requirement.
-- Decide whether to document and test the exact default interlace behavior more
-  prominently. The spec distinguishes `interlace=None` and
-  `interlace="keep"`, while user-facing docs summarize supported values.
+- If PyPI publishing is approved, add Trusted Publishing and decide whether
+  publishing remains wheel-only.
+- Decide whether to add an sdist. Current docs defer sdist support because
+  source installs require Rust and a compatible build environment.
+- Add release notes for first public artifacts after the wheel workflow
+  produces verified artifacts.
+- Verify local and hosted wheel metadata, especially `oxipng/__init__.pyi`,
+  `oxipng/py.typed`, license files, and platform tags.
 
-## pyoxipng Compatibility Gaps
+## Completed pyoxipng Compatibility Paths
 
-`oxipng-pybind` now covers the most important practical workflows from
-`pyoxipng`: file optimization, memory optimization, raw image output, common
-options, and the `oxipng` import name. It is still not a full drop-in
-replacement.
+`oxipng-pybind` covers the main practical workflows from `pyoxipng`:
+
+- file optimization;
+- memory optimization;
+- raw image output;
+- common options;
+- the `oxipng` import name.
+
+These pyoxipng-style compatibility paths exist:
+
+- naming aliases for common option names;
+- `RawImage(data, width, height, color_type=...)`;
+- callable `ColorType` descriptors;
+- `RowFilter`;
+- `StripChunks.strip(...)` and `StripChunks.keep(...)`;
+- `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)`;
+- advanced boolean option keywords;
+- `timeout`.
+
+Compatibility paths emit `DeprecationWarning`. They are unsupported migration
+paths. New code should use the stable oxipng-pybind API.
+
+## Remaining pyoxipng Gaps
+
+This project is not a full drop-in replacement for `pyoxipng`.
 
 - Python version policy differs. `pyoxipng` 9.1.1 advertises Python 3.8+ on
-  PyPI, while this project requires Python 3.11+.
-- Distribution artifacts differ. `pyoxipng` publishes PyPI wheels and an sdist;
-  this project currently builds artifact-only wheels and intentionally does not
-  publish to PyPI.
-- Wheel strategy differs. `pyoxipng` publishes CPython-version-specific wheels
-  for multiple versions and platforms; this project targets ABI3 `cp311-abi3`
-  wheels for Python 3.11+.
-- Platform coverage differs. `pyoxipng` publishes additional targets such as
-  musllinux and 32-bit Windows on PyPI; this project currently targets
-  manylinux x86_64/aarch64, macOS x86_64/aarch64, and Windows x86_64.
-- API compatibility paths now exist for pyoxipng-style naming aliases,
-  `RawImage(data, width, height, color_type=...)`, callable `ColorType`
-  descriptors, `RowFilter`, explicit `StripChunks.strip(...)` and
-  `StripChunks.keep(...)`, `Deflaters.libdeflater(int)`,
-  `Deflaters.zopfli(int)`, advanced boolean option keywords, and `timeout`.
-- Compatibility paths emit `DeprecationWarning` and remain unsupported for new
-  code; users should migrate to the stable oxipng-pybind API.
+  PyPI. This project requires Python 3.11+.
+- Distribution artifacts differ. `pyoxipng` publishes PyPI wheels and an sdist.
+  This project builds artifact-only wheels and does not publish to PyPI.
+- Wheel strategy differs. `pyoxipng` publishes CPython-version-specific wheels.
+  This project targets ABI3 `cp311-abi3` wheels for Python 3.11+.
+- Platform coverage differs. `pyoxipng` publishes extra targets such as
+  musllinux and 32-bit Windows. This project targets manylinux
+  x86_64/aarch64, macOS x86_64/aarch64, and Windows x86_64.
 - A migration guide with side-by-side examples is not written yet.
-- stdin/stdout behavior remains unsupported here.
-- This project adds file-focused controls, including `backup` and
-  `preserve_attrs`, that are wrapper-specific rather than pyoxipng parity
-  targets.
+- stdin/stdout behavior remains unsupported.
+- `backup` and `preserve_attrs` are wrapper-specific controls, not pyoxipng
+  parity targets.
+
+## Remaining Product and Test Work
+
+These gaps are still visible in the workspace:
+
+- Consider tests for `preserve_attrs`. The option is passed to upstream, but
+  current tests focus on argument validation and readable PNG output.
+- Consider tests for `add_icc_profile`. The method exists, but public API tests
+  focus more on chunk preservation than ICC output.
+- Consider tests for `optimize_from_memory(memoryview(...))` with sliced or
+  non-contiguous buffers if those buffers become a product requirement.
+- Decide whether to document and test exact default interlace behavior more
+  prominently. The spec separates `interlace=None` and `interlace="keep"`,
+  while user docs summarize supported values.
 
 ## pyoxipng Parity Roadmap
 
-Parity should be treated as a sequence of compatibility layers. Preserve the
-current stable API while adding pyoxipng-compatible aliases and constructors
-where they do not create unsafe defaults.
+Preserve the current stable API. Add pyoxipng-compatible aliases and
+constructors only where they do not create unsafe defaults.
 
 1. Packaging parity:
    - Decide whether `oxipng-pybind` should publish to PyPI.
    - Add Trusted Publishing if PyPI distribution is approved.
-   - Decide whether to publish an sdist; pyoxipng publishes one, but this
-     project currently avoids source-install expectations.
-   - Add or explicitly reject musllinux and 32-bit Windows wheel targets.
+   - Decide whether to publish an sdist.
+   - Add or reject musllinux and 32-bit Windows wheel targets.
 
 2. Naming and enum parity:
    - pyoxipng-style `Interlacing.Off`, `Interlacing.Adam7`, and `RowFilter`
      exist as compatibility paths.
-   - `FilterStrategy` remains the stable internal name, and `RowFilter` is a
-     compatibility enum.
+   - `FilterStrategy` remains the stable name.
 
 3. Raw image constructor parity:
-   - `RawImage(data, width, height, color_type=...)` exists as a warning-emitting
-     compatibility constructor.
-   - `ColorType` helper constructors such as `rgb(...)`, `rgba()`,
-     `indexed(...)`, `grayscale(...)`, and `grayscale_alpha()` exist as
-     warning-emitting compatibility factories.
-   - The existing explicit constructor path remains the stable API.
+   - `RawImage(data, width, height, color_type=...)` exists as a
+     warning-emitting compatibility constructor.
+   - `ColorType` helper constructors exist as warning-emitting compatibility
+     factories.
+   - The explicit constructor path remains the stable API.
 
 4. Option object parity:
-   - `StripChunks.strip(...)` and `StripChunks.keep(...)` compatibility
-     constructors exist for explicit chunk-name lists.
-   - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` compatibility
-     constructors exist with range validation.
+   - `StripChunks.strip(...)` and `StripChunks.keep(...)` exist for explicit
+     chunk-name lists.
+   - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` exist with range
+     validation.
    - Compatibility factories produce narrow accepted input objects.
 
 5. Advanced option parity:
@@ -176,41 +184,39 @@ where they do not create unsafe defaults.
 6. Behavior and migration parity:
    - Add a migration guide with side-by-side pyoxipng and oxipng-pybind
      examples.
-   - Add tests for pyoxipng-style examples copied from the public docs, adapted
-     only where behavior is intentionally different.
-   - Decide whether stdin/stdout workflows are required for parity or remain
-     explicitly unsupported.
+   - Add tests for pyoxipng-style examples from public docs, adapted only where
+     behavior intentionally differs.
+   - Decide whether stdin/stdout workflows are required or remain unsupported.
 
 ## Future Work
 
-Future work should be split into small, reviewable phases.
+Split future work into small phases:
 
 - Release hardening: pin GitHub Actions by SHA, prove hosted wheel runs, verify
   artifact metadata, and document the first release checklist.
 - PyPI phase: add Trusted Publishing, choose wheel-only or wheel-plus-sdist
   policy, and document rollback expectations.
 - Compatibility phase: add a migration guide and decide whether stdin/stdout
-  workflows are required for parity.
-- Upstream option phase: continue using compatibility warnings for any future
+  workflows are required.
+- Upstream option phase: keep using compatibility warnings for future
   pyoxipng-only API surface unless it graduates to the stable API.
-- Platform phase: decide whether musllinux, 32-bit Windows, or additional Linux
+- Platform phase: decide whether musllinux, 32-bit Windows, or extra Linux
   architectures are in scope.
 - Documentation phase: keep stable API examples synchronized with any
-  compatibility-path behavior that graduates to supported API surface.
-- Observability phase: improve automated upstream bump reports so they include
-  a concise list of exact new and removed items, not only the high-level PR body
-  section.
+  compatibility path that graduates to supported API surface.
+- Observability phase: make upstream bump reports list exact added and removed
+  items, not only a high-level PR body section.
 
 ## Recommended Next Order
 
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Choose the next milestone: PyPI packaging parity, migration-guide docs, or
+4. Choose the next milestone: PyPI packaging parity, migration docs, or
    stdin/stdout compatibility.
 5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
    verification first.
-6. If migration docs are chosen, write side-by-side pyoxipng and oxipng-pybind
-   examples that emphasize warning-emitting compatibility paths.
+6. If migration docs are chosen, write side-by-side pyoxipng and
+   oxipng-pybind examples. Make the warning-emitting compatibility paths clear.
 7. Turn the chosen milestone into a focused implementation plan before adding
    more API surface.

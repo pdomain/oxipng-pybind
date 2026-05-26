@@ -2,9 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rewrite active Markdown docs so they are shorter, clearer, and accurate for current oxipng-pybind behavior.
+**Goal:** Rewrite active Markdown docs so they are shorter, clearer, and
+accurate for current oxipng-pybind behavior.
 
-**Architecture:** Treat active docs as the supported documentation set and `docs/archive/**` as historical records. Rewrite prose in small file groups, preserving API contracts, plan status, command blocks, warning text, and release policy. Verify with markdownlint, diff review, and archive-preservation checks.
+**Architecture:** Treat active docs as the supported docs. Treat
+`docs/archive/**` as historical records. Rewrite prose in small file groups.
+Preserve API contracts, plan status, command blocks, warning text, and release
+policy. Verify with markdownlint, diff review, and archive-preservation checks.
 
 **Tech Stack:** Markdown, markdownlint-cli2, git diff checks, existing Python/Rust test commands when examples change.
 
@@ -245,7 +249,7 @@ Expected: commit succeeds.
 - Modify: `docs/superpowers/plans/2026-05-26-pyoxipng-compatibility.md`
 - Modify: `docs/superpowers/plans/2026-05-26-active-docs-clarity-rewrite.md`
 
-- [ ] **Step 1: Read roadmap and active Superpowers docs**
+- [x] **Step 1: Read roadmap and active Superpowers docs**
 
 Run:
 
@@ -259,7 +263,7 @@ sed -n '1,260p' docs/superpowers/plans/2026-05-26-pyoxipng-compatibility.md
 
 Expected: current plan state and completed checkboxes are visible before editing.
 
-- [ ] **Step 2: Rewrite the current roadmap**
+- [x] **Step 2: Rewrite the current roadmap**
 
 Rewrite `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md` to make these facts easy to find:
 
@@ -270,7 +274,7 @@ Rewrite `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md` to make thes
 
 Keep the meaning of open work unchanged.
 
-- [ ] **Step 3: Simplify active specs**
+- [x] **Step 3: Simplify active specs**
 
 Rewrite active specs for clarity while keeping approved scope unchanged.
 
@@ -290,7 +294,7 @@ For the pyoxipng compatibility spec, preserve:
 - concise docstring policy;
 - remaining migration expectations.
 
-- [ ] **Step 4: Simplify active plans**
+- [x] **Step 4: Simplify active plans**
 
 Rewrite active plan prose only. Preserve:
 
@@ -305,7 +309,7 @@ Rewrite active plan prose only. Preserve:
 
 Do not change completed boxes to open boxes or open boxes to completed boxes.
 
-- [ ] **Step 5: Verify roadmap and active Superpowers docs**
+- [x] **Step 5: Verify roadmap and active Superpowers docs**
 
 Run:
 
@@ -319,7 +323,7 @@ Expected:
 - markdownlint passes.
 - `git diff --check` prints no whitespace errors.
 
-- [ ] **Step 6: Commit roadmap and active Superpowers docs**
+- [x] **Step 6: Commit roadmap and active Superpowers docs**
 
 Run:
 

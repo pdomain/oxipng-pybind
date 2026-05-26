@@ -2,9 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add pyoxipng-style compatibility paths for API migration while warning users to migrate to oxipng-pybind's stable API.
+**Goal:** Add pyoxipng-style compatibility paths for API migration. Warn users
+to migrate to oxipng-pybind's stable API.
 
-**Architecture:** Keep the existing stable API unchanged. Add narrow Python facade compatibility objects for pyoxipng-style factories, and teach the Rust parser to recognize those objects and pyoxipng keyword names explicitly. Compatibility callables emit `DeprecationWarning`; stable API calls stay warning-free.
+**Architecture:** Keep the stable API unchanged. Add narrow Python facade
+objects for pyoxipng-style factories. Teach the Rust parser to recognize those
+objects and pyoxipng keyword names explicitly. Compatibility callables emit
+`DeprecationWarning`; stable API calls stay warning-free.
 
 **Tech Stack:** Python `Enum`, PyO3, Rust `oxi` options, pytest, basedpyright, Ruff, maturin.
 
@@ -20,7 +24,8 @@ Modify existing files:
 - `tests/test_api.py`: add focused public API tests for warnings, docstrings, parsing, and stable API non-warning behavior.
 - `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`: mark API compatibility work that this plan covers.
 
-Do not modify packaging, wheel targets, PyPI publishing, or migration-guide docs in this plan.
+Do not modify packaging, wheel targets, PyPI publishing, or migration-guide docs
+in this plan.
 
 ## Shared Policy
 
@@ -32,7 +37,8 @@ pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable AP
 
 Use concise one-sentence docstrings for new compatibility callables.
 
-Compatibility paths should work where they map cleanly, but they are not the supported long-term API.
+Compatibility paths should work where they map cleanly. They are not the
+supported long-term API.
 
 ## Task 1: Add Compatibility Facade Scaffolding
 

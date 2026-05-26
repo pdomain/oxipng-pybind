@@ -2,13 +2,14 @@
 
 ## Goal
 
-Add pyoxipng-style API compatibility paths for migration testing without making
-them the supported long-term API.
+Add pyoxipng-style API paths for migration testing. These paths are not the
+supported long-term API.
 
 ## Policy
 
 The existing oxipng-pybind API remains the supported API. Compatibility paths
-exist to help users port pyoxipng code and should be migrated away from.
+help users port pyoxipng code and should be removed from user code after the
+port.
 
 Every compatibility callable must:
 
@@ -16,10 +17,10 @@ Every compatibility callable must:
 - emit `DeprecationWarning` when used;
 - include a concise docstring that names the compatibility contract;
 - point users toward the stable oxipng-pybind API;
-- avoid changing behavior for existing stable API calls.
+- avoid behavior changes for existing stable API calls.
 
-Use `DeprecationWarning` because these are transitional API calls, not ordinary
-runtime notices.
+Use `DeprecationWarning` because these calls are transitional API paths, not
+ordinary runtime notices.
 
 ## Compatibility Surface
 
@@ -31,25 +32,25 @@ Add pyoxipng-style aliases for common option names:
 - `Interlacing.Adam7`
 - `RowFilter`
 
-Keep current enum values and stable string parsing unchanged. `RowFilter` should
-act as a compatibility alias for the current filter strategy surface unless a
-separate object is required for type-checking clarity.
+Keep current enum values and stable string parsing unchanged. `RowFilter`
+should act as a compatibility alias for the current filter strategy surface
+unless a separate object is needed for type-checking clarity.
 
 ### Raw Image Compatibility
 
-Add a compatibility constructor path for:
+Add a compatibility constructor path:
 
 ```python
 RawImage(data, width, height, color_type=...)
 ```
 
-Keep the existing explicit constructor path:
+Keep the explicit stable constructor:
 
 ```python
 RawImage(width, height, color_type, bit_depth, data, *, palette=None, transparent=None)
 ```
 
-Add `ColorType` helper constructors where they map cleanly:
+Add `ColorType` helpers where they map cleanly:
 
 - `ColorType.rgb(...)`
 - `ColorType.rgba()`
@@ -57,8 +58,8 @@ Add `ColorType` helper constructors where they map cleanly:
 - `ColorType.grayscale(...)`
 - `ColorType.grayscale_alpha()`
 
-These helpers should produce values accepted by `RawImage` and should warn when
-called.
+These helpers should produce values accepted by `RawImage`. They should warn
+when called.
 
 ### Option Factories
 
@@ -69,9 +70,8 @@ Add compatibility factories for explicit chunk and deflater options:
 - `Deflaters.libdeflater(int)`
 - `Deflaters.zopfli(int)`
 
-Factories should validate their inputs and warn when called. The implementation
-may represent these as narrow compatibility objects if enum values cannot carry
-the required data.
+Factories should validate inputs and warn when called. The implementation may
+use narrow compatibility objects if enum values cannot carry the needed data.
 
 ### Advanced Options
 
@@ -93,7 +93,7 @@ tests.
 
 ## Warnings and Docs
 
-Warnings should use this shape:
+Warnings should use this exact text:
 
 ```text
 pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API.
@@ -102,7 +102,7 @@ pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable AP
 Docstrings should be one sentence unless a second sentence is needed to mention
 the warning or migration requirement.
 
-Compatibility docstrings should not say the path is supported. Prefer wording
+Compatibility docstrings must not say the path is supported. Prefer wording
 like:
 
 ```text
@@ -129,11 +129,19 @@ Keep tests name-first. Do not add docstrings to every test function.
 Keep compatibility parsing narrow and explicit. Do not replace the stable parser
 with broad dynamic behavior.
 
-Prefer small helper types or parser functions over ad hoc string checks spread
-through the code. Compatibility types should be easy to remove later.
+Prefer small helper types or parser functions over repeated ad hoc string
+checks. Compatibility types should be easy to remove later.
 
 Do not add PyPI publishing, wheel target changes, or migration-guide prose in
 this implementation. Those remain separate milestones.
+
+## Remaining Migration Expectations
+
+Users can use compatibility paths to test a port from pyoxipng. They should
+migrate to the stable oxipng-pybind API after that port works.
+
+Packaging parity, platform parity, stdin/stdout behavior, and migration-guide
+docs remain separate work.
 
 ## Open Decisions
 
@@ -147,6 +155,6 @@ Implementation planning must decide:
 ## Self-Review
 
 - No placeholder requirements remain.
-- The design keeps stable API behavior separate from compatibility behavior.
+- Stable API behavior stays separate from compatibility behavior.
 - Warning policy, docstring policy, and testing expectations are explicit.
 - Packaging parity is intentionally out of scope.

@@ -2,10 +2,10 @@
 
 ## Goal
 
-Rewrite active documentation so it is clear, concise, and easy to scan.
+Rewrite active documentation so it is clear, short, and easy to scan.
 
-The target reader can use Python, run shell commands, and read basic API
-examples. The prose should stay near a 10th-grade reading level.
+The reader can use Python, run shell commands, and read basic API examples. Keep
+the prose near a 10th-grade reading level.
 
 ## Scope
 
@@ -21,13 +21,12 @@ Rewrite active Markdown docs:
 - `docs/superpowers/specs/*.md`
 - `docs/usage/*.md`
 
-Treat `docs/archive/**` as historical records. Do not rewrite archived plans or
-specs for style.
+Do not rewrite `docs/archive/**`. Archive files are historical records.
 
-`docs/api-surface/oxipng-10.1.1.toml` is data, not prose. Do not rewrite it.
+Do not rewrite `docs/api-surface/oxipng-10.1.1.toml`. It is data, not prose.
 
-"Full rewrite" means the active docs may be restructured and simplified. It
-does not mean changing facts, plan status, API contracts, or release policy.
+A full rewrite may restructure and simplify active docs. It must not change
+facts, plan status, API contracts, or release policy.
 
 For `docs/superpowers/**`, simplify prose around active specs and plans. Keep
 task order, required skills, checklist state, command blocks, and acceptance
@@ -35,6 +34,7 @@ criteria intact.
 
 ## Writing Rules
 
+- Start with the main fact or purpose.
 - Use short sentences.
 - Use concrete words.
 - Define project terms the first time they appear.
@@ -44,42 +44,41 @@ criteria intact.
 - Keep commands and API signatures exact.
 - Keep warning text exact.
 - Keep plan checkboxes and required skill names intact.
-- Avoid filler phrases such as "responsible for", "handles", and "in order to".
-- Avoid vague phrases such as "various", "proper", "robust", and "as needed"
-  unless the sentence defines what they mean.
+- Avoid filler such as "responsible for", "handles", and "in order to".
+- Avoid vague words such as "various", "proper", "robust", and "as needed"
+  unless the sentence defines them.
 
 ## Accuracy Rules
 
 - Do not change API behavior.
-- Do not change the meaning of implementation plans.
+- Do not change implementation plan meaning.
 - Do not mark work complete unless the existing plan already marks it complete.
-- Keep pyoxipng compatibility status current:
-  warning-emitting compatibility paths exist, but stdin/stdout, migration-guide
-  docs, and packaging/platform parity remain open.
+- Keep pyoxipng status current: warning-emitting compatibility paths exist, but
+  stdin/stdout, migration docs, and packaging/platform parity remain open.
 - Keep archive references truthful. Link to archives when useful, but do not
   edit archived prose for tone.
 
 ## Rewrite Shape
 
-Each active doc should have a clear job:
+Each active doc has one job:
 
 - `README.md`: quick project overview, install, API summary, development, and
   upstream tracking.
 - `docs/README.md`: docs index.
-- `docs/usage/*.md`: task-based examples for file, memory, and raw-image use.
+- `docs/usage/*.md`: task examples for file, memory, and raw-image use.
 - `docs/architecture/*.md`: stable design facts and compatibility decisions.
 - `docs/process/*.md`: repeatable project processes.
 - `docs/conventions/*.md`: local rules and exceptions.
 - `docs/plans/*.md`: current roadmap and open work.
 - `docs/superpowers/**`: current specs and plans for active work.
 
-Prefer trimming over adding new prose. Add definitions only where they reduce
+Prefer trimming over adding prose. Add definitions only when they prevent
 confusion.
 
 ## Non-Goals
 
 - Do not edit Rust or Python source.
-- Do not add new API features.
+- Do not add API features.
 - Do not rewrite archived docs.
 - Do not create a public pyoxipng migration guide in this pass.
 - Do not change release or packaging policy.
@@ -91,9 +90,8 @@ confusion.
   the docs index.
 - Each active doc starts with its purpose or main fact.
 - Long paragraphs are split or trimmed.
-- Project terms are defined before they are used in a process or architecture
-  decision.
-- The remaining pyoxipng parity gaps are easy to identify.
+- Project terms are defined before use in a process or architecture decision.
+- Remaining pyoxipng parity gaps are easy to find.
 - Archive files are unchanged unless an active index link must be corrected.
 
 ## Verification
@@ -106,5 +104,5 @@ After edits:
 4. Confirm `git diff --name-only` does not list rewritten files under
    `docs/archive/**`.
 
-If a doc contains executable examples and the rewrite changes those examples,
-run the focused test or command that proves the example still works.
+If a rewrite changes executable examples, run the focused test or command that
+proves the examples still work.

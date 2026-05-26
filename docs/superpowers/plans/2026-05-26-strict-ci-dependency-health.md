@@ -581,15 +581,24 @@ Append this job to `.github/workflows/dependency-health.yml`:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      DEPENDENCY_REFRESH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v4
         with:
           name: dependency-refresh
           path: .
+      - name: Require dependency refresh token
+        run: |
+          if [ -z "$DEPENDENCY_REFRESH_TOKEN" ]; then
+            echo "DEPENDENCY_REFRESH_TOKEN is required so refresh PRs trigger normal CI." >&2
+            exit 1
+          fi
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ env.DEPENDENCY_REFRESH_TOKEN }}
           commit-message: "chore: refresh dependency lockfiles"
           title: "chore: refresh dependency lockfiles"
           body: |
@@ -604,6 +613,9 @@ Append this job to `.github/workflows/dependency-health.yml`:
           branch: automation/dependency-refresh
           delete-branch: true
           labels: dependencies, automated
+          add-paths: |
+            Cargo.lock
+            uv.lock
 ```
 
 - [x] **Step 3: Document the scheduled workflow**
@@ -617,6 +629,13 @@ Append this section to `docs/process/dependency-health.md`:
 job has read-only repository permissions, refreshes `uv.lock` and `Cargo.lock`,
 then runs dependency audits and full CI. A separate write-scoped publish job
 opens or updates the dependency refresh PR only if lockfiles changed.
+
+Set the `DEPENDENCY_REFRESH_TOKEN` repository secret to a fine-grained PAT or
+GitHub App token that can write contents and pull requests. The workflow
+requires this explicit token so dependency refresh PRs trigger the repository's
+normal CI workflows; PRs created with the default `GITHUB_TOKEN` do not trigger
+those downstream workflow events. The publish job limits committed paths to
+`Cargo.lock` and `uv.lock`.
 
 Do not enable auto-merge for dependency refresh PRs by default. Review lockfile
 diffs before merge, especially when CVE remediation pulls major transitive

@@ -65,15 +65,24 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      DEPENDENCY_REFRESH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v4
         with:
           name: dependency-refresh
           path: .
+      - name: Require dependency refresh token
+        run: |
+          if [ -z "$DEPENDENCY_REFRESH_TOKEN" ]; then
+            echo "DEPENDENCY_REFRESH_TOKEN is required so refresh PRs trigger normal CI." >&2
+            exit 1
+          fi
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ env.DEPENDENCY_REFRESH_TOKEN }}
           commit-message: "chore: refresh dependency lockfiles"
           title: "chore: refresh dependency lockfiles"
           body: |
@@ -88,3 +97,6 @@ jobs:
           branch: automation/dependency-refresh
           delete-branch: true
           labels: dependencies, automated
+          add-paths: |
+            Cargo.lock
+            uv.lock

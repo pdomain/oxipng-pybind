@@ -30,6 +30,13 @@ job has read-only repository permissions, refreshes `uv.lock` and `Cargo.lock`,
 then runs dependency audits and full CI. A separate write-scoped publish job
 opens or updates the dependency refresh PR only if lockfiles changed.
 
+Set the `DEPENDENCY_REFRESH_TOKEN` repository secret to a fine-grained PAT or
+GitHub App token that can write contents and pull requests. The workflow
+requires this explicit token so dependency refresh PRs trigger the repository's
+normal CI workflows; PRs created with the default `GITHUB_TOKEN` do not trigger
+those downstream workflow events. The publish job limits committed paths to
+`Cargo.lock` and `uv.lock`.
+
 Do not enable auto-merge for dependency refresh PRs by default. Review lockfile
 diffs before merge, especially when CVE remediation pulls major transitive
 updates.

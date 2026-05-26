@@ -41,8 +41,14 @@ When `output` is omitted, upstream writes in place through `OutFile::Path` with
 ## Memory Optimization Flow
 
 `optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
-`memoryview`. The wrapper copies Python-owned bytes before releasing the GIL,
-then calls `oxipng::optimize_from_memory` and returns optimized PNG bytes.
+`memoryview`. `bytes` and `bytearray` inputs are copied directly into owned Rust
+memory. `memoryview` and other objects exposing a `tobytes()` method are first
+materialized as Python `bytes`, then copied into owned Rust memory. This extra
+copy keeps the handoff simple with the pinned PyO3 ABI3 configuration, where the
+PyO3 buffer API is not available. The wrapper owns the copied bytes before
+releasing the GIL, then calls `oxipng::optimize_from_memory` and returns
+optimized PNG bytes. See the upstream `oxipng` crate documentation for optimizer
+behavior after this handoff.
 
 File-only options such as `backup` and `preserve_attrs` are rejected for memory
 optimization.

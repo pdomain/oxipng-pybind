@@ -2,7 +2,10 @@ upstream_version = "10.1.1"
 manifest_scope = "Tracks upstream oxipng surface mapped or intentionally not mapped by this package. Python-only options such as backup and preserve_attrs are documented in stubs and usage docs."
 
 [functions]
-exposed = ["analyze", "optimize", "optimize_from_memory"]
+exposed = ["optimize", "optimize_from_memory"]
+
+[functions.wrapper]
+analyze = "wraps optimize with OutFile::None"
 
 [classes]
 exposed = ["OptimizationResult", "RawImage"]
@@ -45,8 +48,8 @@ on = "Options.interlace = Some(true)"
 none = "StripChunks::None"
 safe = "StripChunks::Safe"
 all = "StripChunks::All"
-Strip = "StripChunks.strip(names)"
-Keep = "StripChunks.keep(names)"
+Strip = "StripChunks::Strip via StripChunks.strip(names)"
+Keep = "StripChunks::Keep via StripChunks.keep(names)"
 
 [enums.Deflater.exposed]
 libdeflater = "Deflater::Libdeflater"
@@ -63,7 +66,7 @@ entropy = "FilterStrategy::Entropy"
 bigrams = "FilterStrategy::Bigrams"
 bigent = "FilterStrategy::BigEnt"
 brute = "FilterStrategy::Brute { num_lines: 3, level: 1 }"
-Predefined = "FilterStrategy.predefined(filters)"
+Predefined = "FilterStrategy::Predefined via FilterStrategy.predefined(filters)"
 
 [enums.ColorType.exposed]
 grayscale = "ColorType::Grayscale"
@@ -80,11 +83,11 @@ eight = "BitDepth::Eight"
 sixteen = "BitDepth::Sixteen"
 
 [enums.RowFilter.exposed]
-None = "RowFilter.none"
-Sub = "RowFilter.sub"
-Up = "RowFilter.up"
-Average = "RowFilter.average"
-Paeth = "RowFilter.paeth"
+None = "RowFilter::None via RowFilter.none"
+Sub = "RowFilter::Sub via RowFilter.sub"
+Up = "RowFilter::Up via RowFilter.up"
+Average = "RowFilter::Average via RowFilter.average"
+Paeth = "RowFilter::Paeth via RowFilter.paeth"
 
 [notes]
 interlacing = "Python Interlacing.keep maps to leaving Options.interlace unchanged as None."

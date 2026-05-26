@@ -19,6 +19,16 @@ wrappers own ergonomic names and path handling.
 | `force` | `bool` |
 | `backup` | `bool`, file API only |
 | `preserve_attrs` | `bool`, file API only |
+| `optimize_alpha` | `bool` or `None` |
+| `bit_depth_reduction` | `bool` or `None` |
+| `color_type_reduction` | `bool` or `None` |
+| `palette_reduction` | `bool` or `None` |
+| `grayscale_reduction` | `bool` or `None` |
+| `idat_recoding` | `bool` or `None` |
+| `scale_16` | `bool` or `None` |
+| `fast_evaluation` | `bool` or `None` |
+| `timeout` | non-negative seconds or `None` |
+| `max_decompressed_size` | non-negative integer bytes or `None` |
 
 ## Filter Values
 
@@ -26,32 +36,22 @@ wrappers own ergonomic names and path handling.
 `entropy`, `bigrams`, `bigent`, and `brute`. String aliases also include
 numeric values `"0"` through `"9"` in that order.
 
-## Compatibility-Only Options
+`FilterStrategy.predefined(...)` exposes upstream `FilterStrategy::Predefined`.
+It accepts a non-empty sequence of basic row filters.
 
-These upstream `Options` fields are accepted only as pyoxipng compatibility
-paths. They emit `DeprecationWarning` and are not stable API:
+## Stable Factories
 
-- `optimize_alpha`
-- `bit_depth_reduction`
-- `color_type_reduction`
-- `palette_reduction`
-- `grayscale_reduction`
-- `idat_recoding`
-- `scale_16`
-- `fast_evaluation`
-- `timeout`
+These factories expose upstream option objects:
 
-## Unexposed Options
+- `StripChunks.strip(names)`
+- `StripChunks.keep(names)`
+- `Deflaters.libdeflater(compression)`
+- `Deflaters.zopfli(iterations)`
 
-This upstream `Options` field is not exposed:
+## Dry Run
 
-- `max_decompressed_size`
-
-These upstream enum variants are not exposed as stable API:
-
-- `StripChunks::Strip`
-- `StripChunks::Keep`
-- `FilterStrategy::Predefined`
+`analyze(input, **options)` maps to upstream `OutFile::None`. It returns
+`OptimizationResult` with `original_size` and `optimized_size`.
 
 ## Source Of Truth
 

@@ -11,6 +11,8 @@ The supported Python surface is:
 
 - `optimize`
 - `optimize_from_memory`
+- `analyze`
+- `OptimizationResult`
 - `PngError`
 - `Interlacing`
 - `StripChunks`
@@ -20,17 +22,21 @@ The supported Python surface is:
 - `BitDepth`
 - `RawImage`
 
-These names are the public contract for normal use. They do not try to mirror
-every upstream CLI flag, Rust type, or `Options` field.
+These names are the public contract for normal use.
 
 ## pyoxipng Compatibility
 
-`pyoxipng` exposed a broader Python API. `oxipng-pybind` keeps practical
-compatibility paths for path-based optimization, enum-like options, explicit
-chunk keep/strip lists, raw-image construction, and upstream option keywords.
+`pyoxipng` exposed a broader Python API. Most practical upstream surfaces are
+now stable API in `oxipng-pybind`.
 
 Compatibility paths emit `DeprecationWarning`. They are unsupported migration
 paths. A migration path is a short-term bridge for old callers, not a stable API.
+
+Remaining compatibility paths are:
+
+- `ColorType` descriptor calls;
+- `RawImage(data, width, height, color_type=...)`;
+- pyoxipng naming aliases such as `Interlacing.Off` and `Interlacing.Adam7`.
 
 ## Unsupported Paths
 
@@ -38,7 +44,6 @@ These paths are not supported:
 
 - pyoxipng-specific raw buffer helpers beyond `RawImage`
 - stdin/stdout behavior
-- automatic stable exposure of every upstream `Options` field
 
 Unsupported paths may fail, warn, or stay absent.
 

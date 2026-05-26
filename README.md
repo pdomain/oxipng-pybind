@@ -17,7 +17,8 @@ make wheel
 
 ## Basic API
 
-The main entry points are `optimize`, `optimize_from_memory`, and `RawImage`.
+The main entry points are `optimize`, `optimize_from_memory`, `RawImage`, and
+`analyze`.
 
 - `optimize` reads and writes PNG files.
   See [File Optimization](docs/usage/file-optimization.md).
@@ -25,17 +26,16 @@ The main entry points are `optimize`, `optimize_from_memory`, and `RawImage`.
   See [Memory Optimization](docs/usage/memory-optimization.md).
 - `RawImage` builds optimized PNG data from packed pixel bytes.
   See [Raw Image Usage](docs/usage/raw-image.md).
+- `analyze` reports original and optimized sizes without writing output.
 
 PNG decode and optimization failures raise `PngError`. Caller errors raise
 standard Python exceptions such as `TypeError` or `ValueError`.
 
 ## pyoxipng Compatibility
 
-Some `pyoxipng` compatibility paths exist for migration tests. These paths emit
-`DeprecationWarning`. New code should use the stable `oxipng-pybind` API.
-
-Compatibility-only paths include explicit chunk keep/strip lists and upstream
-alpha options. They emit `DeprecationWarning` and are not the stable API.
+Most practical upstream options are stable API. Remaining `pyoxipng`
+compatibility paths emit `DeprecationWarning`. New code should use the stable
+`oxipng-pybind` API.
 
 stdin/stdout optimization is still unsupported.
 

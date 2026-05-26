@@ -370,7 +370,7 @@ Expected: commit succeeds.
 - Modify: `docs/superpowers/specs/2026-05-26-upstream-surface-promotion-design.md`
 - Modify: `docs/superpowers/plans/2026-05-26-upstream-surface-promotion.md`
 
-- [ ] **Step 1: Update docs and manifest**
+- [x] **Step 1: Update docs and manifest**
 
 Update docs to show:
 
@@ -380,7 +380,7 @@ Update docs to show:
 - `OutFile::None` is represented by `analyze`.
 - `FilterStrategy::Predefined` is represented by `FilterStrategy.predefined`.
 
-- [ ] **Step 2: Run full verification**
+- [x] **Step 2: Run full verification**
 
 Run:
 
@@ -405,7 +405,7 @@ Expected:
 - markdownlint passes.
 - `git diff --check` prints no whitespace errors.
 
-- [ ] **Step 3: Commit docs and checklist**
+- [x] **Step 3: Commit docs and checklist**
 
 Run:
 

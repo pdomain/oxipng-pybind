@@ -20,8 +20,8 @@ The package shape is in place:
 
 The public Python API is in place:
 
-- `optimize`, `optimize_from_memory`, `PngError`, option enums, raw-image
-  enums, and `RawImage` are exported.
+- `optimize`, `optimize_from_memory`, `analyze`, `OptimizationResult`,
+  `PngError`, option enums, raw-image enums, and `RawImage` are exported.
 - Type stubs, `py.typed`, and runtime docstrings exist for the supported API.
 - File optimization supports in-place writes, explicit output paths,
   path-like inputs, `backup`, `preserve_attrs`, level checks, option parsing,
@@ -30,8 +30,8 @@ The public Python API is in place:
 - `RawImage` supports `ColorType`, `BitDepth`, packed pixel data, indexed
   palettes, transparency checks, ancillary chunks, ICC profiles, and
   `create_optimized_png`.
-- The option surface includes `level`, `interlace`, `strip`, `deflate`,
-  `filter`, `fix_errors`, and `force`.
+- The option surface includes stable upstream options, explicit strip/keep
+  chunks, deflater tuning, predefined filters, and dry-run analysis.
 - Supported option values accept stable strings and Python enum `.value`
   strings. Rust code does not depend on Python enum object identity.
 
@@ -106,10 +106,14 @@ These pyoxipng-style compatibility paths exist:
 - `StripChunks.strip(...)` and `StripChunks.keep(...)`;
 - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)`;
 - advanced boolean option keywords;
-- `timeout`.
+- `timeout`;
+- `max_decompressed_size`;
+- `analyze`, which maps to upstream `OutFile::None`;
+- `FilterStrategy.predefined(...)`, which maps to upstream
+  `FilterStrategy::Predefined`.
 
-Compatibility paths emit `DeprecationWarning`. They are unsupported migration
-paths. New code should use the stable oxipng-pybind API.
+Most of these paths are now stable API. Remaining compatibility-only paths emit
+`DeprecationWarning`; new code should use the stable oxipng-pybind API.
 
 ## Remaining pyoxipng Gaps
 
@@ -145,8 +149,8 @@ These gaps are still visible in the workspace:
 
 ## pyoxipng Parity Roadmap
 
-Preserve the current stable API. Add pyoxipng-compatible aliases and
-constructors only where they do not create unsafe defaults.
+Preserve the current stable API. Add pyoxipng-compatible aliases only where
+they do not create unsafe defaults.
 
 1. Packaging parity:
    - Decide whether `oxipng-pybind` should publish to PyPI.
@@ -167,19 +171,19 @@ constructors only where they do not create unsafe defaults.
    - The explicit constructor path remains the stable API.
 
 4. Option object parity:
-   - `StripChunks.strip(...)` and `StripChunks.keep(...)` exist for explicit
-     chunk-name lists.
-   - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` exist with range
-     validation.
-   - Compatibility factories produce narrow accepted input objects.
+   - `StripChunks.strip(...)` and `StripChunks.keep(...)` are stable API for
+     explicit chunk-name lists.
+   - `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` are stable API
+     with range validation.
+   - `FilterStrategy.predefined(...)` is stable API for predefined row filters.
 
 5. Advanced option parity:
    - `optimize_alpha`, `bit_depth_reduction`, `color_type_reduction`,
      `palette_reduction`, `grayscale_reduction`, `idat_recoding`, `scale_16`,
-     `fast_evaluation`, and `timeout` exist as warning-emitting compatibility
-     keywords.
+     `fast_evaluation`, `timeout`, and `max_decompressed_size` are stable API.
    - `timeout` rejects booleans, negative values, non-finite values, and
      out-of-range values with Python exceptions.
+   - `analyze(...)` exposes upstream `OutFile::None`.
 
 6. Behavior and migration parity:
    - Add a migration guide with side-by-side pyoxipng and oxipng-pybind
@@ -198,8 +202,8 @@ Split future work into small phases:
   policy, and document rollback expectations.
 - Compatibility phase: add a migration guide and decide whether stdin/stdout
   workflows are required.
-- Upstream option phase: keep using compatibility warnings for future
-  pyoxipng-only API surface unless it graduates to the stable API.
+- Upstream option phase: keep stdin/stdout unsupported unless a focused design
+  approves process I/O behavior.
 - Platform phase: decide whether musllinux, 32-bit Windows, or extra Linux
   architectures are in scope.
 - Documentation phase: keep stable API examples synchronized with any
@@ -212,8 +216,8 @@ Split future work into small phases:
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Choose the next milestone: PyPI packaging parity, migration docs, or
-   stdin/stdout compatibility.
+4. Choose the next milestone: PyPI packaging parity, migration docs, or a
+   stdin/stdout decision.
 5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
    verification first.
 6. If migration docs are chosen, write side-by-side pyoxipng and

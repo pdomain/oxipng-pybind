@@ -21,7 +21,8 @@ implementation plans.
   manifest.
 - The Python facade exports `optimize`, `optimize_from_memory`, `PngError`,
   option enums, raw-image enums, and `RawImage`.
-- Type stubs and `py.typed` are present for the supported API.
+- Type stubs, `py.typed`, and runtime docstrings are present for the supported
+  public API.
 - File optimization supports in-place and explicit-output workflows, path-like
   inputs, `backup`, `preserve_attrs`, level validation, option parsing, and
   predictable Python exceptions.
@@ -137,6 +138,60 @@ replacement.
   `preserve_attrs`, that are wrapper-specific rather than pyoxipng parity
   targets.
 
+## pyoxipng Parity Roadmap
+
+Parity should be treated as a sequence of compatibility layers. Preserve the
+current stable API while adding pyoxipng-compatible aliases and constructors
+where they do not create unsafe defaults.
+
+1. Packaging parity:
+   - Decide whether `oxipng-pybind` should publish to PyPI.
+   - Add Trusted Publishing if PyPI distribution is approved.
+   - Decide whether to publish an sdist; pyoxipng publishes one, but this
+     project currently avoids source-install expectations.
+   - Add or explicitly reject musllinux and 32-bit Windows wheel targets.
+
+2. Naming and enum parity:
+   - Add pyoxipng-style enum names as aliases, including `Interlacing.Off`,
+     `Interlacing.Adam7`, and `RowFilter`.
+   - Decide whether `FilterStrategy` remains the primary internal name with
+     `RowFilter` as a compatibility alias.
+   - Add tests that pyoxipng-style names and current stable strings parse to the
+     same upstream options.
+
+3. Raw image constructor parity:
+   - Add a compatibility constructor path for `RawImage(data, width, height,
+     color_type=...)`.
+   - Add `ColorType` helper constructors such as `rgb(...)`, `rgba()`,
+     `indexed(...)`, `grayscale(...)`, and `grayscale_alpha()`.
+   - Keep the existing explicit constructor path documented for users who
+     prefer enum values and keyword arguments.
+
+4. Option object parity:
+   - Add `StripChunks.strip(...)` and `StripChunks.keep(...)` compatibility
+     constructors for explicit chunk-name lists.
+   - Add `Deflaters.libdeflater(int)` and `Deflaters.zopfli(int)` compatibility
+     constructors with range validation.
+   - Decide whether these become public classes, enum-like factories, or narrow
+     accepted input objects.
+
+5. Advanced option parity:
+   - Evaluate `optimize_alpha`, `bit_depth_reduction`,
+     `color_type_reduction`, `palette_reduction`, `grayscale_reduction`,
+     `idat_recoding`, `scale_16`, `fast_evaluation`, and `timeout` one at a
+     time.
+   - Start with boolean options that map directly to stable upstream fields.
+   - Treat `timeout` separately because it changes execution behavior and needs
+     clear tests for partial optimization.
+
+6. Behavior and migration parity:
+   - Add a migration guide with side-by-side pyoxipng and oxipng-pybind
+     examples.
+   - Add tests for pyoxipng-style examples copied from the public docs, adapted
+     only where behavior is intentionally different.
+   - Decide whether stdin/stdout workflows are required for parity or remain
+     explicitly unsupported.
+
 ## Future Work
 
 Future work should be split into small, reviewable phases.
@@ -164,7 +219,10 @@ Future work should be split into small, reviewable phases.
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Decide whether the next milestone is PyPI publishing or deeper pyoxipng
-   compatibility.
-5. Turn the chosen milestone into a focused implementation plan before adding
+4. Choose the next milestone: PyPI packaging parity or API compatibility parity.
+5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
+   verification first.
+6. If API compatibility parity is chosen, start with naming and enum aliases,
+   then raw image constructor compatibility.
+7. Turn the chosen milestone into a focused implementation plan before adding
    more API surface.

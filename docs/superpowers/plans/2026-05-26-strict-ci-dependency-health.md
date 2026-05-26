@@ -128,7 +128,7 @@ git push origin main
 - Modify: `.pre-commit-config.yaml`
 - Modify: `Makefile`
 
-- [ ] **Step 1: Update pre-commit hook versions and install types**
+- [x] **Step 1: Update pre-commit hook versions and install types**
 
 Replace the top of `.pre-commit-config.yaml` with:
 
@@ -150,7 +150,7 @@ repos:
       - id: check-merge-conflict
 ```
 
-- [ ] **Step 2: Add gitleaks**
+- [x] **Step 2: Add gitleaks**
 
 Add this repo block after `pre-commit-hooks`:
 
@@ -161,7 +161,7 @@ Add this repo block after `pre-commit-hooks`:
       - id: gitleaks
 ```
 
-- [ ] **Step 3: Update Ruff hook revision**
+- [x] **Step 3: Update Ruff hook revision**
 
 Replace the Ruff repo block with:
 
@@ -176,7 +176,7 @@ Replace the Ruff repo block with:
       - id: ruff-format
 ```
 
-- [ ] **Step 4: Keep markdownlint and add manual markdown fix**
+- [x] **Step 4: Keep markdownlint and add manual markdown fix**
 
 Replace the markdownlint block with:
 
@@ -191,7 +191,7 @@ Replace the markdownlint block with:
         stages: [manual]
 ```
 
-- [ ] **Step 5: Add local lock, Rust, and basedpyright hooks**
+- [x] **Step 5: Add local lock, Rust, and basedpyright hooks**
 
 Replace the local hook block with:
 
@@ -222,7 +222,7 @@ Replace the local hook block with:
         files: ^(oxipng|scripts|tests)/.*\.pyi?$
 ```
 
-- [ ] **Step 6: Add gitlint commit-msg hook**
+- [x] **Step 6: Add gitlint commit-msg hook**
 
 Add this block at the end:
 
@@ -234,7 +234,7 @@ Add this block at the end:
         stages: [commit-msg]
 ```
 
-- [ ] **Step 7: Ensure setup installs commit-msg hooks**
+- [x] **Step 7: Ensure setup installs commit-msg hooks**
 
 In `Makefile`, change:
 
@@ -249,7 +249,7 @@ uv run --group dev pre-commit install --install-hooks
 uv run --group dev pre-commit install --hook-type commit-msg
 ```
 
-- [ ] **Step 8: Run pre-commit validation**
+- [x] **Step 8: Run pre-commit validation**
 
 Run:
 
@@ -268,7 +268,7 @@ rm -f .cache/gitlint-message.txt
 
 Expected: all hooks pass.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 Run:
 

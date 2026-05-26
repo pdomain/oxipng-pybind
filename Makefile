@@ -54,7 +54,8 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
 	uv sync --group dev --reinstall
 	uv run --group dev maturin develop
-	uv run --group dev pre-commit install
+	uv run --group dev pre-commit install --install-hooks
+	uv run --group dev pre-commit install --hook-type commit-msg
 
 develop: ## Build and install the editable extension
 	uv run --group dev maturin develop
@@ -93,7 +94,7 @@ md-lint: ## Run markdownlint via pre-commit
 	uv run --group dev pre-commit run markdownlint-cli2 --all-files
 
 md-lint-fix: ## Run markdownlint auto-fix via pre-commit
-	@echo "No markdownlint auto-fix hook is configured."
+	uv run --group dev pre-commit run markdownlint-cli2-fix --hook-stage manual --all-files
 
 format: ## Format Rust and Python, then run lint
 	cargo fmt --all

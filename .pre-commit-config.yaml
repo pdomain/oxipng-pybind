@@ -1,31 +1,64 @@
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
       - id: check-toml
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: debug-statements
+      - id: check-merge-conflict
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
     hooks:
+      - id: gitleaks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
+    hooks:
+      - id: ruff-check
+        args: ["--select", "I", "--fix"]
       - id: ruff-check
         args: ["--fix"]
       - id: ruff-format
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.18.1
+    rev: v0.22.1
     hooks:
       - id: markdownlint-cli2
+      - id: markdownlint-cli2
+        alias: markdownlint-cli2-fix
+        args: ["--fix"]
+        stages: [manual]
   - repo: local
     hooks:
       - id: cargo-fmt
-        name: cargo fmt
+        name: cargo fmt --check
         entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" cargo fmt --all -- --check'
         language: system
         pass_filenames: false
       - id: cargo-clippy
-        name: cargo clippy
+        name: cargo clippy -D warnings
         entry: bash -c 'PATH="$HOME/.cargo/bin:$PATH" cargo clippy --workspace --all-targets -- -D warnings'
         language: system
         pass_filenames: false
+      - id: uv-lock-check
+        name: uv.lock is in sync with pyproject.toml
+        entry: uv lock --check
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|uv\.lock)$
+      - id: basedpyright
+        name: basedpyright type check
+        entry: uv run --group dev basedpyright
+        language: system
+        pass_filenames: false
+        files: ^(oxipng|scripts|tests)/.*\.pyi?$
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]

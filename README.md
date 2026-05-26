@@ -19,47 +19,12 @@ make wheel
 
 The main entry points are `optimize`, `optimize_from_memory`, and `RawImage`.
 
-```python
-from pathlib import Path
-
-from oxipng import BitDepth, ColorType, RawImage
-from oxipng import optimize, optimize_from_memory
-
-path = Path("cover.png")
-optimize(path, level=6)
-
-png_bytes = path.read_bytes()
-optimized_bytes = optimize_from_memory(png_bytes, strip="safe")
-
-raw = RawImage(
-    1,
-    1,
-    ColorType.rgba,
-    BitDepth.eight,
-    bytes([255, 0, 0, 255]),
-)
-raw_png = raw.create_optimized_png()
-```
-
-`optimize` reads a PNG file. If `output` is omitted, it writes the optimized
-PNG back to the input path.
-
-```python
-optimize("cover.png", output="cover.optimized.png", level=4)
-```
-
-`optimize_from_memory` reads PNG data from `bytes`, `bytearray`, or
-`memoryview`. It returns optimized PNG data as `bytes`.
-
-```python
-optimized_bytes = optimize_from_memory(png_bytes, level=4)
-```
-
-`RawImage` builds an optimized PNG from packed pixel bytes.
-
-```python
-raw_png = raw.create_optimized_png(level=3)
-```
+- `optimize` reads and writes PNG files.
+  See [File Optimization](docs/usage/file-optimization.md).
+- `optimize_from_memory` reads PNG data from memory and returns optimized bytes.
+  See [Memory Optimization](docs/usage/memory-optimization.md).
+- `RawImage` builds optimized PNG data from packed pixel bytes.
+  See [Raw Image Usage](docs/usage/raw-image.md).
 
 PNG decode and optimization failures raise `PngError`. Caller errors raise
 standard Python exceptions such as `TypeError` or `ValueError`.

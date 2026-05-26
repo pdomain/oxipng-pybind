@@ -181,7 +181,11 @@ def test_compare_surface_reports_new_and_removed_items() -> None:
         },
         "enums": {"Deflater": {"exposed": {"Libdeflater": "Deflater::Libdeflater"}}},
     }
-    surface = parse_upstream_surface(Path(".cache/upstream/oxipng"))
+    surface = UpstreamSurface(
+        options_fields=["fix_errors"],
+        enums={"Deflater": ["Libdeflater"]},
+        functions=["optimize", "optimize_from_memory"],
+    )
     report = compare_surface(surface, manifest)
 
     assert "missing" in report["removed_exposed_options"]

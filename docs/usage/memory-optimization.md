@@ -1,6 +1,7 @@
 # Optimize PNG Data in Memory
 
-Use `optimize_from_memory` when PNG data is already loaded in Python.
+Use [`optimize_from_memory`](../../oxipng/__init__.pyi#L238) when PNG data is
+already loaded in Python.
 
 ## Basic Use
 
@@ -12,15 +13,20 @@ from pathlib import Path
 from oxipng import optimize_from_memory
 
 png_bytes = Path("cover.png").read_bytes()
-optimized = optimize_from_memory(png_bytes, level=4, strip="safe")
+optimized = optimize_from_memory(data=png_bytes, level=4, strip="safe")
 Path("cover.optimized.png").write_bytes(optimized)
 ```
 
-The return value is always `bytes`.
+The return value is always
+[`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes).
 
-## Options
+## Inputs
 
-The input may be `bytes`, `bytearray`, or `memoryview`.
+The input may be:
+
+- `bytes`
+- [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray)
+- [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview)
 
 ```python
 from pathlib import Path
@@ -28,38 +34,37 @@ from pathlib import Path
 from oxipng import optimize_from_memory
 
 png_bytes = Path("cover.png").read_bytes()
-optimized_from_bytearray = optimize_from_memory(bytearray(png_bytes))
-optimized_from_view = optimize_from_memory(memoryview(png_bytes))
+optimized_from_bytearray = optimize_from_memory(data=bytearray(png_bytes))
+optimized_from_view = optimize_from_memory(data=memoryview(png_bytes))
 ```
 
-`level` must be an integer from `0` through `6`. Enum-like options accept enum
-members or string aliases. Common options include `interlace`, `strip`,
-`deflate`, `filter`, `fix_errors`, and `force`.
+## Options
 
-Advanced options include `optimize_alpha`, `bit_depth_reduction`,
-`color_type_reduction`, `palette_reduction`, `grayscale_reduction`,
-`idat_recoding`, `scale_16`, `fast_evaluation`, `timeout`, and
-`max_decompressed_size`.
+`level` must be an integer from `0` through `6`.
 
-`backup` and `preserve_attrs` are file-only options. `optimize_from_memory`
-rejects them.
+Most optimization options map to Rust
+[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
+
+This package uses Python names and Python value types for those options.
+See [Options Surface](../architecture/options-surface.md) for the Python
+mapping.
+
+Enum-like options accept enum members or string aliases.
+
+`backup` and `preserve_attrs` are file-only options.
+
+`optimize_from_memory` rejects them.
 
 ## Untrusted Input
 
-Set explicit limits when processing PNG bytes from untrusted users:
+For bytes from untrusted users, see
+[Handle Untrusted Input](untrusted-input.md).
 
-```python
-from oxipng import optimize_from_memory
+## stdin and stdout
 
-optimized = optimize_from_memory(data, timeout=2.0, max_decompressed_size=50_000_000)
-```
+stdin and stdout optimization are caller-owned.
 
-`timeout` limits optimization time. `max_decompressed_size` rejects inputs whose
-inflated image data would exceed the configured byte count. Defaults preserve
-upstream behavior and do not impose a decompression cap.
-
-stdin and stdout optimization are not part of this API. Callers must decide
-when to read from stdin and when to write to stdout:
+Read bytes first. Then call `optimize_from_memory`:
 
 ```python
 import sys
@@ -67,20 +72,21 @@ import sys
 from oxipng import optimize_from_memory
 
 data = sys.stdin.buffer.read()
-optimized = optimize_from_memory(data)
+optimized = optimize_from_memory(data=data)
 sys.stdout.buffer.write(optimized)
 ```
 
 ## Errors
 
-Caller errors raise `TypeError` or `ValueError`. Invalid PNG data raises
-`PngError`.
+Caller errors raise `TypeError` or `ValueError`.
+
+Invalid PNG data raises `PngError`.
 
 ```python
 from oxipng import PngError, optimize_from_memory
 
 try:
-    optimize_from_memory(b"not a png")
+    optimize_from_memory(data=b"not a png")
 except PngError:
     print("not an optimizable PNG")
 ```

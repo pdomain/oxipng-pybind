@@ -1,13 +1,14 @@
 # API Compatibility
 
-`oxipng-pybind` exposes a small stable API over upstream `oxipng`. A stable API
-is an API that callers can use without compatibility warnings.
+`oxipng-pybind` exposes a small stable API over Rust `oxipng`.
 
-Stable API calls must remain warning-free.
+A stable API is safe for normal callers to use.
+
+Stable API calls must not emit compatibility warnings.
 
 ## Stable API
 
-The stable no-warning Python surface is:
+These names are the public contract:
 
 - `optimize`
 - `optimize_from_memory`
@@ -23,49 +24,61 @@ The stable no-warning Python surface is:
 - `BitDepth`
 - `RawImage`
 
-These names are the public contract for normal use.
-
 ## pyoxipng Compatibility
 
-`pyoxipng` exposed a broader Python API. Most practical upstream surfaces are
-now stable API in `oxipng-pybind`.
+`pyoxipng` exposed older Python shapes.
 
-Compatibility paths emit `DeprecationWarning`. They are unsupported migration
-paths. A migration path is a short-term bridge for old callers, not a stable
-API.
+Some of those shapes do not match Rust `oxipng` option contracts.
 
-Warning-emitting compatibility paths are:
+This package keeps selected old shapes as migration paths.
 
-- `ColorType` descriptor calls;
-- `RawImage(data, width, height, color_type=...)`;
-- pyoxipng enum aliases such as `Interlacing.Off`, `Interlacing.Adam7`, and
-  `RowFilter`.
+Those paths emit `DeprecationWarning`.
 
-Every compatibility warning states that the path will be removed in a future
-release.
+A migration path is a short-term bridge for old callers. It is not stable API.
 
-Stable enum members such as `Interlacing.off`, `FilterStrategy.none`,
-`ColorType.rgba`, and `BitDepth.eight` do not warn. `StripChunks.strip`,
-`StripChunks.keep`, `Deflaters.libdeflater`, and `Deflaters.zopfli` also do not
-warn.
+Warning-emitting paths include:
 
-`RowFilter` is exported only for old pyoxipng-style code. Do not use it in new
-code. Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
+- `ColorType` descriptor calls
+- `RawImage(data, width, height, color_type=...)`
+- pyoxipng enum aliases such as `Interlacing.Off`
+- `Interlacing.Adam7`
+- `RowFilter`
+
+Every compatibility warning says the path will be removed in a future release.
+
+Stable enum members do not warn.
+
+Examples:
+
+- `Interlacing.off`
+- `FilterStrategy.none`
+- `ColorType.rgba`
+- `BitDepth.eight`
+- `StripChunks.strip`
+- `StripChunks.keep`
+- `Deflaters.libdeflater`
+- `Deflaters.zopfli`
+
+`RowFilter` exists only for old pyoxipng-style code.
+
+Do not use it in new code.
+
+Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
 
 ## Unsupported Paths
 
 These paths are not supported:
 
 - pyoxipng-specific raw buffer helpers beyond `RawImage`
-- stdin and stdout stream handling
+- stdin and stdout stream handling inside the library
 
 Unsupported paths may fail, warn, or stay absent.
 
 ## Source Of Truth
 
-The machine-readable upstream-surface source of truth for upstream `oxipng`
-10.1.1 is [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
+The machine-readable Rust surface record is
+[oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
 
-## Unexposed Upstream Surface
+## Unexposed Rust Surface
 
-No generated upstream-surface additions have been recorded for 10.1.1.
+No generated Rust surface additions have been recorded for 10.1.1.

@@ -1,7 +1,10 @@
 # Create PNGs From Raw Pixels
 
-Use `RawImage` when pixels are available as packed channel bytes and no input
-PNG file exists yet.
+Use [`RawImage`](../../oxipng/__init__.pyi#L126) when you have packed pixel bytes
+but no PNG file yet.
+
+It wraps Rust
+[`oxipng::RawImage`](https://docs.rs/oxipng/latest/oxipng/struct.RawImage.html).
 
 ## Basic Use
 
@@ -11,24 +14,46 @@ Create a one-pixel RGBA PNG:
 from oxipng import BitDepth, ColorType, RawImage
 
 raw = RawImage(
-    1,
-    1,
-    ColorType.rgba,
-    BitDepth.eight,
-    bytes([255, 0, 0, 255]),
+    width=1,
+    height=1,
+    color_type=ColorType.rgba,
+    bit_depth=BitDepth.eight,
+    data=bytes([255, 0, 0, 255]),
 )
 png_bytes = raw.create_optimized_png(level=3)
 ```
 
-## Options
+## Constructor
 
-The `RawImage` constructor accepts width, height, color type, bit depth, and
-packed pixel data. Width and height are in pixels. These values may be
-positional or keyword arguments.
+`RawImage` accepts:
 
-`color_type` accepts `ColorType` enum values or string aliases. `bit_depth`
-accepts `BitDepth` enum values or integer bit depths. Pixel data may be
-`bytes`, `bytearray`, or `memoryview`.
+- width
+- height
+- color type
+- bit depth
+- packed pixel data
+
+Width and height are in pixels.
+
+These values may be positional or keyword arguments.
+
+`color_type` accepts `ColorType` enum values or string aliases.
+See Rust
+[`ColorType`](https://docs.rs/oxipng/latest/oxipng/enum.ColorType.html)
+for the underlying color model.
+
+`bit_depth` accepts `BitDepth` enum values or integer bit depths.
+See Rust
+[`BitDepth`](https://docs.rs/oxipng/latest/oxipng/enum.BitDepth.html)
+for the underlying bit depth model.
+
+Pixel data may be:
+
+- [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)
+- [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray)
+- [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview)
+
+## Indexed Images
 
 Indexed images require a palette:
 
@@ -36,21 +61,17 @@ Indexed images require a palette:
 from oxipng import RawImage
 
 raw = RawImage(
-    2,
-    1,
-    "indexed",
-    8,
-    bytes([0, 1]),
+    width=2,
+    height=1,
+    color_type="indexed",
+    bit_depth=8,
+    data=bytes([0, 1]),
     palette=[(255, 0, 0), (0, 0, 255, 128)],
 )
 png_bytes = raw.create_optimized_png()
 ```
 
-Palette order is preserved and therefore must come from an ordered finite
-sequence. Tuple entries are the canonical style, but each palette entry may be
-any ordered 3- or 4-channel sequence of integer channel values. This accepts
-JSON-style lists while still rejecting strings, bytes, mappings, sets, and
-frozensets.
+## Transparency
 
 Transparent colors are supported for grayscale and RGB raw images:
 
@@ -58,40 +79,61 @@ Transparent colors are supported for grayscale and RGB raw images:
 from oxipng import BitDepth, ColorType, RawImage
 
 gray = RawImage(
-    1,
-    1,
-    ColorType.grayscale,
-    BitDepth.eight,
-    bytes([0]),
+    width=1,
+    height=1,
+    color_type=ColorType.grayscale,
+    bit_depth=BitDepth.eight,
+    data=bytes([0]),
     transparent=0,
 )
 rgb = RawImage(
-    1,
-    1,
-    ColorType.rgb,
-    BitDepth.eight,
-    bytes([255, 0, 0]),
+    width=1,
+    height=1,
+    color_type=ColorType.rgb,
+    bit_depth=BitDepth.eight,
+    data=bytes([255, 0, 0]),
     transparent=(255, 0, 0),
 )
 ```
 
-`transparent` is not accepted for indexed, grayscale-alpha, or RGBA images. Use
-alpha values in palette entries for indexed transparency. Transparent values
-must fit the selected bit depth.
+`transparent` is not accepted for indexed, grayscale-alpha, or RGBA images.
+
+Use alpha values in palette entries for indexed transparency.
+
+Transparent values must fit the selected bit depth.
+
+## PNG Chunks
 
 Add an auxiliary PNG chunk before optimization:
 
 ```python
 from oxipng import BitDepth, ColorType, RawImage
 
-raw = RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]))
+raw = RawImage(
+    width=1,
+    height=1,
+    color_type=ColorType.grayscale,
+    bit_depth=BitDepth.eight,
+    data=bytes([0]),
+)
 raw.add_png_chunk(b"tEXt", b"Comment\x00created from raw pixels")
 png_bytes = raw.create_optimized_png()
 ```
 
-The chunk name must be four ASCII letters. It must be public, ancillary, and
-safe to copy. The binding rejects structural chunks such as `IHDR`, `PLTE`,
-`IDAT`, `IEND`, `tRNS`, and `iCCP`.
+The chunk name must be four ASCII letters.
+
+It must be public, ancillary, and safe to copy.
+
+The binding rejects structural chunks such as:
+
+- `IHDR`
+- `PLTE`
+- `IDAT`
+- `IEND`
+- `tRNS`
+- `iCCP`
+
+## ICC Profiles
 
 Attach an ICC profile before optimization:
 
@@ -99,28 +141,43 @@ Attach an ICC profile before optimization:
 from oxipng import BitDepth, ColorType, RawImage
 
 icc_profile_bytes = b"example ICC profile bytes"
-raw = RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]))
+raw = RawImage(
+    width=1,
+    height=1,
+    color_type=ColorType.grayscale,
+    bit_depth=BitDepth.eight,
+    data=bytes([0]),
+)
 raw.add_icc_profile(icc_profile_bytes)
 png_bytes = raw.create_optimized_png()
 ```
 
-`RawImage.add_icc_profile()` forwards the profile to oxipng. The upstream API
-does not return a separate success status for profile attachment, so callers
-should treat invalid profile rejection as an exception and successful calls as
-best-effort attachment.
-
 ## Errors
 
-Invalid bit depths, color types, palette values, transparency values, and chunk
-names raise `ValueError`. Unsupported keywords raise `TypeError`. Invalid raw
-image data, such as the wrong data length for the image shape, raises
-`PngError`.
+These inputs raise `ValueError`:
+
+- invalid bit depths
+- invalid color types
+- invalid palette values
+- invalid transparency values
+- invalid chunk names
+
+Unsupported keywords raise `TypeError`.
+
+Invalid raw image data raises `PngError`. One example is data with the wrong
+length for the image shape.
 
 ```python
 from oxipng import BitDepth, ColorType, PngError, RawImage
 
 try:
-    RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255]))
+    RawImage(
+        width=1,
+        height=1,
+        color_type=ColorType.rgb,
+        bit_depth=BitDepth.eight,
+        data=bytes([255]),
+    )
 except PngError:
     print("not valid raw image data")
 ```
@@ -138,10 +195,9 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
-This path emits `DeprecationWarning`. The warning says it will be removed in a
-future release.
+This path emits `DeprecationWarning`.
 
-Move the color details into stable `RawImage` arguments:
+Move color details into stable `RawImage` arguments:
 
 ```python
 from oxipng import BitDepth, ColorType, RawImage
@@ -149,11 +205,28 @@ from oxipng import BitDepth, ColorType, RawImage
 data = bytes([255, 0, 0, 255])
 width = 1
 height = 1
-raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
+raw = RawImage(
+    width=width,
+    height=height,
+    color_type=ColorType.rgba,
+    bit_depth=BitDepth.eight,
+    data=data,
+)
 ```
 
-Do not mix the two shapes. For example, `RawImage(data, width, height,
-color_type=ColorType.rgba)` is rejected because pyoxipng order requires a
-`ColorType.rgba()` descriptor.
+Do not mix the two shapes.
+
+This call is rejected:
+
+```python
+from oxipng import ColorType, RawImage
+
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
+raw = RawImage(data, width, height, color_type=ColorType.rgba)
+```
+
+The pyoxipng order requires a descriptor such as `ColorType.rgba()`.
 
 See [Move from pyoxipng](pyoxipng-migration.md) for all migration rules.

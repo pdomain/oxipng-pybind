@@ -1,20 +1,36 @@
 # Options Surface
 
-Python options map to upstream `oxipng::Options`.
+Python options map to Rust `oxipng::Options`.
 
-Rust starts with `oxipng::Options::from_preset(level)`. Then it applies explicit
-Python overrides. The Rust extension owns validation and path conversion. The
-Python facade owns ergonomic names.
+For Rust option behavior, see
+[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
 
-## Supported Options
+This page records the Python mapping.
+
+## Option Parsing
+
+Rust starts with `oxipng::Options::from_preset(level)`.
+
+Then it applies explicit Python overrides.
+
+The Rust extension owns validation and path conversion.
+
+The Python facade owns ergonomic names.
+
+## Python Keyword Options
+
+Pass these options as keyword arguments to `optimize`,
+`optimize_from_memory`, `analyze`, or `RawImage.create_optimized_png`.
+
+`backup` and `preserve_attrs` are only valid for `optimize`.
 
 | Python option | Supported values |
 | --- | --- |
 | `level` | integers `0` through `6` |
-| `interlace` | `None`, `Interlacing.keep`, `Interlacing.off`, `Interlacing.on`, `"keep"`, `"off"`, `"on"`, `"0"`, `"1"` |
-| `strip` | `None`, `StripChunks.none`, `StripChunks.safe`, `StripChunks.all`, `StripChunks.strip(names)`, `StripChunks.keep(names)`, `"none"`, `"safe"`, `"all"` |
-| `deflate` | `None`, `Deflater.libdeflater`, `Deflater.zopfli`, `Deflaters.libdeflater(compression)`, `Deflaters.zopfli(iterations)`, `"libdeflater"`, `"zopfli"` |
-| `filter` | `None`, one scalar filter value, `FilterStrategy.predefined(filters)`, or a non-empty `list`, `tuple`, or `set` of scalar filter values |
+| `interlace` | enum values or aliases: `keep`, `off`, `on`, `0`, `1` |
+| `strip` | enum values, `StripChunks` factories, or aliases: `none`, `safe`, `all` |
+| `deflate` | enum values, `Deflaters` factories, or aliases: `libdeflater`, `zopfli` |
+| `filter` | one filter, or a non-empty list, tuple, or set of filters |
 | `fix_errors` | `bool` |
 | `force` | `bool` |
 | `backup` | `bool`, file API only |
@@ -32,49 +48,59 @@ Python facade owns ergonomic names.
 
 ## Filter Values
 
-`FilterStrategy` exposes `none`, `sub`, `up`, `average`, `paeth`, `minsum`,
-`entropy`, `bigrams`, `bigent`, and `brute`. String aliases also include
-numeric values `"0"` through `"9"` in that order.
+`FilterStrategy` exposes Rust `oxipng` filter strategies as Python enum values.
 
-`FilterStrategy.predefined(...)` exposes upstream `FilterStrategy::Predefined`.
-It accepts a non-empty ordered iterable of basic row filters, including ordered
-sequences and generators. Basic row filters are `none`, `sub`, `up`, `average`,
-and `paeth`.
+It also accepts string aliases.
 
-Predefined filter order is meaningful. `FilterStrategy.predefined(...)` rejects
-`set` and `frozenset`; callers that want sorted set contents should pass
-`sorted(values)` explicitly. A predefined-filter object is valid only as the
-whole `filter=` value, not inside a scalar filter collection.
+`FilterStrategy.predefined(...)` maps to Rust `FilterStrategy::Predefined`.
 
-`RowFilter` values also parse as filters for old pyoxipng-style code. Accessing
-`RowFilter` values emits `DeprecationWarning`.
+It accepts a non-empty sequence of basic row filters:
+
+- `none`
+- `sub`
+- `up`
+- `average`
+- `paeth`
+
+`RowFilter` values also parse as filters for old pyoxipng-style code.
+
+Accessing `RowFilter` values emits `DeprecationWarning`.
 
 ## Stable Factories
 
-These factories create Python option objects. Rust maps them to upstream
-options:
+These factories create Python option objects:
 
 - `StripChunks.strip(names)`
 - `StripChunks.keep(names)`
 - `Deflaters.libdeflater(compression)`
 - `Deflaters.zopfli(iterations)`
 
+Rust maps those objects to Rust `oxipng` options.
+
 `Deflaters.libdeflater(compression)` accepts `0` through `12`.
+
 `Deflaters.zopfli(iterations)` accepts `1` through `255`.
 
 ## Dry Run
 
-`analyze(input, **options)` maps to upstream `OutFile::None`. It returns
-`OptimizationResult` with `original_size` and `optimized_size`.
+[`analyze`](../../oxipng/__init__.pyi#L211) maps to Rust `OutFile::None`.
 
-`analyze` uses the same parser as memory mode. It rejects `backup` and
-`preserve_attrs`.
+It returns [`OptimizationResult`](../../oxipng/__init__.pyi#L118).
+
+`OptimizationResult` has:
+
+- `original_size`
+- `optimized_size`
+
+`analyze` uses the same parser as memory mode.
+
+It rejects `backup` and `preserve_attrs`.
 
 ## Source Of Truth
 
-The machine-readable upstream-surface source of truth is
+The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
 
-## Unexposed Upstream Surface
+## Unexposed Rust Surface
 
-No generated upstream-surface additions have been recorded for 10.1.1.
+No generated Rust surface additions have been recorded for 10.1.1.

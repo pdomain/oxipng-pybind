@@ -2,15 +2,22 @@
 
 Use this guide when old code imports `pyoxipng` or uses pyoxipng names.
 
-Stable API means the supported `oxipng-pybind` names. Compatibility path means
-an old pyoxipng shape that still works for now.
+Stable API means the supported `oxipng-pybind` names.
 
-Compatibility paths emit `DeprecationWarning`. They will be removed in a future
-release.
+A compatibility path is an old pyoxipng shape that still works for now.
 
-Some names that also existed in pyoxipng are stable in this package. They do
-not warn. Examples are `StripChunks.strip`, `StripChunks.keep`,
-`Deflaters.libdeflater`, and `Deflaters.zopfli`.
+Compatibility paths emit `DeprecationWarning`.
+
+They will be removed in a future release.
+
+Some names also existed in pyoxipng and are stable here. They do not warn.
+
+Examples:
+
+- `StripChunks.strip`
+- `StripChunks.keep`
+- `Deflaters.libdeflater`
+- `Deflaters.zopfli`
 
 ## Import Name
 
@@ -33,8 +40,10 @@ filter = FilterStrategy.none
 filters = FilterStrategy.predefined(["none", "sub", "up"])
 ```
 
-Do not use `RowFilter` in new code. `RowFilter` exists only for old pyoxipng
-code. It warns when you access a member:
+Do not use `RowFilter` in new code.
+
+`RowFilter` exists only for old pyoxipng code. It warns when you access a
+member:
 
 ```python
 from oxipng import RowFilter
@@ -85,7 +94,13 @@ from oxipng import BitDepth, ColorType, RawImage
 data = bytes([255, 0, 0, 255])
 width = 1
 height = 1
-raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
+raw = RawImage(
+    width=width,
+    height=height,
+    color_type=ColorType.rgba,
+    bit_depth=BitDepth.eight,
+    data=data,
+)
 ```
 
 The old pyoxipng order still works only as a migration path:
@@ -101,7 +116,9 @@ raw = RawImage(data, width, height, color_type=ColorType.rgba())
 
 That path emits `DeprecationWarning`.
 
-Do not mix the two shapes. This is rejected:
+Do not mix the two shapes.
+
+This call is rejected:
 
 ```python
 from oxipng import ColorType, RawImage
@@ -112,8 +129,9 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba)
 ```
 
-The pyoxipng order requires a descriptor such as `ColorType.rgba()`. The stable
-order requires an enum value such as `ColorType.rgba`.
+The pyoxipng order requires a descriptor such as `ColorType.rgba()`.
+
+The stable order requires an enum value such as `ColorType.rgba`.
 
 ## Color Types
 
@@ -143,11 +161,17 @@ entry lengths, boolean channels, and channel values outside `0..255`.
 
 ## Other Options
 
-Most practical options are stable now. Use these names directly:
+Most practical options are stable now.
+
+Underlying option behavior comes from Rust
+[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
+This package maps those options to Python names and values.
+
+Use these names directly:
 
 ```python
 optimize_from_memory(
-    png_bytes,
+    data=png_bytes,
     optimize_alpha=True,
     bit_depth_reduction=True,
     color_type_reduction=True,
@@ -170,10 +194,11 @@ strip = StripChunks.strip(["tEXt"])
 deflater = Deflaters.libdeflater(11)
 ```
 
-stdin and stdout optimization are not part of this API. Callers must decide
-when to read from stdin and when to write to stdout.
+## stdin and stdout
 
-Use `optimize_from_memory` after reading bytes:
+stdin and stdout are caller-owned.
+
+Read bytes first. Then call `optimize_from_memory`:
 
 ```python
 import sys
@@ -181,7 +206,7 @@ import sys
 from oxipng import optimize_from_memory
 
 data = sys.stdin.buffer.read()
-optimized = optimize_from_memory(data)
+optimized = optimize_from_memory(data=data)
 sys.stdout.buffer.write(optimized)
 ```
 
@@ -193,6 +218,6 @@ This keeps process stream handling in caller code.
 2. Replace `RowFilter` with `FilterStrategy`.
 3. Replace `Interlacing.Off` and `Interlacing.Adam7`.
 4. Replace callable `ColorType` values in new `RawImage` code.
-5. Use the stable `RawImage(width, height, color_type, bit_depth, data)` order.
+5. Use the stable `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)` order.
 6. Run tests with `DeprecationWarning` visible.
 7. Remove all compatibility paths before a future release removes them.

@@ -9,6 +9,7 @@ project state.
 - [Optimize PNG data in memory](usage/memory-optimization.md)
 - [Create PNGs from raw pixels](usage/raw-image.md)
 - [Handle untrusted input](usage/untrusted-input.md)
+- [Build from source](usage/build-from-source.md)
 - [Move from pyoxipng](usage/pyoxipng-migration.md)
 
 ## Architecture
@@ -21,10 +22,10 @@ project state.
 ## Process
 
 - [Dependency health](process/dependency-health.md)
-- [GitHub settings](process/github-settings.md)
 - [Local development](process/local-development.md)
 - [Release artifacts](process/release-artifacts.md)
-- [Upstream bump process](process/upstream-bumps.md)
+- [Rust oxipng updates](process/upstream-bumps.md)
+- [Writing style](process/writing-style.md)
 - [Lint deviations](conventions/lint-deviations.md)
 
 ## Project State

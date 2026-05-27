@@ -1,115 +1,109 @@
 # Optimize PNG Files
 
-Use `optimize` when a PNG is stored on disk.
+Use `optimize` when the PNG is on disk.
 
 ## Basic Use
-
-Optimize a file in place:
-
-```python
-from pathlib import Path
-
-from oxipng import optimize
-
-path = Path("cover.png")
-optimize(path, level=6)
-```
 
 Write the optimized PNG to a new path:
 
 ```python
 from oxipng import optimize
 
-optimize("cover.png", "cover.optimized.png", strip="safe")
+optimize(input="cover.png", output="cover.optimized.png", strip="safe")
 ```
 
-`input` and `output` may be strings, bytes paths, or `os.PathLike` values. If
-`output` is omitted, `optimize` writes back to the input file.
+`input` and `output` may be
+[`str`](https://docs.python.org/3/library/stdtypes.html#str),
+[`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes), or
+[`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) values.
 
-Use `analyze` to check sizes without writing a file:
+If `output` is omitted, `optimize` writes back to the input file.
+
+For files from untrusted users, see
+[Handle Untrusted Input](untrusted-input.md).
+
+## Analyze Without Writing
+
+Use [`analyze`](../../oxipng/__init__.pyi#L211) to check sizes without writing a
+file:
 
 ```python
 from oxipng import analyze
 
-result = analyze("cover.png", strip="safe")
+result = analyze(input="cover.png", strip="safe")
 print(result.original_size, result.optimized_size)
 ```
 
-`analyze` returns an `OptimizationResult`. It has `original_size` and
-`optimized_size` values in bytes.
+`analyze` returns an
+[`OptimizationResult`](../../oxipng/__init__.pyi#L118).
+
+The result has `original_size` and `optimized_size` values in bytes.
 
 ## Options
 
 `level` must be an integer from `0` through `6`.
 
-Use `backup=True` for in-place optimization when the original file should be
-copied first. The backup path is the input path plus `.bak`. Existing backup
-files are never overwritten.
+Use `backup=True` when an in-place write should keep the original file.
 
-Direct backup writes follow oxipng's file behavior. If the process is
-interrupted while a `.bak` file is being written, the partially written backup
-file may remain and should be removed before retrying.
+The backup path is the input path plus `.bak`.
+
+If that backup file already exists, `optimize` raises `FileExistsError`.
+
+It does not replace the existing backup file.
 
 ```python
 from oxipng import optimize
 
-optimize("cover.png", backup=True, force=True)
+optimize(input="cover.png", backup=True, force=True)
 ```
 
 Use `preserve_attrs=True` to copy output permissions and modification time from
-the input file where the operating system allows it.
+the input file. This depends on operating system support.
 
 ```python
 from oxipng import optimize
 
-optimize("cover.png", "out.png", preserve_attrs=True)
+optimize(input="cover.png", output="out.png", preserve_attrs=True)
 ```
 
-Enum-like options accept enum members or string aliases. Common options include
-`interlace`, `strip`, `deflate`, `filter`, `fix_errors`, and `force`.
+Most optimization options map to Rust
+[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
 
-Advanced options include `optimize_alpha`, `bit_depth_reduction`,
-`color_type_reduction`, `palette_reduction`, `grayscale_reduction`,
-`idat_recoding`, `scale_16`, `fast_evaluation`, `timeout`, and
-`max_decompressed_size`.
+This package uses Python names and Python value types for those options.
+See [Options Surface](../architecture/options-surface.md) for the Python
+mapping.
 
-`backup` and `preserve_attrs` are only valid for `optimize`. `analyze`,
-`optimize_from_memory`, and `RawImage.create_optimized_png` reject them.
+Enum-like options accept enum members or string aliases.
 
-## Untrusted Input
+`backup` and `preserve_attrs` are only valid for `optimize`.
 
-Set explicit limits when optimizing PNG files from untrusted users:
+These options are rejected by:
 
-```python
-from oxipng import optimize
+- `analyze`
+- `optimize_from_memory`
+- `RawImage.create_optimized_png`
 
-optimize("upload.png", timeout=2.0, max_decompressed_size=50_000_000)
-```
-
-`timeout` limits optimization time. `max_decompressed_size` rejects inputs whose
-inflated image data would exceed the configured byte count. Defaults preserve
-upstream behavior and do not impose a decompression cap.
-
-File APIs also need caller-side path controls for untrusted uploads. See
-[Untrusted Input](untrusted-input.md).
-
-stdin and stdout optimization are not part of this API. Callers must decide
-when to read from stdin and when to write to stdout. Use `optimize_from_memory`
+stdin and stdout optimization are caller-owned. Use `optimize_from_memory`
 after reading bytes.
 
 ## Errors
 
-Caller errors raise `TypeError` or `ValueError`. PNG decode and optimization
-errors raise `PngError`. File I/O problems may raise `FileNotFoundError`,
-`FileExistsError`, or `OSError`.
+Caller errors raise
+[`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError) or
+[`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError).
+
+PNG decode and optimization errors raise `PngError`.
+
+File I/O problems may raise
+[`FileNotFoundError`](https://docs.python.org/3/library/exceptions.html#FileNotFoundError),
+[`FileExistsError`](https://docs.python.org/3/library/exceptions.html#FileExistsError),
+or [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError).
 
 ```python
 from oxipng import PngError, optimize
 
 try:
-    optimize("possibly-corrupt.png", fix_errors=False)
+    optimize(input="possibly-corrupt.png", fix_errors=False)
 except PngError:
     print("not an optimizable PNG")
 ```
-
-The distribution is named `oxipng-pybind`, but the import module is `oxipng`.

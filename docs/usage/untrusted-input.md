@@ -1,34 +1,58 @@
-# Untrusted Input
+# Handle Untrusted Input
 
-PNG optimization can spend CPU and memory while decoding and recompressing
-images. When processing attacker-controlled files or bytes, pass explicit
-resource limits:
+PNG optimization can use a lot of CPU and memory.
+
+This matters when files or bytes come from users, uploads, queues, or other
+untrusted sources.
+
+## Use Limits
+
+Pass explicit limits for untrusted input:
 
 ```python
 from oxipng import optimize_from_memory
 
-optimized = optimize_from_memory(
-    data,
-    timeout=2.0,
-    max_decompressed_size=50_000_000,
-)
+optimized = optimize_from_memory(data=data, timeout=2.0, max_decompressed_size=50_000_000)
 ```
 
-The default options preserve upstream `oxipng` behavior and do not impose a
-decompression cap. Use conservative compression settings for request-time
-workloads, and enable `fix_errors` or `force` only when the caller accepts the
-additional processing.
+`timeout` limits optimization time.
 
-## File Paths
+`max_decompressed_size` rejects inputs whose inflated image data would exceed
+the configured byte count.
 
-File APIs read and write ordinary filesystem paths. They are not a sandbox and
-do not harden caller-controlled paths against symlinks, path races, or
-time-of-check/time-of-use changes.
+Default options follow Rust
+[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html)
+behavior. They do not set a decompression size limit.
 
-Services that optimize untrusted uploads should use private work directories
-owned by the service account. Generate input, output, and temporary filenames
-on the server side. Do not let request data choose output paths or backup paths
-for untrusted files.
+## File Uploads
 
-For untrusted bytes, prefer `optimize_from_memory` when the service does not
-need file attributes or in-place replacement.
+Use the same limits for files from untrusted users:
+
+```python
+from oxipng import optimize
+
+optimize(input="upload.png", timeout=2.0, max_decompressed_size=50_000_000)
+```
+
+## Request-Time Work
+
+Use conservative compression settings during web requests or other
+latency-sensitive work.
+
+Use `fix_errors` or `force` only when the caller accepts the extra work.
+
+## Byte Streams
+
+stdin and stdout are caller-owned.
+
+Read bytes first. Then call `optimize_from_memory`:
+
+```python
+import sys
+
+from oxipng import optimize_from_memory
+
+data = sys.stdin.buffer.read()
+optimized = optimize_from_memory(data=data, timeout=2.0, max_decompressed_size=50_000_000)
+sys.stdout.buffer.write(optimized)
+```

@@ -1,101 +1,151 @@
 # Architecture Overview
 
-`oxipng-pybind` is a Python package over the upstream Rust `oxipng` crate.
-The package name is `oxipng-pybind`, and the import name is `oxipng`.
+`oxipng-pybind` is a Python package over the Rust `oxipng` crate.
+
+The package name is `oxipng-pybind`.
+
+The import name is `oxipng`.
 
 ## Package Layout
 
-- `oxipng/__init__.py` is the Python facade. It exposes public names and
-  imports native functions and classes from `_oxipng`.
+- `oxipng/__init__.py` is the Python facade.
 - `oxipng/__init__.pyi` defines the typed Python API.
-- `oxipng/py.typed` tells type checkers that the package is typed.
-- `src/lib.rs` is the Rust extension built with PyO3.
+- `oxipng/py.typed` marks the package as typed.
+- `src/lib.rs` is the PyO3 Rust extension.
 - `.github/workflows/ci.yml` runs source checks.
-- `.github/workflows/wheels.yml` builds release wheel artifacts.
-- `.github/workflows/upstream-bump.yml` updates the pinned upstream version and
-  scans the upstream API surface.
+- `.github/workflows/wheels.yml` builds release wheels.
+- `.github/workflows/upstream-bump.yml` updates the Rust `oxipng` version.
 
-## Rust/Python Boundary
+## Rust and Python Split
 
-The Python facade owns ergonomic names. This includes `Interlacing`,
-`StripChunks`, `Deflater`, `Deflaters`, `FilterStrategy`, `ColorType`,
-`BitDepth`, and compatibility warnings.
+The Python facade owns user-facing names.
 
-The Rust extension owns path conversion, option validation, file controls, raw
-image validation, and GIL release. The GIL is the Python lock that normally
-prevents Python code from running in parallel.
+Examples:
 
-Rust accepts strings, enum `.value` strings, and supported factory objects. It
-builds `oxipng::Options`, calls upstream `oxipng`, and maps errors back to
-Python.
+- `Interlacing`
+- `StripChunks`
+- `Deflater`
+- `Deflaters`
+- `FilterStrategy`
+- `ColorType`
+- `BitDepth`
 
-Unsupported keyword names raise `TypeError`. Invalid known values raise
-`ValueError`. Upstream PNG failures raise `PngError`.
+The facade also owns compatibility warnings for old pyoxipng shapes.
+
+The Rust extension owns:
+
+- path conversion
+- option validation
+- file controls
+- raw image validation
+- GIL release
+- calls into Rust `oxipng`
+
+The GIL (Global Interpreter Lock) is the Python lock that normally stops Python
+code from running in parallel.
+
+Rust copies Python-owned data before long optimization work. Then it releases
+the GIL.
 
 ## File Flow
 
-`optimize(input, output=None, *, ...)` accepts path-like objects. PyO3 converts
-them to Rust `PathBuf` values.
+`optimize(input=..., output=None, ...)` accepts path-like objects.
 
-Rust handles file-only controls such as `backup` and `preserve_attrs`. When
-`backup=True`, Rust first creates `<input>.bak`. This only works for in-place
-optimization. Existing backup paths raise `FileExistsError`.
+Rust converts those paths to `PathBuf` values.
 
-Then Rust calls `oxipng::optimize` while the GIL is released.
+Rust handles file-only controls:
 
-If `output` is omitted, upstream writes in place. If `output` is set, upstream
-writes to that path.
+- `backup`
+- `preserve_attrs`
 
-Callers that process untrusted files must provide safe work directories and
-server-generated paths. See [Untrusted Input](../usage/untrusted-input.md).
+When `backup=True`, Rust creates `<input>.bak` before an in-place write.
+
+Existing backup paths raise `FileExistsError`.
+
+Then Rust calls `oxipng::optimize` with the GIL released.
+
+If `output` is omitted, Rust `oxipng` writes in place.
+
+If `output` is set, Rust `oxipng` writes to that path.
 
 ## Memory Flow
 
-`optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
-`memoryview`.
+`optimize_from_memory(data=..., ...)` accepts:
 
-Python-visible data is copied into owned Rust memory before the GIL is released.
-Rust then calls `oxipng::optimize_from_memory` and returns optimized PNG bytes.
+- `bytes`
+- `bytearray`
+- `memoryview`
 
-File-write options such as `backup` and `preserve_attrs` are rejected in memory
-mode. They are also rejected by `analyze` and `RawImage.create_optimized_png`.
+The binding copies the input into Rust memory before it releases the GIL.
+
+Rust calls `oxipng::optimize_from_memory`.
+
+The Python return value is optimized PNG bytes.
+
+Memory mode rejects file-write options such as `backup` and `preserve_attrs`.
+
+`analyze` and `RawImage.create_optimized_png` reject those options too.
 
 ## Raw Image Flow
 
-`RawImage(width, height, color_type, bit_depth, data, *, palette=None,
-transparent=None)` wraps upstream `oxipng::RawImage`. This stable constructor
-does not warn. Python `ColorType` and `BitDepth` values become upstream raw
-image metadata. Packed pixel bytes are copied into Rust memory.
+`RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)`
+wraps Rust `oxipng::RawImage`.
 
-`RawImage.create_optimized_png(**options)` uses the memory-mode option parser
-and returns PNG bytes. `add_png_chunk` adds auxiliary chunks. `add_icc_profile`
-attaches ICC profile data. `add_png_chunk` only accepts valid safe-to-copy
-ancillary PNG chunk names. It rejects structural chunks such as `IHDR`, `IDAT`,
-`IEND`, `PLTE`, `tRNS`, and `iCCP`.
+The stable constructor does not warn.
+
+Python `ColorType` and `BitDepth` values become Rust raw-image metadata.
+
+Packed pixel bytes are copied into Rust memory.
+
+`RawImage.create_optimized_png(...)` uses the memory-mode option parser.
+
+It returns PNG bytes.
+
+`add_png_chunk` adds auxiliary chunks.
+
+`add_icc_profile` attaches ICC profile data.
+
+`add_png_chunk` accepts only valid safe-to-copy ancillary PNG chunk names.
+
+It rejects structural chunks such as:
+
+- `IHDR`
+- `IDAT`
+- `IEND`
+- `PLTE`
+- `tRNS`
+- `iCCP`
 
 ## Error Mapping
 
-The wrapper keeps caller mistakes separate from image failures:
+The wrapper keeps caller mistakes separate from image failures.
 
-- Invalid boolean types use `TypeError`.
-- Invalid known values use `ValueError`.
-- Unsupported option names use `TypeError`.
-- Existing backup paths use `FileExistsError`.
-- Upstream file read/write failures become `FileNotFoundError` or `OSError`.
-- Upstream PNG decode and optimization failures become `oxipng.PngError`.
+- Invalid boolean types raise `TypeError`.
+- Invalid known values raise `ValueError`.
+- Unsupported option names raise `TypeError`.
+- Existing backup paths raise `FileExistsError`.
+- File read and write failures raise `FileNotFoundError` or `OSError`.
+- PNG decode and optimization failures raise `oxipng.PngError`.
 
 ## Wheel Strategy
 
-PyO3 uses `abi3-py311`. Release wheels use one ABI3 extension per supported
-platform for Python 3.11 and newer.
+PyO3 uses `abi3-py311`.
 
-PyPI wheels are the supported release path. Source builds remain the fallback
-for unsupported platforms and require Rust plus a compatible build environment.
+Each release wheel supports Python 3.11 and newer for one platform.
 
-## Upstream Surface Policy
+The wheel workflow uploads wheel artifacts.
 
-The wrapper exposes a small subset of upstream `oxipng`. The checked-in API
-surface manifest records exposed and intentionally unexposed items.
+On release tags, the workflow verifies the complete wheel set before PyPI
+publishing.
 
-During upstream bumps, `scripts/scan_upstream_surface.py` reports new or removed
-upstream surface area. It does not expose new Python API by itself.
+## Rust oxipng Surface
+
+This wrapper exposes a small subset of Rust `oxipng`.
+
+The API surface manifest records what is exposed and what is intentionally not
+exposed.
+
+During Rust `oxipng` updates, `scripts/scan_upstream_surface.py` reports new or
+removed Rust surface area.
+
+It does not expose new Python API by itself.

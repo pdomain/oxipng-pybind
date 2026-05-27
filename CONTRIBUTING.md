@@ -10,9 +10,10 @@ a drop-in replacement for `pyoxipng`, with a stable Python API.
 Read these files first:
 
 - `README.md`
-- `CLAUDE.md`
 - `CONVENTIONS.md`
 - `docs/README.md`
+
+`CLAUDE.md` is only for AI coding agents.
 
 When writing docs or user-facing text, also read
 `docs/process/writing-style.md`.

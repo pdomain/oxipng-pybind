@@ -1,8 +1,10 @@
 # API Compatibility
 
-`oxipng-pybind` exposes a small stable API over Rust `oxipng`. A stable API is
-safe for normal callers to use. Stable API calls must not emit compatibility
-warnings.
+`oxipng-pybind` exposes a small stable API over Rust `oxipng`. Stable names are
+safe for normal callers. They must not emit compatibility warnings.
+
+For option values, see [Options Surface](options-surface.md). For old pyoxipng
+code, see [Move from pyoxipng](../usage/pyoxipng-migration.md).
 
 ## Stable API
 
@@ -35,9 +37,8 @@ The stable method and factory surface includes:
 
 ## pyoxipng Compatibility
 
-`pyoxipng` exposed older Python shapes. Some of those shapes do not match Rust
-`oxipng` option contracts. This package keeps selected old shapes as migration
-paths. They emit `DeprecationWarning` and are not stable API.
+`pyoxipng` exposed older Python shapes. Some do not match Rust `oxipng` option
+contracts. This package keeps selected old shapes as migration paths.
 
 Common warning-emitting paths include:
 
@@ -48,23 +49,15 @@ Common warning-emitting paths include:
 - `Interlacing.Adam7`
 - `RowFilter`
 
-Every compatibility warning says the path will be removed in a future release.
-Stable enum members do not warn.
+Compatibility paths emit `DeprecationWarning`. They are not stable API. Each
+warning says the path will be removed in a future release.
 
-Examples:
+Stable enum members and factories do not warn. For example,
+`FilterStrategy.none`, `ColorType.rgba`, `StripChunks.strip`, and
+`Deflaters.libdeflater` are stable.
 
-- `Interlacing.off`
-- `FilterStrategy.none`
-- `ColorType.rgba`
-- `BitDepth.eight`
-- `FilterStrategy.predefined(...)`
-- `StripChunks.strip`
-- `StripChunks.keep`
-- `Deflaters.libdeflater`
-- `Deflaters.zopfli`
-
-`RowFilter` exists only for old pyoxipng-style code. Do not use it in new code.
-Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
+`RowFilter` exists only for old pyoxipng-style code. Use `FilterStrategy` or
+`FilterStrategy.predefined(...)` in new code.
 
 ## Unsupported Paths
 
@@ -78,7 +71,5 @@ Unsupported paths may fail, warn, or stay absent.
 
 The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
-
-## Unexposed Rust Surface
 
 No generated Rust surface additions have been recorded for 10.1.1.

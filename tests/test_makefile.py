@@ -47,6 +47,17 @@ def test_bootstrap_installs_cargo_deny_through_cargo_install() -> None:
     assert 'find "$$tmp_dir"' not in makefile
 
 
+def test_bootstrap_enforces_pinned_cargo_deny_version() -> None:
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+    bootstrap_body = _target_body(makefile, "bootstrap-rust")
+    rust_deny_body = _target_body(makefile, "rust-deny")
+
+    assert "CARGO_DENY_VERSION :=" in makefile
+    assert "cargo-deny --version | grep -q" in bootstrap_body
+    assert "cargo install --locked cargo-deny --version $(CARGO_DENY_VERSION)" in bootstrap_body
+    assert "cargo-deny --version" not in rust_deny_body
+
+
 def test_dependency_audit_includes_lockfile_python_audit() -> None:
     makefile = Path("Makefile").read_text(encoding="utf-8")
 

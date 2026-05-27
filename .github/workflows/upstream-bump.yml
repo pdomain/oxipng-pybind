@@ -159,4 +159,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --merge --delete-branch

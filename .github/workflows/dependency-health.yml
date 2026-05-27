@@ -108,4 +108,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --merge --delete-branch

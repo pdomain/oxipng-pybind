@@ -55,6 +55,12 @@ For upstream releases, run the default bump path:
 uv run --group dev python scripts/bump_upstream.py
 ```
 
+The script checks crates.io for the target `oxipng` crate before editing files.
+If GitHub has published a release tag but crates.io has not indexed the matching
+crate version yet, the scheduled run exits successfully without file changes and
+prints a retryable message. The next scheduled or manual run can pick up the
+same upstream version after crates.io catches up.
+
 If the pinned upstream version is already current, the script leaves existing
 wrapper post releases unchanged. If upstream moved from `10.1.1` to `10.2.0`,
 the script resets the Python package version to `10.2.0`, updates the Cargo

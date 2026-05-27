@@ -4,7 +4,9 @@
 import json
 import shutil
 import subprocess
+import urllib.error
 import urllib.request
+from email.message import Message
 from pathlib import Path
 from types import TracebackType
 
@@ -64,6 +66,47 @@ def test_latest_upstream_version_reads_github_release_payload(
 
     assert bump_upstream.latest_upstream_version() == "10.2.0"
     assert calls == [(bump_upstream.LATEST_RELEASE_URL, 30)]
+
+
+def test_crates_io_version_available_checks_exact_crate_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeResponse:
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_value: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            pass
+
+        def read(self) -> bytes:
+            return b'{"version": {"num": "10.2.0"}}'
+
+    calls: list[tuple[str, int]] = []
+
+    def fake_urlopen(url: str, *, timeout: int) -> FakeResponse:
+        calls.append((url, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    assert bump_upstream.crates_io_version_available("10.2.0") is True
+    assert calls == [(bump_upstream.CRATES_IO_VERSION_URL.format(version="10.2.0"), 30)]
+
+
+def test_crates_io_version_available_treats_missing_version_as_noop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_urlopen(url: str, *, timeout: int) -> object:
+        raise urllib.error.HTTPError(url, 404, "not found", hdrs=Message(), fp=None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    assert bump_upstream.crates_io_version_available("10.2.0") is False
 
 
 def test_update_pyproject_toml(tmp_path: Path) -> None:
@@ -272,6 +315,7 @@ def test_main_upstream_mode_reports_current_pin(
     outputs: list[tuple[str, str]] = []
 
     monkeypatch.setattr(bump_upstream, "latest_upstream_version", lambda: "10.1.1")
+    monkeypatch.setattr(bump_upstream, "crates_io_version_available", lambda version: True)
     monkeypatch.setattr(bump_upstream, "bump_upstream_files", lambda version: False)
     monkeypatch.setattr(
         bump_upstream, "emit_github_output", lambda name, value: outputs.append((name, value))
@@ -281,6 +325,28 @@ def test_main_upstream_mode_reports_current_pin(
 
     assert outputs == [("target-version", "10.1.1")]
     assert capsys.readouterr().out == "oxipng-pybind already pins oxipng 10.1.1\n"
+
+
+def test_main_upstream_mode_exits_cleanly_when_crate_is_not_indexed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    outputs: list[tuple[str, str]] = []
+    bump_calls: list[str] = []
+
+    monkeypatch.setattr(bump_upstream, "latest_upstream_version", lambda: "10.2.0")
+    monkeypatch.setattr(bump_upstream, "crates_io_version_available", lambda version: False)
+    monkeypatch.setattr(bump_upstream, "bump_upstream_files", bump_calls.append)
+    monkeypatch.setattr(
+        bump_upstream, "emit_github_output", lambda name, value: outputs.append((name, value))
+    )
+
+    assert bump_upstream.main([]) == 0
+
+    assert bump_calls == []
+    assert outputs == [("target-version", "10.2.0"), ("upstream-crate-available", "false")]
+    assert (
+        capsys.readouterr().out == "oxipng 10.2.0 is not available on crates.io yet; retry later.\n"
+    )
 
 
 def test_update_cargo_lock_runs_precise_cargo_update(monkeypatch: pytest.MonkeyPatch) -> None:

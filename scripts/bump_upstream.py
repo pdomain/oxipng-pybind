@@ -8,16 +8,19 @@ import os
 import re
 import shutil
 import subprocess
+import urllib.error
 import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
+CRATES_IO_VERSION_URL = "https://crates.io/api/v1/crates/oxipng/{version}"
+HTTP_NOT_FOUND = 404
 WRAPPER_VERSION_PATTERN = re.compile(r"^(?P<base>\d+\.\d+\.\d+)(?:\.post(?P<post>\d+))?$")
 UPSTREAM_VERSION_PATTERN = re.compile(r"^v?(?P<version>\d+\.\d+\.\d+)$")
 
@@ -55,6 +58,23 @@ def latest_upstream_version() -> str:
     with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:  # noqa: S310
         payload = json.loads(response.read().decode("utf-8"))
     return normalize_version(str(payload["tag_name"]))
+
+
+def crates_io_version_available(version: str) -> bool:
+    """Return whether crates.io has indexed the target oxipng crate version."""
+    url = CRATES_IO_VERSION_URL.format(version=version)
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310
+            payload = cast("dict[str, Any]", json.loads(response.read().decode("utf-8")))
+    except urllib.error.HTTPError as error:
+        if error.code == HTTP_NOT_FOUND:
+            return False
+        raise
+    crate_version = payload.get("version")
+    if not isinstance(crate_version, dict):
+        return False
+    crate_version_data = cast("dict[str, object]", crate_version)
+    return crate_version_data.get("num") == version
 
 
 def read_pyproject_version(path: Path) -> str:
@@ -240,8 +260,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     version = latest_upstream_version()
-    changed = bump_upstream_files(version)
     emit_github_output("target-version", version)
+    if not crates_io_version_available(version):
+        emit_github_output("upstream-crate-available", "false")
+        print(f"oxipng {version} is not available on crates.io yet; retry later.")
+        return 0
+
+    changed = bump_upstream_files(version)
     if changed:
         print(f"updated oxipng-pybind to oxipng {version}")
     else:

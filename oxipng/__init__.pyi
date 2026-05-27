@@ -22,7 +22,7 @@ class StripChunks(Enum):
     safe = "safe"
     all = "all"
 
-    def __call__(self) -> _CompatStripChunks:
+    def __call__(self) -> StripChunks:
         """Create a pyoxipng-compatible strip factory; emits DeprecationWarning."""
 
     @staticmethod

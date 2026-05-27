@@ -174,35 +174,35 @@ def test_deprecated_enum_aliases_warn_on_access() -> None:
     assert brute.value == "brute"
 
 
-def test_pyoxipng_rowfilter_aliases_warn_on_access() -> None:
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("none", "none"),
+        ("sub", "sub"),
+        ("up", "up"),
+        ("average", "average"),
+        ("paeth", "paeth"),
+        ("minsum", "minsum"),
+        ("entropy", "entropy"),
+        ("bigrams", "bigrams"),
+        ("bigent", "bigent"),
+        ("brute", "brute"),
+        ("NoOp", "none"),
+        ("Sub", "sub"),
+        ("Up", "up"),
+        ("Average", "average"),
+        ("Paeth", "paeth"),
+        ("MinSum", "minsum"),
+        ("Entropy", "entropy"),
+        ("Bigrams", "bigrams"),
+        ("BigEnt", "bigent"),
+        ("Brute", "brute"),
+    ],
+)
+def test_pyoxipng_rowfilter_aliases_warn_on_access(name: str, value: str) -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        no_op = RowFilter.NoOp
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        sub = RowFilter.Sub
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        up = RowFilter.Up
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        average = RowFilter.Average
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        paeth = RowFilter.Paeth
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        entropy = RowFilter.Entropy
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        bigrams = RowFilter.Bigrams
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        big_ent = RowFilter.BigEnt
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        brute = RowFilter.Brute
-
-    assert no_op.value == "none"
-    assert sub.value == "sub"
-    assert up.value == "up"
-    assert average.value == "average"
-    assert paeth.value == "paeth"
-    assert entropy.value == "entropy"
-    assert bigrams.value == "bigrams"
-    assert big_ent.value == "bigent"
-    assert brute.value == "brute"
+        row_filter = getattr(RowFilter, name)
+    assert row_filter.value == value
 
 
 def test_stable_enum_members_do_not_warn_on_access() -> None:
@@ -494,9 +494,12 @@ def test_pyoxipng_strip_member_factories_warn_and_work(png_bytes: bytes) -> None
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         all_ = StripChunks.all()
 
-    assert none.mode == "none"
-    assert safe.mode == "safe"
-    assert all_.mode == "all"
+    assert none is StripChunks.none
+    assert safe is StripChunks.safe
+    assert all_ is StripChunks.all
+    assert isinstance(none, StripChunks)
+    assert isinstance(safe, StripChunks)
+    assert isinstance(all_, StripChunks)
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

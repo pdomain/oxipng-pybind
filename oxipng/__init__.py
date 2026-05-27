@@ -40,16 +40,10 @@ class StripChunks(Enum):
         """Create a keep-chunk option for explicit PNG chunk names."""
         return _compat.CompatStripChunks("keep", _compat.chunk_names(names))
 
-    def __call__(self) -> _compat.CompatStripChunks:
+    def __call__(self) -> "StripChunks":
         """Create a deprecated pyoxipng-compatible factory."""
         _compat.warn_pyoxipng_compat()
-        if self is StripChunks.none:
-            return _compat.CompatStripChunks("none", ())
-        if self is StripChunks.safe:
-            return _compat.CompatStripChunks("safe", ())
-        if self is StripChunks.all:
-            return _compat.CompatStripChunks("all", ())
-        raise TypeError("unsupported pyoxipng StripChunks factory")
+        return self
 
 
 class Deflater(Enum):

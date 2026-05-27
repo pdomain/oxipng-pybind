@@ -266,11 +266,36 @@ def test_migration_guide_filter_strategy_examples(png_bytes: bytes) -> None:
     assert optimize_from_memory(data=png_bytes, filter=filters)
 
 
-def test_migration_guide_rowfilter_example_warns() -> None:
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("none", "none"),
+        ("sub", "sub"),
+        ("up", "up"),
+        ("average", "average"),
+        ("paeth", "paeth"),
+        ("minsum", "minsum"),
+        ("entropy", "entropy"),
+        ("bigrams", "bigrams"),
+        ("bigent", "bigent"),
+        ("brute", "brute"),
+        ("NoOp", "none"),
+        ("Sub", "sub"),
+        ("Up", "up"),
+        ("Average", "average"),
+        ("Paeth", "paeth"),
+        ("MinSum", "minsum"),
+        ("Entropy", "entropy"),
+        ("Bigrams", "bigrams"),
+        ("BigEnt", "bigent"),
+        ("Brute", "brute"),
+    ],
+)
+def test_migration_guide_rowfilter_example_warns(name: str, value: str) -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        filter_value = RowFilter.none
+        filter_value = getattr(RowFilter, name)
 
-    assert filter_value.value == "none"
+    assert filter_value.value == value
 
 
 def test_migration_guide_interlacing_examples() -> None:

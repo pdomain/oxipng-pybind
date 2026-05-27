@@ -70,6 +70,31 @@ jobs:
         with:
           python-version: "3.11"
       - uses: dtolnay/rust-toolchain@1.85.1
+      - name: Set TestPyPI version
+        if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("pyproject.toml")
+          text = path.read_text(encoding="utf-8")
+          match = re.search(r'(?m)^version = "([^"]+)"$', text)
+          if match is None:
+              raise SystemExit("pyproject.toml project version not found")
+          base_version = match.group(1)
+          run_number = os.environ["GITHUB_RUN_NUMBER"]
+          run_attempt = int(os.environ["GITHUB_RUN_ATTEMPT"])
+          dev_number = int(f"{run_number}{run_attempt:02d}")
+          test_version = f"{base_version}.dev{dev_number}"
+          path.write_text(
+              re.sub(r'(?m)^version = "[^"]+"$', f'version = "{test_version}"', text, count=1),
+              encoding="utf-8",
+          )
+          print(f"TestPyPI version: {test_version}")
+          PY
       - name: Build wheel
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
         with:
@@ -110,6 +135,31 @@ jobs:
         with:
           python-version: "3.11"
       - uses: dtolnay/rust-toolchain@1.85.1
+      - name: Set TestPyPI version
+        if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("pyproject.toml")
+          text = path.read_text(encoding="utf-8")
+          match = re.search(r'(?m)^version = "([^"]+)"$', text)
+          if match is None:
+              raise SystemExit("pyproject.toml project version not found")
+          base_version = match.group(1)
+          run_number = os.environ["GITHUB_RUN_NUMBER"]
+          run_attempt = int(os.environ["GITHUB_RUN_ATTEMPT"])
+          dev_number = int(f"{run_number}{run_attempt:02d}")
+          test_version = f"{base_version}.dev{dev_number}"
+          path.write_text(
+              re.sub(r'(?m)^version = "[^"]+"$', f'version = "{test_version}"', text, count=1),
+              encoding="utf-8",
+          )
+          print(f"TestPyPI version: {test_version}")
+          PY
       - name: Build sdist
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
         with:

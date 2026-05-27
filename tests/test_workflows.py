@@ -259,6 +259,7 @@ def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
     assert steps[0]["uses"] == "actions/checkout@v6"
     assert steps[1]["uses"] == "actions/setup-python@v6"
     assert steps[2]["uses"] == "dtolnay/rust-toolchain@1.85.1"
+    assert step_index(steps, "Set TestPyPI version") < step_index(steps, "Build wheel")
     assert step_by_name(steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(steps, "Build wheel")["with"]["args"] == (
         "--release --locked --out dist --interpreter python3.11"
@@ -307,9 +308,12 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
     """Manual wheel runs can publish verified artifacts to TestPyPI only when requested."""
     workflow = load_workflow(".github/workflows/wheels.yml")
     dispatch = workflow_trigger(workflow)["workflow_dispatch"]
+    build_steps = workflow["jobs"]["build"]["steps"]
+    sdist_steps = workflow["jobs"]["sdist"]["steps"]
     publish = workflow["jobs"]["publish"]
     testpypi = workflow["jobs"]["publish-testpypi"]
     steps = testpypi["steps"]
+    version_step = step_by_name(build_steps, "Set TestPyPI version")
 
     assert dispatch["inputs"]["publish-target"] == {
         "description": "Optional publish target for verified artifacts",
@@ -322,6 +326,15 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
     assert testpypi["if"] == (
         "github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'"
     )
+    assert version_step["if"] == (
+        "github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'"
+    )
+    assert "GITHUB_RUN_NUMBER" in version_step["run"]
+    assert "GITHUB_RUN_ATTEMPT" in version_step["run"]
+    assert 'dev_number = int(f"{run_number}{run_attempt:02d}")' in version_step["run"]
+    assert ".dev{dev_number}" in version_step["run"]
+    assert step_index(build_steps, "Set TestPyPI version") < step_index(build_steps, "Build wheel")
+    assert step_index(sdist_steps, "Set TestPyPI version") < step_index(sdist_steps, "Build sdist")
     assert testpypi["environment"] == "testpypi"
     assert testpypi["permissions"] == {"id-token": "write", "contents": "read"}
     assert steps[0]["uses"] == "actions/checkout@v6"

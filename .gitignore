@@ -10,5 +10,6 @@ build/
 dist/
 htmlcov/
 target/
+.worktrees/
 *.egg-info/
 *.pyc

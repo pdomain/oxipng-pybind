@@ -99,6 +99,13 @@ fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
     ))
 }
 
+fn is_bytes_like(value: &Bound<'_, PyAny>) -> bool {
+    if value.downcast::<PyBytes>().is_ok() || value.downcast::<PyByteArray>().is_ok() {
+        return true;
+    }
+    is_memoryview(value)
+}
+
 fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
     if !is_bool(value) {
         return Err(PyTypeError::new_err(format!("{option} must be a bool")));
@@ -1171,7 +1178,10 @@ impl PyRawImage {
     #[pyo3(signature = (*args, **kwargs))]
     fn new(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         if args.len() == 3 {
-            return Self::new_pyoxipng_compat(args, kwargs);
+            if is_bytes_like(&args.get_item(0)?) {
+                return Self::new_pyoxipng_compat(args, kwargs);
+            }
+            return Self::new_stable(args, kwargs);
         }
         if args.len() <= 5 {
             return Self::new_stable(args, kwargs);

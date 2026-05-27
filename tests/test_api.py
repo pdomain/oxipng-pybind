@@ -1146,6 +1146,23 @@ def test_raw_image_rejects_non_bytes_data_before_overflow_validation(
             RawImage(2**32 - 1, 2**32 - 1, color_type, bit_depth, cast("Any", 123))
 
 
+def test_stable_raw_image_constructor_with_positional_shape_and_keyword_data_does_not_warn() -> (
+    None
+):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        raw = RawImage(
+            1,
+            1,
+            ColorType.rgba,
+            bit_depth=BitDepth.eight,
+            data=bytes([255, 0, 0, 255]),
+        )
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
 def test_raw_image_rgba_create_optimized_png_returns_readable_bytes() -> None:
     raw = RawImage(
         2,

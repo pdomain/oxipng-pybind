@@ -32,7 +32,7 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 	fi
 	rustup toolchain install $(RUST_VERSION) --profile minimal --component rustfmt --component clippy
 	rustup default $(RUST_VERSION)
-	@if ! command -v cargo-deny >/dev/null 2>&1 || ! cargo-deny --version | grep -q " $(CARGO_DENY_VERSION)"; then \
+	@if ! command -v cargo-deny >/dev/null 2>&1 || ! cargo-deny --version | grep -qx "cargo-deny $(CARGO_DENY_VERSION)"; then \
 		cargo install --locked cargo-deny --version $(CARGO_DENY_VERSION); \
 	fi
 

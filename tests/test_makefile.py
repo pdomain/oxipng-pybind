@@ -53,7 +53,7 @@ def test_bootstrap_enforces_pinned_cargo_deny_version() -> None:
     rust_deny_body = _target_body(makefile, "rust-deny")
 
     assert "CARGO_DENY_VERSION :=" in makefile
-    assert "cargo-deny --version | grep -q" in bootstrap_body
+    assert 'cargo-deny --version | grep -qx "cargo-deny $(CARGO_DENY_VERSION)"' in bootstrap_body
     assert "cargo install --locked cargo-deny --version $(CARGO_DENY_VERSION)" in bootstrap_body
     assert "cargo-deny --version" not in rust_deny_body
 

@@ -215,7 +215,7 @@ def test_upstream_bump_docs_describe_ci_gated_auto_merge() -> None:
     text = (ROOT / "docs/process/upstream-bumps.md").read_text(encoding="utf-8").lower()
 
     assert "auto-merge" in text
-    assert "ci and wheel checks pass" in text
+    assert "the workflow waits for wheel checks before enabling auto-merge" in text
     assert "human review is required" not in text
 
 
@@ -231,7 +231,7 @@ def test_release_docs_describe_tag_gates_and_automation() -> None:
     assert ".devnnn" in release_lower
     assert "tag-driven" in release_lower
     assert "pypi" in release_lower
-    assert "duplicate" in release_lower or "already present on pypi" in release_lower
+    assert "already present on pypi" in release_lower
     for accepted_tag in ("v10.1.1", "v10.1.1.post1"):
         assert accepted_tag in release
     for rejected_tag in ("vtest", "v10.1", "v10.1.1.dev1", "v10.1.1rc1"):

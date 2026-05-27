@@ -108,6 +108,6 @@ gh pr merge --auto --rebase --delete-branch
 For manual repair, pull the PR branch, rebase it on current `main`, then merge
 with the rebase merge method.
 
-Automated upstream bump PRs are expected to auto-merge when CI and wheel checks
-pass. If upstream `oxipng` changes break the wrapper, CI fails and the bump
-pull request remains open for manual repair.
+Automated upstream bump PRs are expected to auto-merge only when CI and wheel checks pass.
+If upstream `oxipng` changes break the wrapper, CI fails and the bump pull request
+remains open for manual repair.

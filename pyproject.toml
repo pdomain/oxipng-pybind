@@ -9,7 +9,7 @@ description = "Focused Python wrapper for oxipng."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Unlicense"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [
     { name = "ConcaveTrillion", email = "ConcaveTrillion@gmail.com" },
 ]
@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Utilities",
@@ -30,8 +31,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/ConcaveTrillion/oxipng-pybind"
-Issues = "https://github.com/ConcaveTrillion/oxipng-pybind/issues"
+Repository = "https://github.com/pdomain/oxipng-pybind"
+Issues = "https://github.com/pdomain/oxipng-pybind/issues"
 Upstream = "https://github.com/oxipng/oxipng"
 
 [dependency-groups]
@@ -52,6 +53,7 @@ build = [
     "maturin>=1.8,<2.0",
 ]
 automation = [
+    "packaging>=24",
     "tomlkit>=0.13",
 ]
 dev = [
@@ -129,7 +131,7 @@ convention = "google"
 "tests/**/*.py" = ["ANN", "D", "PLR2004", "S101", "S108"]
 # Helper scripts intentionally perform URL calls, subprocess calls, and printing.
 # Docstrings remain enforced because these scripts encode release and CI policy.
-"scripts/*.py" = ["S310", "S603", "T201"]
+"scripts/*.py" = ["T201"]
 
 [tool.basedpyright]
 include = ["oxipng", "tests", "scripts"]

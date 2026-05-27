@@ -78,6 +78,9 @@ Use the stable `RawImage` order:
 ```python
 from oxipng import BitDepth, ColorType, RawImage
 
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
 raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
 ```
 
@@ -86,6 +89,9 @@ The old pyoxipng order still works only as a migration path:
 ```python
 from oxipng import ColorType, RawImage
 
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
@@ -96,6 +102,9 @@ Do not mix the two shapes. This is rejected:
 ```python
 from oxipng import ColorType, RawImage
 
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba)
 ```
 

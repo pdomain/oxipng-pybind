@@ -55,9 +55,7 @@ def parse_struct_fields(source: str, name: str) -> list[str]:
     block = extract_block(source, rf"pub\s+struct\s+{name}")
     fields: list[str] = []
     for line in _strip_attributes(block.splitlines()):
-        match = re.match(r"\s*pub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", line)
-        if match:
-            fields.append(match.group(1))
+        fields.extend(re.findall(r"\bpub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", line))
     if not fields:
         raise ValueError(f"no public fields found for {name}")
     return fields

@@ -32,6 +32,12 @@ pub struct Options {
     assert parse_struct_fields(source, "Options") == ["fix_errors", "force"]
 
 
+def test_parse_struct_fields_finds_multiple_fields_on_one_line() -> None:
+    source = "pub struct Options { pub fix_errors: bool, pub force: bool, }"
+
+    assert parse_struct_fields(source, "Options") == ["fix_errors", "force"]
+
+
 def test_parse_struct_fields_requires_public_fields() -> None:
     source = "pub struct Options { force: bool }"
 
@@ -142,7 +148,7 @@ pub fn optimize_from_memory(data: &[u8], opts: &Options) -> PngResult<Vec<u8>> {
 
     surface = parse_upstream_surface(tmp_path)
 
-    assert surface.options_fields == ["fix_errors"]
+    assert surface.options_fields == ["fix_errors", "force"]
     assert surface.enums["ColorType"] == ["Grayscale", "RGB", "Indexed", "GrayscaleAlpha", "RGBA"]
     assert surface.enums["BitDepth"] == ["One", "Two", "Four", "Eight", "Sixteen"]
     assert "optimize_from_memory" in surface.functions

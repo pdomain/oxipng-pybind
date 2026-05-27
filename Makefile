@@ -18,7 +18,7 @@ else
 
 .PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
-	rust-deny py-audit dependency-audit dependency-refresh-check pre-commit-check build wheel clean clean-cache reset remove-venv \
+	rust-deny py-audit py-audit-lock dependency-audit dependency-refresh-check pre-commit-check build wheel clean clean-cache reset remove-venv \
 	upgrade-deps ci
 
 help: ## Show this help message
@@ -33,22 +33,7 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 	rustup toolchain install $(RUST_VERSION) --profile minimal --component rustfmt --component clippy
 	rustup default $(RUST_VERSION)
 	@if ! command -v cargo-deny >/dev/null 2>&1; then \
-		set -eu; \
-		case "$$(uname -s)-$$(uname -m)" in \
-			Linux-x86_64) cargo_deny_target="x86_64-unknown-linux-musl" ;; \
-			Linux-aarch64|Linux-arm64) cargo_deny_target="aarch64-unknown-linux-musl" ;; \
-			Darwin-x86_64) cargo_deny_target="x86_64-apple-darwin" ;; \
-			Darwin-arm64) cargo_deny_target="aarch64-apple-darwin" ;; \
-			*) echo "Unsupported cargo-deny platform: $$(uname -s)-$$(uname -m)" >&2; exit 1 ;; \
-		esac; \
-		tmp_dir="$$(mktemp -d)"; \
-		trap 'rm -rf "$$tmp_dir"' EXIT; \
-		archive="cargo-deny-$(CARGO_DENY_VERSION)-$$cargo_deny_target.tar.gz"; \
-		url="https://github.com/EmbarkStudios/cargo-deny/releases/download/$(CARGO_DENY_VERSION)/$$archive"; \
-		curl --proto '=https' --tlsv1.2 -LsSf "$$url" -o "$$tmp_dir/$$archive"; \
-		tar -xzf "$$tmp_dir/$$archive" -C "$$tmp_dir"; \
-		install -d "$(HOME)/.cargo/bin"; \
-		install "$$(find "$$tmp_dir" -type f -name cargo-deny | head -n 1)" "$(HOME)/.cargo/bin/cargo-deny"; \
+		cargo install --locked cargo-deny --version $(CARGO_DENY_VERSION); \
 	fi
 
 setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
@@ -115,7 +100,10 @@ rust-deny: ## Run cargo deny
 py-audit: ## Audit installed Python environment for known vulnerabilities
 	uv run --group dev pip-audit --local
 
-dependency-audit: rust-deny py-audit ## Run Rust and Python dependency vulnerability checks
+py-audit-lock: ## Audit locked Python dependency set for known vulnerabilities
+	uv audit --locked
+
+dependency-audit: rust-deny py-audit py-audit-lock ## Run Rust and Python dependency vulnerability checks
 
 dependency-refresh-check: ## Refresh lockfiles, then run audits and full CI
 	uv lock --upgrade

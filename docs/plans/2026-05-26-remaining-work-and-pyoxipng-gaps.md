@@ -84,12 +84,22 @@ Open CI and release work:
   artifact-only by design.
 - If PyPI publishing is approved, add Trusted Publishing and decide whether
   publishing remains wheel-only.
+- Before PyPI upload, add a release aggregation job that downloads every wheel
+  artifact, verifies the complete expected wheel set is present exactly once,
+  rejects unexpected wheels, and then runs the existing smoke checks against the
+  final artifacts.
 - Decide whether to add an sdist. Current docs defer sdist support because
   source installs require Rust and a compatible build environment.
 - Add release notes for first public artifacts after the wheel workflow
   produces verified artifacts.
 - Verify local and hosted wheel metadata, especially `oxipng/__init__.pyi`,
   `oxipng/py.typed`, license files, and platform tags.
+- Replace the hand-maintained runtime dependency list in
+  `THIRD_PARTY_NOTICES.md` with generated notices. Use `cargo-about` from
+  `Cargo.lock` for Rust runtime dependencies, add Python package license
+  extraction from the locked `uv.lock` dependency set for bundled or distributed
+  Python dependencies, and add a CI check that fails when generated notices are
+  out of date.
 
 ## Completed pyoxipng Compatibility Paths
 

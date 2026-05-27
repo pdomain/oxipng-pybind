@@ -49,8 +49,7 @@ writes to that path.
 ## Memory Flow
 
 `optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
-`memoryview`. It also accepts objects that expose a compatible buffer or a
-`tobytes()` method.
+`memoryview`.
 
 Python-visible data is copied into owned Rust memory before the GIL is released.
 Rust then calls `oxipng::optimize_from_memory` and returns optimized PNG bytes.
@@ -79,7 +78,8 @@ The wrapper keeps caller mistakes separate from image failures:
 - Invalid known values use `ValueError`.
 - Unsupported option names use `TypeError`.
 - Existing backup paths use `FileExistsError`.
-- Upstream `oxipng::PngError` values become `oxipng.PngError`.
+- Upstream file read/write failures become `FileNotFoundError` or `OSError`.
+- Upstream PNG decode and optimization failures become `oxipng.PngError`.
 
 ## Wheel Strategy
 

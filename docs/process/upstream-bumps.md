@@ -15,9 +15,9 @@ The scheduled `.github/workflows/upstream-bump.yml` workflow:
 7. Opens a pull request when files changed, including the scan summary.
 8. Opens or updates one `upstream-surface` triage issue per upstream version.
 9. Waits for `.github/workflows/wheels.yml` on the pull request commit.
-10. Enables auto-merge after the prepare CI and wheel workflow pass. Branch
-    protection still controls the required pull request checks. The scan must
-    also report no broken exposed mappings.
+10. Enables PR auto-merge after CI and wheel checks pass. Branch protection
+    still controls the required pull request checks. The scan must also report
+    no broken exposed mappings.
 
 The workflow does not push directly to `main`.
 
@@ -60,21 +60,21 @@ wrapper post releases unchanged. If upstream moved from `10.1.1` to `10.2.0`,
 the script resets the Python package version to `10.2.0`, updates the Cargo
 package version to `10.2.0`, and pins `oxi` to `=10.2.0`.
 
-Mutable action tags should be replaced with full commit SHAs during
-release-hardening maintenance. Review the resolved SHAs before merge.
+Third-party GitHub Actions in write-scoped jobs must be pinned to reviewed full
+commit SHAs. Review updated SHAs before merging workflow maintenance changes.
 
 ## Required Repository Settings
 
-Enable these GitHub settings for CI-gated auto-merge. CI is continuous
-integration.
+Enable these GitHub settings for CI-gated upstream bump pull requests. CI is
+continuous integration.
 
 - Add an `UPSTREAM_BUMP_TOKEN` repository secret. The token must be able to
-  create pull requests and enable auto-merge so bump PRs trigger normal PR CI
-  checks and can merge through protected-branch requirements.
+  create pull requests so bump PRs trigger normal PR CI checks.
 - Allow GitHub Actions to create and approve pull requests.
-- Enable auto-merge for the repository.
 - Protect `main`.
 - Require the `ci` workflow to pass before merging.
+- Enable repository auto-merge.
 
-If upstream `oxipng` changes break the wrapper, CI fails and the bump PR remains
-open for manual repair.
+Native dependency bump PRs are expected to auto-merge when CI and wheel checks
+pass. If upstream `oxipng` changes break the wrapper, CI fails and the bump PR
+remains open for manual repair.

@@ -7,17 +7,18 @@ import argparse
 import fnmatch
 from pathlib import Path
 
-WHEEL_TAG_PARTS = 4
+import tomlkit
+from packaging.utils import InvalidWheelFilename, canonicalize_name, parse_wheel_filename
+from packaging.version import Version
+
+ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_DISTRIBUTION = "oxipng-pybind"
 
 
-def parse_wheel_tags(path: Path) -> tuple[str, str, str]:
-    """Return the Python, ABI, and platform tag components from a wheel name."""
-    if path.suffix != ".whl":
-        raise ValueError(f"{path} is not a wheel")
-    parts = path.name.removesuffix(".whl").rsplit("-", 3)
-    if len(parts) != WHEEL_TAG_PARTS:
-        raise ValueError(f"{path.name} is not a valid wheel filename")
-    return parts[1], parts[2], parts[3]
+def expected_version() -> Version:
+    """Return the package version expected in wheel filenames."""
+    document = tomlkit.parse((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    return Version(str(document["project"]["version"]))
 
 
 def check_wheels(
@@ -26,22 +27,43 @@ def check_wheels(
     """Return validation errors for wheel tags."""
     if not wheels:
         return ["no wheel paths provided"]
+    if len(wheels) != 1:
+        return [f"expected exactly 1 wheel, found {len(wheels)}"]
 
     errors: list[str] = []
+    project_version = expected_version()
     for wheel in wheels:
+        if not wheel.is_file():
+            errors.append(f"{wheel} does not exist")
+            continue
         try:
-            python_tag, abi_tag, platform_tag = parse_wheel_tags(wheel)
-        except ValueError as exc:
-            errors.append(str(exc))
+            distribution, version, _build, tags = parse_wheel_filename(wheel.name)
+        except InvalidWheelFilename as exc:
+            errors.append(f"{wheel.name} is not a valid wheel filename: {exc}")
             continue
 
-        if python_tag != expected_python:
-            errors.append(f"{wheel.name} uses Python tag {python_tag}, expected {expected_python}")
-        if abi_tag != "abi3":
-            errors.append(f"{wheel.name} uses non-ABI3 tag {python_tag}-{abi_tag}")
-        if not fnmatch.fnmatchcase(platform_tag, expected_platform):
+        if distribution != canonicalize_name(EXPECTED_DISTRIBUTION):
             errors.append(
-                f"{wheel.name} platform {platform_tag} does not match {expected_platform}"
+                f"{wheel.name} uses distribution {distribution}, expected {EXPECTED_DISTRIBUTION}"
+            )
+        if version != project_version:
+            errors.append(f"{wheel.name} uses version {version}, expected {project_version}")
+
+        python_tags = {tag.interpreter for tag in tags}
+        abi_tags = {tag.abi for tag in tags}
+        platform_tags = {tag.platform for tag in tags}
+        tag_label = "/".join(sorted(f"{tag.interpreter}-{tag.abi}" for tag in tags))
+        if python_tags != {expected_python}:
+            actual_python_tags = ",".join(sorted(python_tags))
+            errors.append(
+                f"{wheel.name} uses Python tag {actual_python_tags}, expected {expected_python}"
+            )
+        if abi_tags != {"abi3"}:
+            errors.append(f"{wheel.name} uses non-ABI3 tag {tag_label}")
+        if not any(fnmatch.fnmatchcase(platform, expected_platform) for platform in platform_tags):
+            actual_platform_tags = ",".join(sorted(platform_tags))
+            errors.append(
+                f"{wheel.name} platform {actual_platform_tags} does not match {expected_platform}"
             )
 
     return errors

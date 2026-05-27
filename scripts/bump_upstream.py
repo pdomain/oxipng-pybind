@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
 WRAPPER_VERSION_PATTERN = re.compile(r"^(?P<base>\d+\.\d+\.\d+)(?:\.post(?P<post>\d+))?$")
+UPSTREAM_VERSION_PATTERN = re.compile(r"^v?(?P<version>\d+\.\d+\.\d+)$")
 
 
 def resolve_executable(name: str) -> str:
@@ -31,7 +32,10 @@ def resolve_executable(name: str) -> str:
 
 def normalize_version(version: str) -> str:
     """Normalize GitHub tag names to packaging versions."""
-    return version.removeprefix("v")
+    match = UPSTREAM_VERSION_PATTERN.fullmatch(version)
+    if match is None:
+        raise ValueError(f"unsupported upstream version: {version}")
+    return match.group("version")
 
 
 def next_post_release(version: str) -> str:
@@ -48,7 +52,7 @@ def next_post_release(version: str) -> str:
 
 def latest_upstream_version() -> str:
     """Fetch the latest upstream oxipng release version."""
-    with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:
+    with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:  # noqa: S310
         payload = json.loads(response.read().decode("utf-8"))
     return normalize_version(str(payload["tag_name"]))
 
@@ -90,7 +94,7 @@ def update_cargo_toml(path: Path, version: str) -> None:
 
 def update_cargo_lock(version: str) -> None:
     """Refresh Cargo.lock for the requested upstream oxipng version."""
-    subprocess.run(
+    subprocess.run(  # noqa: S603
         [resolve_executable("cargo"), "update", "-p", "oxipng", "--precise", version],
         cwd=ROOT,
         check=True,
@@ -99,7 +103,7 @@ def update_cargo_lock(version: str) -> None:
 
 def update_uv_lock() -> None:
     """Refresh uv.lock for the updated Python package metadata."""
-    subprocess.run(
+    subprocess.run(  # noqa: S603
         [resolve_executable("uv"), "lock"],
         cwd=ROOT,
         check=True,
@@ -114,6 +118,8 @@ def write_target_version(version: str, path: Path) -> None:
 
 def emit_github_output(name: str, value: str) -> None:
     """Write a GitHub Actions output when running in Actions."""
+    if "\n" in name or "\n" in value:
+        raise ValueError("GitHub output names and values must not contain newlines")
     output = os.environ.get("GITHUB_OUTPUT")
     if output:
         with Path(output).open("a", encoding="utf-8") as handle:
@@ -176,7 +182,9 @@ def find_surface_issue(version: str) -> int | None:
         "--json",
         "number,title",
     ]
-    result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
+    result = subprocess.run(  # noqa: S603
+        command, cwd=ROOT, check=True, capture_output=True, text=True
+    )
     title = f"Evaluate upstream oxipng {version} surface changes"
     for issue in json.loads(result.stdout):
         if issue.get("title") == title:
@@ -192,7 +200,7 @@ def upsert_surface_issue(version: str, report_path: Path) -> None:
     existing = find_surface_issue(version)
     gh = resolve_executable("gh")
     if existing is None:
-        subprocess.run(
+        subprocess.run(  # noqa: S603
             [
                 gh,
                 "issue",
@@ -208,7 +216,7 @@ def upsert_surface_issue(version: str, report_path: Path) -> None:
             check=True,
         )
     else:
-        subprocess.run(
+        subprocess.run(  # noqa: S603
             [gh, "issue", "edit", str(existing), "--body", body],
             cwd=ROOT,
             check=True,

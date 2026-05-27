@@ -4,6 +4,8 @@ Dependency security is checked by scheduled automation and by manual commands.
 
 `cargo deny check` audits Rust dependencies with the RustSec advisory database.
 `pip-audit --local` audits the installed Python development environment.
+`make py-audit-lock` runs `uv audit --locked` against the locked Python project
+dependency set.
 
 ## Manual Checks
 
@@ -46,6 +48,9 @@ downstream workflow events.
 
 The publish job limits committed paths to `Cargo.lock` and `uv.lock`.
 
-Do not enable auto-merge for dependency refresh PRs by default. Review lockfile
-diffs before merge, especially when CVE remediation pulls major transitive
-updates.
+Dependency refresh PRs enable auto-merge after audits and CI pass. Branch
+protection remains the merge gate, so failed checks leave the PR open for
+manual repair.
+
+Third-party GitHub Actions in write-scoped dependency refresh jobs must be
+pinned to reviewed full commit SHAs.

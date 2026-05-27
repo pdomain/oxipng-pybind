@@ -80,7 +80,8 @@ jobs:
             exit 1
           fi
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        id: cpr
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
         with:
           token: ${{ env.DEPENDENCY_REFRESH_TOKEN }}
           commit-message: "chore: refresh dependency lockfiles"
@@ -93,10 +94,18 @@ jobs:
             - `make dependency-audit`
             - `make ci`
 
-            Review the lockfile diff for security-relevant updates before merge.
+            Auto-merge is enabled after required checks pass.
           branch: automation/dependency-refresh
           delete-branch: true
           labels: dependencies, automated
           add-paths: |
             Cargo.lock
             uv.lock
+      - name: Enable auto-merge
+        if: >-
+          steps.cpr.outputs.pull-request-number != '' &&
+          contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch

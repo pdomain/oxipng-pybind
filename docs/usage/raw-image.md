@@ -121,6 +121,9 @@ The old pyoxipng constructor order still works as a migration path:
 ```python
 from oxipng import ColorType, RawImage
 
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
@@ -132,6 +135,9 @@ Move the color details into stable `RawImage` arguments:
 ```python
 from oxipng import BitDepth, ColorType, RawImage
 
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
 raw = RawImage(width, height, ColorType.rgba, BitDepth.eight, data)
 ```
 

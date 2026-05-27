@@ -44,6 +44,20 @@ Advanced options include `optimize_alpha`, `bit_depth_reduction`,
 `backup` and `preserve_attrs` are file-only options. `optimize_from_memory`
 rejects them.
 
+## Untrusted Input
+
+Set explicit limits when processing PNG bytes from untrusted users:
+
+```python
+from oxipng import optimize_from_memory
+
+optimized = optimize_from_memory(data, timeout=2.0, max_decompressed_size=50_000_000)
+```
+
+`timeout` limits optimization time. `max_decompressed_size` rejects inputs whose
+inflated image data would exceed the configured byte count. Defaults preserve
+upstream behavior and do not impose a decompression cap.
+
 stdin and stdout optimization are not part of this API. Callers must decide
 when to read from stdin and when to write to stdout:
 

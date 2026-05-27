@@ -1,6 +1,8 @@
 """Supported public API tests."""
 
+import array
 import inspect
+import os
 import warnings
 from io import BytesIO
 from pathlib import Path
@@ -43,6 +45,22 @@ class CustomPathLike:
         return str(self.path)
 
 
+class ExplodingValue:
+    @property
+    def value(self) -> str:
+        raise RuntimeError("value property exploded")
+
+
+class BytesMethodOnly:
+    data: bytes
+
+    def __init__(self, data: bytes) -> None:
+        self.data = data
+
+    def tobytes(self) -> bytes:
+        return self.data
+
+
 def assert_readable_png_path(path: Path) -> None:
     """Assert that Pillow can read the optimized PNG."""
     with Image.open(path) as image:
@@ -53,6 +71,20 @@ def assert_readable_png_bytes(data: bytes) -> None:
     """Assert that Pillow can read optimized PNG bytes."""
     with Image.open(BytesIO(data)) as image:
         image.verify()
+
+
+def png_chunk_names(data: bytes) -> list[bytes]:
+    """Return chunk names from PNG bytes."""
+    chunks: list[bytes] = []
+    offset = 8
+    while offset < len(data):
+        length = int.from_bytes(data[offset : offset + 4], "big")
+        name = data[offset + 4 : offset + 8]
+        chunks.append(name)
+        offset += 12 + length
+        if name == b"IEND":
+            break
+    return chunks
 
 
 def test_import_supported_api() -> None:
@@ -747,6 +779,29 @@ def test_backup_creates_copy_for_in_place_optimization(png_path: Path) -> None:
     assert_readable_png_path(png_path)
 
 
+def test_missing_input_raises_file_not_found(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError):
+        optimize(tmp_path / "missing.png")
+
+
+def test_missing_output_parent_raises_os_error(png_path: Path, tmp_path: Path) -> None:
+    with pytest.raises(OSError, match="No such file or directory"):
+        optimize(png_path, tmp_path / "missing" / "out.png")
+
+
+def test_preserve_attrs_copies_permissions_and_mtime(png_path: Path, tmp_path: Path) -> None:
+    output = tmp_path / "out.png"
+    expected_mtime = 1_700_000_000
+    png_path.chmod(0o640)
+    os.utime(png_path, (expected_mtime, expected_mtime))
+
+    optimize(png_path, output, preserve_attrs=True)
+
+    assert output.stat().st_mode & 0o777 == 0o640
+    assert int(output.stat().st_mtime) == expected_mtime
+    assert_readable_png_path(output)
+
+
 def test_corrupt_input_raises_png_error(corrupt_png_path: Path) -> None:
     with pytest.raises(PngError):
         optimize(corrupt_png_path, level=6)
@@ -769,6 +824,27 @@ def test_optimize_from_memory_memoryview_returns_readable_bytes(png_bytes: bytes
     output = optimize_from_memory(memoryview(png_bytes))
 
     assert_readable_png_bytes(output)
+
+
+def test_optimize_from_memory_rejects_generic_buffers(png_bytes: bytes) -> None:
+    with pytest.raises(TypeError, match="bytes, bytearray, or memoryview"):
+        cast("Any", optimize_from_memory)(array.array("B", png_bytes))
+
+
+def test_optimize_from_memory_rejects_tobytes_only_objects(png_bytes: bytes) -> None:
+    with pytest.raises(TypeError, match="bytes, bytearray, or memoryview"):
+        cast("Any", optimize_from_memory)(BytesMethodOnly(png_bytes))
+
+
+@pytest.mark.parametrize("option", ["backup", "preserve_attrs"])
+def test_optimize_from_memory_rejects_file_only_options(png_bytes: bytes, option: str) -> None:
+    with pytest.raises(TypeError, match=f"unsupported option: {option}"):
+        cast("Any", optimize_from_memory)(png_bytes, **{option: True})
+
+
+def test_max_decompressed_size_limit_is_enforced(png_bytes: bytes) -> None:
+    with pytest.raises(PngError):
+        optimize_from_memory(png_bytes, max_decompressed_size=1)
 
 
 def test_corrupt_memory_input_raises_png_error() -> None:
@@ -903,6 +979,16 @@ def test_raw_image_add_png_chunk_preserves_allowed_chunk() -> None:
         assert cast("Any", image).text["Comment"] == "hello"
 
 
+def test_raw_image_add_icc_profile_writes_iccp_chunk() -> None:
+    raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+    raw.add_icc_profile(b"not a real profile but stored as bytes")
+
+    output = raw.create_optimized_png(strip=StripChunks.none)
+
+    assert b"iCCP" in png_chunk_names(output)
+    assert_readable_png_bytes(output)
+
+
 @pytest.mark.parametrize("name", [b"IHDR", b"IDAT", b"IEND", b"PLTE", b"tRNS", b"iCCP"])
 def test_raw_image_rejects_structural_or_dedicated_chunks(name: bytes) -> None:
     raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
@@ -978,6 +1064,42 @@ def test_raw_image_rejects_grayscale_transparency_above_bit_depth_range() -> Non
         RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]), transparent=256)
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"width": True}, "width"),
+        ({"height": True}, "height"),
+        ({"bit_depth": True}, "bit_depth"),
+    ],
+)
+def test_raw_image_rejects_bool_numeric_shape_values(
+    kwargs: dict[str, object], message: str
+) -> None:
+    arguments: dict[str, object] = {
+        "width": 1,
+        "height": 1,
+        "color_type": ColorType.rgb,
+        "bit_depth": BitDepth.eight,
+        "data": bytes([255, 0, 0]),
+    }
+    arguments.update(kwargs)
+
+    with pytest.raises(TypeError, match=message):
+        cast("Any", RawImage)(**arguments)
+
+
+def test_raw_image_rejects_bool_palette_samples() -> None:
+    palette = [(True, 0, 0)]
+
+    with pytest.raises(TypeError, match="palette"):
+        cast("Any", RawImage)(1, 1, ColorType.indexed, BitDepth.eight, bytes([0]), palette=palette)
+
+
+def test_raw_image_rejects_bool_transparent_value() -> None:
+    with pytest.raises(TypeError, match="transparent"):
+        RawImage(1, 1, ColorType.grayscale, BitDepth.eight, bytes([0]), transparent=True)
+
+
 def test_raw_image_rejects_rgb_transparency_above_bit_depth_range() -> None:
     with pytest.raises(ValueError, match="transparent"):
         RawImage(
@@ -1028,3 +1150,33 @@ def test_raw_image_create_rejects_file_only_options() -> None:
 
     with pytest.raises(TypeError, match="unsupported option: backup"):
         cast("Any", raw.create_optimized_png)(backup=True)
+
+    with pytest.raises(TypeError, match="unsupported option: preserve_attrs"):
+        cast("Any", raw.create_optimized_png)(preserve_attrs=True)
+
+
+def test_raw_image_rejects_negative_timeout() -> None:
+    raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+
+    with pytest.raises(ValueError, match="timeout"):
+        raw.create_optimized_png(timeout=-1)
+
+
+def test_analyze_rejects_negative_timeout(png_path: Path) -> None:
+    with pytest.raises(ValueError, match="timeout"):
+        analyze(png_path, timeout=-1)
+
+
+def test_optimize_from_memory_rejects_negative_timeout(png_bytes: bytes) -> None:
+    with pytest.raises(ValueError, match="timeout"):
+        optimize_from_memory(png_bytes, timeout=-1)
+
+
+def test_enum_value_property_errors_are_propagated(png_bytes: bytes) -> None:
+    with pytest.raises(RuntimeError, match="value property exploded"):
+        cast("Any", optimize_from_memory)(png_bytes, filter=ExplodingValue())
+
+
+def test_bit_depth_value_property_errors_are_propagated() -> None:
+    with pytest.raises(RuntimeError, match="value property exploded"):
+        cast("Any", RawImage)(1, 1, ColorType.rgb, ExplodingValue(), bytes([255, 0, 0]))

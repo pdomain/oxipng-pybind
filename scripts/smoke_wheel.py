@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from importlib import metadata, util
 from io import BytesIO
 from pathlib import Path
@@ -37,7 +38,7 @@ def verify_png_bytes(data: bytes) -> None:
         image.verify()
 
 
-def verify_packaged_typing_files() -> None:
+def verify_packaged_typing_files(*, allow_editable: bool = False) -> None:
     """Verify wheel includes typing metadata."""
     files = metadata.files("oxipng-pybind")
     if files is None:
@@ -48,7 +49,7 @@ def verify_packaged_typing_files() -> None:
     if not missing:
         return
 
-    if "oxipng_pybind.pth" in names:
+    if allow_editable and "oxipng_pybind.pth" in names:
         package_spec = util.find_spec("oxipng")
         locations = package_spec.submodule_search_locations if package_spec else None
         package_root = Path(next(iter(locations))) if locations else None
@@ -60,13 +61,21 @@ def verify_packaged_typing_files() -> None:
     raise RuntimeError(f"wheel is missing {', '.join(sorted(missing))}")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Run smoke checks."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--allow-editable",
+        action="store_true",
+        help="allow source-tree typing fallback for editable installs",
+    )
+    args = parser.parse_args(argv)
+
     if oxipng.__name__ != "oxipng":
         raise RuntimeError("imported unexpected oxipng module")
     if PngError.__name__ != "PngError":
         raise RuntimeError("imported unexpected PngError type")
-    verify_packaged_typing_files()
+    verify_packaged_typing_files(allow_editable=args.allow_editable)
     data = make_png_bytes()
 
     with TemporaryDirectory() as tmp:

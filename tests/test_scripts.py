@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from scripts import (
@@ -13,23 +14,23 @@ from scripts import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     import pytest
 
 
 def test_smoke_wheel_main_exercises_installed_package() -> None:
-    assert smoke_wheel.main() == 0
+    assert smoke_wheel.main(["--allow-editable"]) == 0
 
 
-def test_check_wheel_tags_main_success(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_wheel_tags_main_success(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_34_x86_64.whl"
+    wheel.write_text("", encoding="utf-8")
     monkeypatch.setattr(
         "sys.argv",
         [
             "check_wheel_tags.py",
             "--expected-platform",
             "manylinux_2_34_x86_64",
-            "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_34_x86_64.whl",
+            str(wheel),
         ],
     )
 
@@ -66,6 +67,50 @@ def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
     wheel.write_text("", encoding="utf-8")
 
     assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311") == []
+
+
+def test_script_security_ignores_are_line_scoped() -> None:
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    bump_script = Path("scripts/bump_upstream.py").read_text(encoding="utf-8")
+
+    assert '"scripts/*.py" = ["S310", "S603", "T201"]' not in pyproject
+    assert "# noqa: S310" in bump_script
+    assert "# noqa: S603" in bump_script
+
+
+def test_third_party_notices_are_packaged() -> None:
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    notices = Path("THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+
+    assert 'license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]' in pyproject
+    for dependency in ("PyO3", "indexmap", "libdeflater", "zopfli", "rayon"):
+        assert dependency in notices
+
+
+def test_smoke_wheel_release_mode_has_no_editable_typing_fallback() -> None:
+    source = Path("scripts/smoke_wheel.py").read_text(encoding="utf-8")
+
+    assert "allow_editable" in source
+    assert "oxipng_pybind.pth" in source
+    assert 'if allow_editable and "oxipng_pybind.pth" in names:' in source
+
+
+def test_python_314_classifier_matches_api_matrix() -> None:
+    matrix = Path(".github/workflows/api-matrix.yml").read_text(encoding="utf-8")
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    if '"3.14"' in matrix:
+        assert '"Programming Language :: Python :: 3.14"' in pyproject
+
+
+def test_api_surface_records_python_rowfilter_compatibility() -> None:
+    manifest = Path("docs/api-surface/oxipng-10.1.1.toml").read_text(encoding="utf-8")
+
+    assert "[python_compat.RowFilter.aliases]" in manifest
+    assert (
+        'brute = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"'
+        in manifest
+    )
 
 
 def test_ai_filter_log_prints_tail(

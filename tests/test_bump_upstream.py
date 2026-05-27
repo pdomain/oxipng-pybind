@@ -19,6 +19,12 @@ def test_normalize_version_strips_v_prefix() -> None:
     assert bump_upstream.normalize_version("10.1.1") == "10.1.1"
 
 
+@pytest.mark.parametrize("version", ["release-10.1.1", "v10.1", "10.1.1\nbad", "10.1.1.post1"])
+def test_normalize_version_rejects_unexpected_upstream_tags(version: str) -> None:
+    with pytest.raises(ValueError, match="unsupported upstream version"):
+        bump_upstream.normalize_version(version)
+
+
 def test_next_post_release_adds_or_increments_post_segment() -> None:
     assert bump_upstream.next_post_release("10.1.1") == "10.1.1.post1"
     assert bump_upstream.next_post_release("10.1.1.post1") == "10.1.1.post2"
@@ -327,6 +333,19 @@ def test_write_target_version(tmp_path: Path) -> None:
     bump_upstream.write_target_version("10.2.0", path)
 
     assert path.read_text(encoding="utf-8") == "10.2.0\n"
+
+
+@pytest.mark.parametrize(("name", "value"), [("bad\nname", "10.2.0"), ("version", "10.2.0\nbad")])
+def test_emit_github_output_rejects_newlines(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str, value: str
+) -> None:
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+
+    with pytest.raises(ValueError, match="must not contain newlines"):
+        bump_upstream.emit_github_output(name, value)
+
+    assert not output.exists()
 
 
 def test_find_surface_issue_returns_matching_version(monkeypatch: pytest.MonkeyPatch) -> None:

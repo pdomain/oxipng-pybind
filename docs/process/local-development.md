@@ -1,8 +1,14 @@
 # Local Development
 
-Use `make setup` before local work. It installs Rust `1.85.1` and
-`cargo-deny` if needed. It checks `uv.lock`, syncs locked Python dependencies,
-builds the editable native extension, and installs pre-commit hooks.
+Use `make setup` before local work. If `rustup` is missing, project bootstrap
+runs the official Rustup shell installer as a developer convenience. GitHub CI
+installs Rust before running `make ci`, so CI does not depend on that local
+bootstrap branch.
+
+`make setup` installs Rust `1.85.1` through `rustup` and installs `cargo-deny`
+through `cargo install --locked` if needed. It checks `uv.lock`, syncs locked
+Python dependencies, builds the editable native extension, and installs
+pre-commit hooks.
 
 `make setup` runs:
 

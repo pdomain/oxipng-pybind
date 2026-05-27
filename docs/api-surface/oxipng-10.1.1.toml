@@ -96,6 +96,18 @@ Up = "RowFilter::Up via RowFilter.up"
 Average = "RowFilter::Average via RowFilter.average"
 Paeth = "RowFilter::Paeth via RowFilter.paeth"
 
+[python_compat.RowFilter.aliases]
+none = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+sub = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+up = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+average = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+paeth = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+minsum = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+entropy = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+bigrams = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+bigent = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+brute = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
+
 [notes]
 interlacing = "Python Interlacing.keep maps to leaving Options.interlace unchanged as None."
 libdeflater = "Python Deflater.libdeflater preserves the preset compression level."

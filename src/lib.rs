@@ -2,12 +2,14 @@ use indexmap::IndexSet;
 use pyo3::buffer::PyBuffer;
 use pyo3::create_exception;
 use pyo3::exceptions::{
-    PyAttributeError, PyDeprecationWarning, PyException, PyFileExistsError, PyOSError, PyTypeError,
-    PyValueError,
+    PyAttributeError, PyDeprecationWarning, PyException, PyFileExistsError, PyFileNotFoundError,
+    PyOSError, PyTypeError, PyValueError,
 };
 use pyo3::ffi::c_str;
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyByteArray, PyBytes, PyDict, PyList, PySet, PyString, PyTuple};
+use pyo3::types::{
+    PyBool, PyByteArray, PyBytes, PyDict, PyList, PyMemoryView, PySet, PyString, PyTuple,
+};
 use std::fs::{self, OpenOptions};
 use std::io;
 use std::num::NonZeroU64;
@@ -33,15 +35,64 @@ fn value_as_string(value: &Bound<'_, PyAny>, option: &str) -> PyResult<String> {
         return Ok(text.to_str()?.to_owned());
     }
 
-    if let Ok(enum_value) = value.getattr("value") {
-        if let Ok(text) = enum_value.downcast::<PyString>() {
-            return Ok(text.to_str()?.to_owned());
+    match value.getattr("value") {
+        Ok(enum_value) => {
+            if let Ok(text) = enum_value.downcast::<PyString>() {
+                return Ok(text.to_str()?.to_owned());
+            }
         }
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => {}
+        Err(error) => return Err(error),
     }
 
     Err(PyValueError::new_err(format!(
         "{option} must be a string or enum value"
     )))
+}
+
+fn reject_bool(value: &Bound<'_, PyAny>, context: &str) -> PyResult<()> {
+    if value.is_instance_of::<PyBool>() {
+        return Err(PyTypeError::new_err(format!(
+            "{context} must be an integer"
+        )));
+    }
+    Ok(())
+}
+
+fn extract_u32_strict(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u32> {
+    reject_bool(value, context)?;
+    value
+        .extract()
+        .map_err(|_| PyValueError::new_err(format!("{context} must be an integer")))
+}
+
+fn enum_value_is_present(value: &Bound<'_, PyAny>) -> PyResult<bool> {
+    match value.getattr("value") {
+        Ok(_) => Ok(true),
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+fn is_memoryview(value: &Bound<'_, PyAny>) -> bool {
+    value.downcast::<PyMemoryView>().is_ok()
+}
+
+fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
+    if let Ok(bytes) = data.downcast::<PyBytes>() {
+        return Ok(bytes.as_bytes().to_vec());
+    }
+    if let Ok(bytearray) = data.downcast::<PyByteArray>() {
+        return Ok(unsafe { bytearray.as_bytes() }.to_vec());
+    }
+    if is_memoryview(data) {
+        if let Ok(buffer) = PyBuffer::<u8>::get(data) {
+            return buffer.to_vec(data.py());
+        }
+    }
+    Err(PyTypeError::new_err(
+        "data must be bytes, bytearray, or memoryview",
+    ))
 }
 
 fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
@@ -324,7 +375,7 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
         return Ok(filters);
     }
 
-    if value.downcast::<PyString>().is_ok() || value.getattr("value").is_ok() {
+    if value.downcast::<PyString>().is_ok() || enum_value_is_present(value)? {
         filters.insert(parse_filter_strategy(value)?);
         return Ok(filters);
     }
@@ -514,7 +565,16 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
 }
 
 fn map_png_error(error: oxi::PngError) -> PyErr {
-    PngError::new_err(error.to_string())
+    match error {
+        oxi::PngError::ReadFailed(_, error) | oxi::PngError::WriteFailed(_, error) => {
+            if error.kind() == io::ErrorKind::NotFound {
+                PyFileNotFoundError::new_err(error.to_string())
+            } else {
+                PyOSError::new_err(error)
+            }
+        }
+        error => PngError::new_err(error.to_string()),
+    }
 }
 
 fn backup_path_for(input: &std::path::Path) -> PathBuf {
@@ -622,31 +682,14 @@ fn analyze(
     })
 }
 
-fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
-    if let Ok(bytes) = data.downcast::<PyBytes>() {
-        return Ok(bytes.as_bytes().to_vec());
-    }
-    if let Ok(bytearray) = data.downcast::<PyByteArray>() {
-        return Ok(unsafe { bytearray.as_bytes() }.to_vec());
-    }
-    if let Ok(buffer) = PyBuffer::<u8>::get(data) {
-        return buffer.to_vec(data.py());
-    }
-    if let Ok(bytes) = data.call_method0("tobytes") {
-        if let Ok(py_bytes) = bytes.downcast::<PyBytes>() {
-            return Ok(py_bytes.as_bytes().to_vec());
-        }
-    }
-    Err(PyTypeError::new_err(
-        "data must be bytes, bytearray, or memoryview",
-    ))
-}
-
 fn parse_bit_depth(value: &Bound<'_, PyAny>) -> PyResult<oxi::BitDepth> {
-    let raw_value = if let Ok(enum_value) = value.getattr("value") {
-        enum_value.extract::<u8>()
-    } else {
-        value.extract::<u8>()
+    let raw_value = match value.getattr("value") {
+        Ok(enum_value) => enum_value.extract::<u8>(),
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => {
+            reject_bool(value, "bit_depth")?;
+            value.extract::<u8>()
+        }
+        Err(error) => return Err(error),
     }
     .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
 
@@ -655,6 +698,7 @@ fn parse_bit_depth(value: &Bound<'_, PyAny>) -> PyResult<oxi::BitDepth> {
 }
 
 fn extract_u16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u16> {
+    reject_bool(value, context)?;
     let parsed: u32 = value
         .extract()
         .map_err(|_| PyValueError::new_err(format!("{context} must contain integers")))?;
@@ -663,6 +707,7 @@ fn extract_u16(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u16> {
 }
 
 fn extract_u8(value: &Bound<'_, PyAny>, context: &str) -> PyResult<u8> {
+    reject_bool(value, context)?;
     let parsed: u32 = value
         .extract()
         .map_err(|_| PyValueError::new_err(format!("{context} must contain integers")))?;
@@ -906,8 +951,14 @@ impl PyRawImage {
                 "transparent",
             ],
         )?;
-        let width: u32 = Self::raw_image_required_arg(args, kwargs, 0, "width")?.extract()?;
-        let height: u32 = Self::raw_image_required_arg(args, kwargs, 1, "height")?.extract()?;
+        let width = extract_u32_strict(
+            &Self::raw_image_required_arg(args, kwargs, 0, "width")?,
+            "width",
+        )?;
+        let height = extract_u32_strict(
+            &Self::raw_image_required_arg(args, kwargs, 1, "height")?,
+            "height",
+        )?;
         let color_type = Self::raw_image_required_arg(args, kwargs, 2, "color_type")?;
         let bit_depth = Self::raw_image_required_arg(args, kwargs, 3, "bit_depth")?;
         let data = Self::raw_image_required_arg(args, kwargs, 4, "data")?;
@@ -931,8 +982,8 @@ impl PyRawImage {
         warn_pyoxipng_compat(args.py())?;
 
         let data = args.get_item(0)?;
-        let width: u32 = args.get_item(1)?.extract()?;
-        let height: u32 = args.get_item(2)?.extract()?;
+        let width = extract_u32_strict(&args.get_item(1)?, "width")?;
+        let height = extract_u32_strict(&args.get_item(2)?, "height")?;
         let kwargs = kwargs.ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
         let color_type = kwargs
             .get_item("color_type")?

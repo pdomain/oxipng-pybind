@@ -21,7 +21,7 @@ exception is needed, document the rule, location, and reason.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `ANN`, `D`, `PLR2004`, `S101`, `S108` | `tests/**/*.py` in `pyproject.toml` | Tests intentionally use asserts, fixtures, magic sample values, temporary paths, and descriptive test names instead of production-style docstrings and full annotations. |
-| `S310`, `S603`, `T201` | `scripts/*.py` in `pyproject.toml` | Helper scripts intentionally perform URL calls, subprocess calls, and printing; docstrings remain enforced because these scripts encode release and CI policy. |
+| `T201` | `scripts/*.py` in `pyproject.toml` | Helper scripts intentionally print user-facing command output; docstrings remain enforced because these scripts encode release and CI policy. |
 
 ## Docstring Policy
 
@@ -41,6 +41,8 @@ when they clarify shared behavior.
 
 | Rule | Location | Justification |
 | --- | --- | --- |
+| `S310` | reviewed `urllib.request.urlopen` calls in `scripts/*.py` | Release automation uses fixed HTTPS API endpoints with explicit timeouts. |
+| `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Release automation resolves executable paths explicitly and does not use `shell=True`. |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
 

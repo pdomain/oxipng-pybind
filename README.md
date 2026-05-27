@@ -28,8 +28,26 @@ The main entry points are `optimize`, `optimize_from_memory`, `RawImage`, and
   See [Raw Image Usage](docs/usage/raw-image.md).
 - `analyze` reports original and optimized sizes without writing output.
 
-PNG decode and optimization failures raise `PngError`. Caller errors raise
-standard Python exceptions such as `TypeError` or `ValueError`.
+PNG decode and optimization failures raise `PngError`. Caller errors and file
+I/O failures raise standard Python exceptions such as `TypeError`,
+`ValueError`, `FileNotFoundError`, or `OSError`.
+
+## Untrusted Input
+
+PNG optimization can spend CPU and memory while decoding and recompressing
+images. When processing attacker-controlled files or bytes, pass explicit
+resource limits:
+
+```python
+from oxipng import optimize_from_memory
+
+optimized = optimize_from_memory(data, timeout=2.0, max_decompressed_size=50_000_000)
+```
+
+The default options preserve upstream `oxipng` behavior and do not impose a
+decompression cap. Use conservative compression settings for request-time
+workloads, and enable `fix_errors` or `force` only when the caller accepts the
+additional processing.
 
 ## pyoxipng Compatibility
 

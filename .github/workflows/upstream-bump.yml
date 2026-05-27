@@ -109,11 +109,11 @@ jobs:
             echo
             cat .cache/upstream-surface/pr-body-section.md
             echo
-            echo "Auto-merge is enabled only after required checks pass."
+            echo "Auto-merge is enabled only after required CI and wheel checks pass."
           } > .cache/upstream-bump/pr-body.md
       - name: Create pull request
         id: cpr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
         with:
           token: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
           commit-message: "chore: bump upstream oxipng"
@@ -158,4 +158,5 @@ jobs:
           contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
         env:
           GH_TOKEN: ${{ secrets.UPSTREAM_BUMP_TOKEN }}
-        run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch
+        run: |
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash --delete-branch

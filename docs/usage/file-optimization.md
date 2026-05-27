@@ -72,6 +72,20 @@ Advanced options include `optimize_alpha`, `bit_depth_reduction`,
 `backup` and `preserve_attrs` are only valid for `optimize`. `analyze`,
 `optimize_from_memory`, and `RawImage.create_optimized_png` reject them.
 
+## Untrusted Input
+
+Set explicit limits when optimizing PNG files from untrusted users:
+
+```python
+from oxipng import optimize
+
+optimize("upload.png", timeout=2.0, max_decompressed_size=50_000_000)
+```
+
+`timeout` limits optimization time. `max_decompressed_size` rejects inputs whose
+inflated image data would exceed the configured byte count. Defaults preserve
+upstream behavior and do not impose a decompression cap.
+
 stdin and stdout optimization are not part of this API. Callers must decide
 when to read from stdin and when to write to stdout. Use `optimize_from_memory`
 after reading bytes.
@@ -79,8 +93,8 @@ after reading bytes.
 ## Errors
 
 Caller errors raise `TypeError` or `ValueError`. PNG decode and optimization
-errors raise `PngError`. Backup file problems may raise `FileExistsError` or
-`OSError`.
+errors raise `PngError`. File I/O problems may raise `FileNotFoundError`,
+`FileExistsError`, or `OSError`.
 
 ```python
 from oxipng import PngError, optimize

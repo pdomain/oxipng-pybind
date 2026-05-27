@@ -1,18 +1,17 @@
-# docs/
+# Documentation
 
-How documentation is organized in this repo.
+Use this map to find the right project doc.
 
 | Folder | Purpose | Use when |
 | --- | --- | --- |
-| `architecture/` | Durable reference: how the system works today. | Capturing current shape, contracts, and current-state diagrams. |
-| `api-surface/` | Package-specific upstream API manifests. | Tracking Rust `oxipng` API surface snapshots. |
-| `plans/` | Current project plan. | Checking open work. |
-| `process/` | Workflow conventions and release process. | Capturing how the team works. |
-| `usage/` | Downstream reference. | A user or integrator needs to know how to use it. |
+| `architecture/` | Durable reference for how the system works today. | You need current contracts or diagrams. |
+| `api-surface/` | Package-specific upstream API manifests. | You need tracked Rust `oxipng` API snapshots. |
+| `plans/` | Current project plans. | You need open work. |
+| `process/` | Workflow conventions and release process. | You need team workflow rules. |
+| `usage/` | Downstream reference. | You need to use or integrate the package. |
 
-This repo keeps only docs folders that contain current files. It follows the
-workspace folder meanings when those folders exist. `api-surface/` is
-package-specific. Use Git history for old plans, specs, and reports.
+This repo keeps only current docs folders. Use Git history for old plans,
+specs, and reports.
 
 ## Usage
 
@@ -33,12 +32,13 @@ package-specific. Use Git history for old plans, specs, and reports.
 ## Process
 
 - [Dependency health](process/dependency-health.md)
+- [GitHub settings](process/github-settings.md)
 - [Local development](process/local-development.md)
 - [Release artifacts](process/release-artifacts.md)
 - [Rust oxipng updates](process/upstream-bumps.md)
 - [Writing style](process/writing-style.md)
 - [Lint deviations](process/lint-deviations.md)
 
-## Project State
+## Project state
 
 - [Unfinished work](plans/unfinished-work.md)

@@ -1,150 +1,123 @@
-# CLAUDE - oxipng-pybind
+# CLAUDE.md - oxipng-pybind
 
-Python bindings around the upstream Rust `oxipng` crate via PyO3 and maturin.
-This project does not own PNG optimization logic; it exposes a stable Python
-API and pyoxipng compatibility layer over upstream `oxipng`.
+This project provides Python bindings for the upstream Rust `oxipng` crate
+through PyO3 and maturin. It exposes the `oxipng` Python module, the native
+`_oxipng` extension, and a pyoxipng compatibility layer.
 
-Distribution name: `oxipng-pybind`. Import module: `oxipng`. Native extension:
-`_oxipng`.
+This repo does not own PNG optimization logic. Keep optimizer behavior in
+upstream `oxipng` unless a plan says otherwise.
+
+## Start Here
+
+Read these files before making changes:
+
+- `CONVENTIONS.md`
+- `CONTRIBUTING.md`
+- `docs/process/writing-style.md`
+
+For larger work, also check `docs/plans/unfinished-work.md`.
+
+Follow `docs/process/writing-style.md` for docs, reports, issue text, PR text,
+and user-facing copy. Keep text short, clear, and DRY. Link to the source doc
+instead of copying its details.
 
 ## Commands
 
-| target | does |
+Prefer Make targets. Use direct `cargo`, `uv`, or `maturin` commands only when
+no target exists.
+
+| target | use |
 | --- | --- |
-| `make setup AI=1` | install pinned Rust toolchain, sync Python deps, build editable extension, install hooks |
-| `make develop AI=1` | build and install the editable extension |
-| `make test AI=1` | run Rust tests and Python tests |
-| `make test-rust AI=1` / `make test-py AI=1` | run Cargo tests / rebuild extension and run pytest |
-| `make coverage AI=1` | run pytest with branch coverage and HTML report |
-| `make lint AI=1` / `make lint-fix AI=1` | run or fix Rust, Python, and Markdown lint |
-| `make format AI=1` / `make format-check AI=1` | format Rust/Python or check formatting |
+| `make setup AI=1` | set up Rust, Python deps, editable extension, and hooks |
+| `make develop AI=1` | rebuild and install the editable extension |
+| `make test AI=1` | run Rust and Python tests |
+| `make test-rust AI=1` | run Cargo tests |
+| `make test-py AI=1` | rebuild the extension and run pytest |
+| `make lint AI=1` / `make lint-fix AI=1` | run or fix lint |
+| `make format AI=1` / `make format-check AI=1` | format or check formatting |
 | `make typecheck AI=1` | run basedpyright |
-| `make dependency-audit AI=1` | run cargo-deny and the locked Python audit |
-| `make dependency-refresh-check AI=1` | upgrade lockfiles, audit, and run full CI |
+| `make dependency-audit AI=1` | run dependency audits |
+| `make dependency-refresh-check AI=1` | refresh lockfiles, audit, and run CI |
 | `make pre-commit-check AI=1` | run all pre-commit hooks |
-| `make wheel AI=1` | build optimized ABI3 wheel into `target/wheels/` |
-| `make ci AI=1` | setup, hooks, lint, audits, typecheck, tests, and wheel build |
-| `make clean` / `make reset` | remove generated artifacts / rebuild local environment |
-| `make upgrade-deps` | upgrade Python and Rust lockfiles locally |
+| `make wheel AI=1` | build the ABI3 wheel |
+| `make ci AI=1` | run the full local CI gate |
 
-`AI=1` captures verbose output to `.ci-ai.log`; stdout shows a concise pass or
-filtered failure summary. Use the plain target only when full command output is
-needed for debugging.
+`AI=1` writes verbose output to `.ci-ai.log`. Stdout shows a concise result or
+a filtered failure summary. Use the plain target only when you need full output
+while debugging.
 
-`make setup` is the normal first command in a fresh checkout. See
-`CONTRIBUTING.md` and the `setup` target in `Makefile` for setup details.
+Never use bare `python -m pytest`. Python tests need the compiled extension.
+Use `make test-py AI=1`, or run `make develop AI=1` before focused
+`uv run --no-sync --group dev pytest ...` commands.
 
-## Rules
+See `CONTRIBUTING.md` and `docs/process/local-development.md` for setup and
+focused test workflows.
 
-- Before committing, follow the verification step in the "Before coding"
-  workflow below.
-- Prefer Make targets first; fall back to direct `cargo`, `uv`, or `maturin`
-  commands only when no target exists.
-- Never use bare `python -m pytest`. Python tests need the compiled extension;
-  use `make test-py` or `make develop` before focused
-  `uv run --no-sync --group dev pytest ...` commands.
-- Follow `CONVENTIONS.md` for API stability, upstream `oxipng` boundaries,
-  predictable errors, release artifacts, dependency refreshes, and license
-  rules.
-- The Cargo `extension-module` feature is for maturin builds. Keep Cargo tests
-  compatible with the repository's existing PyO3 setup.
-- Update `THIRD_PARTY_NOTICES.md` or generated-notice tooling whenever shipped
-  dependencies change.
+## Agent Rules
 
-## Writing Style
+- Follow `CONVENTIONS.md` for API stability, upstream boundaries, errors,
+  release artifacts, dependency refreshes, and license rules.
+- Keep the Cargo `extension-module` feature for maturin builds. Cargo tests
+  must keep working with this repo's PyO3 setup.
+- Interactive agents must not create GitHub PRs from this repo.
+- Work locally, verify locally, and commit locally only when asked.
+- Do not push or merge without explicit user direction.
+- The repo uses merge commits. See `CONTRIBUTING.md` for PR workflow.
 
-Follow `docs/process/writing-style.md` for docs, reports, issue text, PR text,
-and user-facing copy. In short: write clear text, avoid repeated ideas, link to
-the better source instead of copying details, and group command steps when they
-should run together.
+## Project Docs
 
-## Project State
-
-Core API, compatibility, CI, wheel, dependency health, and release artifact
-work are mostly in place. Check `docs/plans/unfinished-work.md` before
-planning new work.
-
-## Key Docs
-
-- `README.md` - user-facing positioning and quick start.
-- `docs/usage/` - supported API usage and pyoxipng migration guidance.
+- `README.md` - user-facing overview and quick start.
+- `docs/README.md` - docs folder meanings.
+- `docs/usage/` - supported API usage and pyoxipng migration.
 - `docs/architecture/` - API compatibility, options surface, and architecture.
-- `docs/api-surface/oxipng-10.1.1.toml` - tracked upstream surface manifest.
+- `docs/api-surface/` - tracked upstream `oxipng` API manifests.
 - `docs/process/local-development.md` - local development workflow.
-- `docs/process/dependency-health.md` - dependency refresh classification and
-  release/no-release policy.
+- `docs/process/dependency-health.md` - dependency refresh policy.
 - `docs/process/upstream-bumps.md` - upstream `oxipng` bump automation.
-- `docs/process/release-artifacts.md` - wheel policy and PyPI Trusted
-  Publishing setup.
+- `docs/process/release-artifacts.md` - wheel and publish policy.
 - `docs/process/lint-deviations.md` - documented lint exceptions.
 
-## docs/ folder
+This repo does not keep `docs/archive/`. Use Git history for old plans, specs,
+and reports.
 
-This repo follows the workspace docs folder meanings when those folders exist.
-See `docs/README.md`. Current folders are `architecture/`, `plans/`,
-`process/`, and `usage/`.
+## Superpowers Redirect
 
-`docs/api-surface/` is package-specific. It stores tracked upstream `oxipng`
-API surface manifests. This repo does not keep `docs/archive/`; use Git history
-for old plans, specs, and reports.
+When a Superpowers skill says to save to one of these paths, save to
+`docs/plans/<file>.md` instead:
 
-**Superpowers redirect.** When a Superpowers skill says to save to
-`docs/superpowers/specs/<file>.md`, `docs/superpowers/plans/<file>.md`,
-`docs/specs/<file>.md`, or `docs/plans/<file>.md`, save to
-`docs/plans/<file>.md` instead. This repo keeps all current Superpowers specs
-and plans in `docs/plans/`.
+- `docs/superpowers/specs/<file>.md`
+- `docs/superpowers/plans/<file>.md`
+- `docs/specs/<file>.md`
+- `docs/plans/<file>.md`
 
-## GitHub Workflow
-
-Interactive agents must not create GitHub PRs from this repository. Work
-locally, verify locally, commit locally, and wait for explicit user direction
-before pushing or merging. The repository uses merge commits; see
-`CONTRIBUTING.md` for PR workflow.
+This repo keeps all current Superpowers specs and plans in `docs/plans/`.
 
 <!-- workspace-process:start -->
 
-## Before coding
+## Before Coding
 
-These steps are workspace defaults for any coding task. **User-level settings
-override them** - a user's own `~/.claude/CLAUDE.md`, `settings.json`, or a
-direct instruction in the conversation takes precedence and may waive or
-change any step below.
+These workspace defaults apply to coding tasks. User-level settings or direct
+conversation instructions can override them.
 
-### Working principles
-
-- **Use skills.** Invoke the relevant superpowers skill before starting -
-  process skills first (`brainstorming`, `systematic-debugging`,
-  `writing-plans`, `test-driven-development`), then implementation skills.
-  If a skill applies, using it is not optional.
-- **Delegate by default.** Dispatch subagents for non-trivial work: per-repo
-  agents for repo changes, `Explore` for code searches. This keeps large tool
-  output out of the parent context.
-- **Parallelize.** Run independent tasks as concurrent subagents - multiple
-  agent calls in a single message. Set `model: sonnet` on implementers and
-  reviewers.
-
-### Steps
-
-1. **Gather local context.** Run `git status --short`, read this repo's
-   `CLAUDE.md`, `CONVENTIONS.md`, and `CONTRIBUTING.md`, then consult relevant
-   `docs/` folders for plans, specs, decisions, and architecture.
-2. **Check live issue status.** `gh issue view <N> --repo <owner/repo>` -
-   confirm it isn't already closed; note its milestone.
-3. **Check for in-flight work.** Open PRs and existing branches touching the
-   same area, to avoid colliding with work-in-progress.
-4. **Consult agent memory.** `.claude/agent-memory/<repo>/feedback_*.md` for
-   corrections not yet promoted to `CONVENTIONS.md`.
-5. **Locate code with `Explore` first.** Use an `Explore` subagent to find
-   relevant files before broad `Read`/grep.
-6. **Isolate in a worktree.** Never work directly in the interactive checkout
-   at `/workspaces/ocr-container/<repo>/`. Use the `using-git-worktrees` skill
-   to set up an isolated worktree. When delegating to a full-power
-   implementation agent, pass `isolation: "worktree"` on the `Agent` call
-   (skip for `-docs` agents and the `driver` agent). When an agent returns a
-   worktree path + branch, use the `finishing-a-development-branch` skill to
-   decide how to integrate.
-7. **TDD.** Write the failing test first where the plan calls for it.
-8. **Verify before committing.** Focused verification plus `make ci`.
-9. **Commit locally; do not push** without explicit say-so.
+1. Invoke relevant Superpowers skills before starting. Use process skills
+   before implementation skills.
+2. Run `git status --short`. Read this file, `CONVENTIONS.md`, and
+   `CONTRIBUTING.md`.
+3. Check relevant `docs/` folders for plans, specs, decisions, and
+   architecture.
+4. For issue work, confirm the issue is open with
+   `gh issue view <N> --repo <owner/repo>` and note its milestone.
+5. Check open PRs and branches for work touching the same area.
+6. Check `.claude/agent-memory/<repo>/feedback_*.md` for corrections that are
+   not yet in `CONVENTIONS.md`.
+7. Use an `Explore` subagent for broad code searches. Dispatch subagents for
+   non-trivial independent work, and run independent agent calls in parallel.
+8. Use the `using-git-worktrees` skill before code changes in the interactive
+   checkout at `/workspaces/ocr-container/<repo>/`. Full-power implementation
+   agents should use `isolation: "worktree"`. Docs agents and the `driver`
+   agent may skip this when directed.
+9. Write a failing test first when behavior changes or the plan calls for TDD.
+10. Before committing, run focused verification plus `make ci AI=1`.
+11. Commit locally only when asked. Do not push without explicit user direction.
 
 <!-- workspace-process:end -->

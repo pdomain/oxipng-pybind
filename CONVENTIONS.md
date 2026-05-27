@@ -1,7 +1,7 @@
-# oxipng-pybind conventions
+# oxipng-pybind Conventions
 
 These rules apply to source code, tests, docs, scripts, and workflows in this
-repo. They also guide AI agents working here.
+repo. They also guide AI agents.
 
 <!-- workspace-conventions:start -->
 
@@ -9,30 +9,21 @@ repo. They also guide AI agents working here.
 
 Do not add comments that repeat what the code says.
 
-Use a comment only when the reason is not clear from the code. Good reasons
-include a hidden constraint, a subtle invariant, or a workaround for a known
-bug.
+Use comments for hidden constraints, subtle invariants, and known workarounds.
 
-Docstrings should be short. Prefer one clear line. Do not add long parameter
-lists unless the API docs need them.
-
-Common violations:
-
-- A comment above a function that repeats the function name.
-- A comment like `# return the value` before a return statement.
-- A long docstring that only repeats names and types.
-- Section divider comment blocks in test files.
+Keep docstrings short. Follow the docstring policy in
+[Lint Deviations](docs/process/lint-deviations.md#docstring-policy).
 
 ## Rule: Avoid ambiguous Unicode in code
 
-Characters flagged by Ruff under `RUF001`, `RUF002`, or `RUF003` must be clear.
+Make characters flagged by Ruff under `RUF001`, `RUF002`, or `RUF003` clear.
 
 In strings and docstrings, use `\uXXXX` escapes when Ruff flags a character.
 Add a short inline note that names the character.
 
 In comments, replace the character with plain ASCII text.
 
-Do not silence these rules with broad `noqa` entries.
+Do not silence these rules with broad suppressions.
 
 ## Rule: Use `uv run` for Python tools
 
@@ -43,13 +34,13 @@ Do not call bare `python`, `python3`, `pytest`, `ruff`, `pyright`, or
 [Local Development](docs/process/local-development.md) for focused test
 commands.
 
-One-off shell use by a human is outside this rule.
+One-off human shell use is outside this rule.
 
-## Rule: Keep active specs in `docs/specs/`
+## Rule: Keep plans in the right docs folder
 
-Design specs live in `docs/specs/` while the work is active. After the work
-ships, move the final design record to `docs/architecture/` and update links
-that still point to the old spec path.
+Use the folder meanings in [docs/README.md](docs/README.md). This repo keeps
+current plans in `docs/plans/` and durable design records in
+`docs/architecture/`.
 
 ## Rule: Document each lint suppression
 
@@ -57,15 +48,8 @@ Prefer fixing the lint issue. If a suppression is correct, make it narrow, add
 a short reason next to it, and record it in
 `docs/process/lint-deviations.md`.
 
-This applies to:
-
-- `# noqa: ...`
-- `# pyright: ignore[...]`
-- `# type: ignore[...]`
-- Ruff `ignore` or `per-file-ignores` settings
-
-Use basedpyright rule names for Pyright suppressions. Do not use mypy-style
-codes for basedpyright.
+This applies to inline suppressions and config-level ignores. Use basedpyright
+rule names for Pyright suppressions.
 
 <!-- workspace-conventions:end -->
 
@@ -73,34 +57,30 @@ codes for basedpyright.
 
 ## Rule: Keep the Python API stable
 
-Keep the Python API stable. Follow
-[API Compatibility](docs/architecture/api-compatibility.md) for supported names,
-pyoxipng migration paths, and deprecation behavior.
+Follow [API Compatibility](docs/architecture/api-compatibility.md) for
+supported names, pyoxipng migration paths, and deprecation behavior.
 
 ## Rule: Bind upstream `oxipng`
 
 This repo wraps the upstream Rust `oxipng` crate.
 
-Do not add new PNG optimizer algorithms here. If behavior belongs upstream,
-prefer an upstream issue or patch.
+Do not add new PNG optimizer algorithms here. If behavior belongs upstream, use
+an upstream issue or patch.
 
 ## Rule: Keep errors predictable
 
-Keep errors predictable. Follow the
-[error mapping](docs/architecture/overview.md#error-mapping): caller mistakes
-use normal Python exceptions, and PNG decode or optimization failures use
+Follow the [error mapping](docs/architecture/overview.md#error-mapping). Caller
+mistakes use normal Python exceptions. PNG decode and optimization failures use
 `PngError`.
 
 ## Rule: Treat release artifacts as a contract
 
-Treat release artifacts as a contract. Follow
-[Release Artifacts](docs/process/release-artifacts.md) for wheel targets,
-verification, and PyPI Trusted Publishing rules.
+Follow [Release Artifacts](docs/process/release-artifacts.md) for wheel
+targets, verification, and PyPI Trusted Publishing rules.
 
 ## Rule: Classify dependency refreshes
 
-Classify dependency refreshes. Follow
-[Dependency Health](docs/process/dependency-health.md#release-classification)
+Follow [Dependency Health](docs/process/dependency-health.md#release-classification)
 for `release-needed` and `no-release-needed` rules.
 
 ## Rule: Keep docs easy to read

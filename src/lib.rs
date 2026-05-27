@@ -8,7 +8,8 @@ use pyo3::exceptions::{
 use pyo3::ffi::c_str;
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDict, PyList, PyMemoryView, PySet, PyString, PyTuple,
+    PyBool, PyByteArray, PyBytes, PyDict, PyFrozenSet, PyList, PyMapping, PyMemoryView, PySequence,
+    PySequenceMethods, PySet, PyString, PyTuple,
 };
 use std::fs::{self, OpenOptions};
 use std::io;
@@ -838,24 +839,46 @@ fn validate_indexed_pixels(
     Ok(())
 }
 
+fn parse_ordered_palette_sequence<'py>(
+    value: &Bound<'py, PyAny>,
+    context: &str,
+) -> PyResult<Bound<'py, PySequence>> {
+    if value.downcast::<PyString>().is_ok()
+        || value.downcast::<PyBytes>().is_ok()
+        || value.downcast::<PyByteArray>().is_ok()
+        || value.downcast::<PyMemoryView>().is_ok()
+        || value.downcast::<PyMapping>().is_ok()
+        || value.downcast::<PySet>().is_ok()
+        || value.downcast::<PyFrozenSet>().is_ok()
+    {
+        return Err(PyTypeError::new_err(format!(
+            "{context} must be an ordered sequence"
+        )));
+    }
+
+    value
+        .clone()
+        .downcast_into::<PySequence>()
+        .map_err(|_| PyTypeError::new_err(format!("{context} must be an ordered sequence")))
+}
+
 fn parse_palette_color(value: &Bound<'_, PyAny>) -> PyResult<oxi::RGBA8> {
-    let tuple = value
-        .downcast::<PyTuple>()
-        .map_err(|_| PyValueError::new_err("palette entries must be 3- or 4-tuples"))?;
-    if tuple.len() != 3 && tuple.len() != 4 {
+    let sequence = parse_ordered_palette_sequence(value, "palette entries")?;
+    let len = sequence.len()?;
+    if len != 3 && len != 4 {
         return Err(PyValueError::new_err(
-            "palette entries must be 3- or 4-tuples",
+            "palette entries must be 3- or 4-channel sequences",
         ));
     }
-    let alpha = if tuple.len() == 4 {
-        extract_u8(&tuple.get_item(3)?, "palette")?
+    let alpha = if len == 4 {
+        extract_u8(&sequence.get_item(3)?, "palette")?
     } else {
         255
     };
     Ok(oxi::RGBA8::new(
-        extract_u8(&tuple.get_item(0)?, "palette")?,
-        extract_u8(&tuple.get_item(1)?, "palette")?,
-        extract_u8(&tuple.get_item(2)?, "palette")?,
+        extract_u8(&sequence.get_item(0)?, "palette")?,
+        extract_u8(&sequence.get_item(1)?, "palette")?,
+        extract_u8(&sequence.get_item(2)?, "palette")?,
         alpha,
     ))
 }
@@ -866,15 +889,20 @@ fn parse_palette(value: Option<&Bound<'_, PyAny>>) -> PyResult<Vec<oxi::RGBA8>> 
             "palette is required for indexed raw images",
         ));
     };
-    let list = value
-        .downcast::<PyList>()
-        .map_err(|_| PyValueError::new_err("palette must be a list of colors"))?;
-    if list.is_empty() || list.len() > 256 {
+    let sequence = parse_ordered_palette_sequence(value, "palette")?;
+    let len = sequence.len()?;
+    if len == 0 || len > 256 {
         return Err(PyValueError::new_err(
             "palette must contain between 1 and 256 colors",
         ));
     }
-    list.iter().map(|item| parse_palette_color(&item)).collect()
+    (0..len)
+        .map(|index| {
+            sequence
+                .get_item(index)
+                .and_then(|item| parse_palette_color(&item))
+        })
+        .collect()
 }
 
 fn parse_color_type(

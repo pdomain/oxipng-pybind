@@ -53,6 +53,10 @@ Migration rule:
 | `RowFilter.paeth` | `FilterStrategy.paeth` |
 | `[RowFilter.none, RowFilter.sub]` | `FilterStrategy.predefined(["none", "sub"])` |
 
+`FilterStrategy.predefined(...)` preserves the supplied order. It accepts
+ordered sequences and generators, and it rejects `set` and `frozenset`. Pass
+`sorted(values)` if old code intentionally built predefined filters from a set.
+
 ## Interlacing
 
 Use lowercase names:
@@ -130,6 +134,12 @@ ColorType.indexed([(255, 0, 0)])
 ```
 
 They emit `DeprecationWarning`.
+
+Indexed palettes preserve order. Tuple palette entries are the canonical style,
+but both stable `RawImage(..., palette=...)` and the `ColorType.indexed(...)`
+compatibility path accept ordered 3- or 4-channel sequences, including
+JSON-style lists. They reject strings, bytes, mappings, sets, frozensets, wrong
+entry lengths, boolean channels, and channel values outside `0..255`.
 
 ## Other Options
 

@@ -14,7 +14,7 @@ Python facade owns ergonomic names.
 | `interlace` | `None`, `Interlacing.keep`, `Interlacing.off`, `Interlacing.on`, `"keep"`, `"off"`, `"on"`, `"0"`, `"1"` |
 | `strip` | `None`, `StripChunks.none`, `StripChunks.safe`, `StripChunks.all`, `StripChunks.strip(names)`, `StripChunks.keep(names)`, `"none"`, `"safe"`, `"all"` |
 | `deflate` | `None`, `Deflater.libdeflater`, `Deflater.zopfli`, `Deflaters.libdeflater(compression)`, `Deflaters.zopfli(iterations)`, `"libdeflater"`, `"zopfli"` |
-| `filter` | `None`, one filter value, or a non-empty `list`, `tuple`, or `set` of filter values |
+| `filter` | `None`, one scalar filter value, `FilterStrategy.predefined(filters)`, or a non-empty `list`, `tuple`, or `set` of scalar filter values |
 | `fix_errors` | `bool` |
 | `force` | `bool` |
 | `backup` | `bool`, file API only |
@@ -37,8 +37,14 @@ Python facade owns ergonomic names.
 numeric values `"0"` through `"9"` in that order.
 
 `FilterStrategy.predefined(...)` exposes upstream `FilterStrategy::Predefined`.
-It accepts a non-empty sequence of basic row filters. Basic row filters are
-`none`, `sub`, `up`, `average`, and `paeth`.
+It accepts a non-empty ordered iterable of basic row filters, including ordered
+sequences and generators. Basic row filters are `none`, `sub`, `up`, `average`,
+and `paeth`.
+
+Predefined filter order is meaningful. `FilterStrategy.predefined(...)` rejects
+`set` and `frozenset`; callers that want sorted set contents should pass
+`sorted(values)` explicitly. A predefined-filter object is valid only as the
+whole `filter=` value, not inside a scalar filter collection.
 
 `RowFilter` values also parse as filters for old pyoxipng-style code. Accessing
 `RowFilter` values emits `DeprecationWarning`.

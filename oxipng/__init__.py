@@ -1,7 +1,8 @@
 """Python facade for the native oxipng extension."""
 
+from collections.abc import Iterator, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from . import _pyoxipng_compat as _compat
 
@@ -72,11 +73,12 @@ class FilterStrategy(Enum):
     brute = "brute"
 
     @staticmethod
-    def predefined(filters: list[object] | tuple[object, ...]) -> _compat.PredefinedFilters:
+    def predefined(filters: Sequence[object] | Iterator[object]) -> _compat.PredefinedFilters:
         """Create a predefined row-filter sequence."""
-        if not filters:
-            raise ValueError("predefined filter must not be empty")
+        _compat.reject_unordered_predefined_filters(filters)
         parsed = tuple(_compat.basic_row_filter_value(filter_value) for filter_value in filters)
+        if not parsed:
+            raise ValueError("predefined filter must not be empty")
         return _compat.PredefinedFilters(parsed)
 
 
@@ -131,10 +133,7 @@ class ColorType(Enum):
 
     def __call__(
         self,
-        transparent: int
-        | tuple[int, int, int]
-        | list[tuple[int, int, int] | tuple[int, int, int, int]]
-        | None = None,
+        transparent: int | tuple[int, int, int] | Sequence[Sequence[int]] | None = None,
         *,
         bit_depth: int | BitDepth = BitDepth.eight,
     ) -> _compat.CompatColorType:
@@ -142,16 +141,25 @@ class ColorType(Enum):
         _compat.warn_pyoxipng_compat()
         raw_bit_depth = bit_depth.value if isinstance(bit_depth, BitDepth) else bit_depth
         if self is ColorType.indexed:
-            if not isinstance(transparent, list):
+            if transparent is None:
                 raise ValueError("indexed color_type requires a palette")
-            return _compat.CompatColorType("indexed", raw_bit_depth, palette=list(transparent))
+            palette = _compat.ordered_palette_sequence(transparent, "indexed palette")
+            return _compat.CompatColorType(
+                "indexed",
+                raw_bit_depth,
+                palette=cast("list[Sequence[int]]", list(palette)),
+            )
         if self in {ColorType.rgba, ColorType.grayscale_alpha}:
             if transparent is not None:
                 raise ValueError(f"{self.value} does not accept transparent")
             return _compat.CompatColorType(self.value, raw_bit_depth)
         if isinstance(transparent, list):
             raise TypeError(f"{self.value} does not accept palette")
-        return _compat.CompatColorType(self.value, raw_bit_depth, transparent=transparent)
+        return _compat.CompatColorType(
+            self.value,
+            raw_bit_depth,
+            transparent=cast("int | tuple[int, int, int] | None", transparent),
+        )
 
 
 ColorType.__call__.__doc__ = (

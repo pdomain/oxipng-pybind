@@ -1,11 +1,14 @@
 """Typing stub for the supported oxipng-pybind API."""
 
+from collections.abc import Iterator, Sequence
 from enum import Enum
 from os import PathLike
 from typing import overload
 
 StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
 BytesLike = bytes | bytearray | memoryview
+PaletteEntry = Sequence[int]
+Palette = Sequence[PaletteEntry]
 
 class Interlacing(Enum):
     keep = "keep"
@@ -53,7 +56,7 @@ class FilterStrategy(Enum):
     brute = "brute"
 
     @staticmethod
-    def predefined(filters: list[object] | tuple[object, ...]) -> _PredefinedFilters:
+    def predefined(filters: Sequence[object] | Iterator[object]) -> _PredefinedFilters:
         """Create a predefined row-filter sequence."""
 
 class RowFilter(Enum):
@@ -71,7 +74,7 @@ class RowFilter(Enum):
 class _CompatColorType:
     kind: str
     bit_depth: int
-    palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None
+    palette: list[PaletteEntry] | None
     transparent: int | tuple[int, int, int] | None
 
 class _CompatStripChunks:
@@ -85,7 +88,8 @@ class _CompatDeflater:
 class _PredefinedFilters:
     filters: tuple[str, ...]
 
-FilterOption = FilterStrategy | RowFilter | _PredefinedFilters | str
+_ScalarFilterOption = FilterStrategy | RowFilter | str
+FilterOption = _ScalarFilterOption | _PredefinedFilters
 
 class BitDepth(Enum):
     one = 1
@@ -103,10 +107,7 @@ class ColorType(Enum):
 
     def __call__(
         self,
-        transparent: int
-        | tuple[int, int, int]
-        | list[tuple[int, int, int] | tuple[int, int, int, int]]
-        | None = None,
+        transparent: int | tuple[int, int, int] | Palette | None = None,
         *,
         bit_depth: BitDepth | int = BitDepth.eight,
     ) -> _CompatColorType:
@@ -133,7 +134,7 @@ class RawImage:
         bit_depth: BitDepth | int,
         data: BytesLike,
         *,
-        palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None,
+        palette: Palette | None = None,
         transparent: int | tuple[int, int, int] | None = None,
     ) -> None: ...
     @overload
@@ -159,9 +160,9 @@ class RawImage:
         strip: StripChunks | _CompatStripChunks | str | None = None,
         deflate: Deflater | _CompatDeflater | str | None = None,
         filter: FilterOption
-        | list[FilterOption]
-        | tuple[FilterOption, ...]
-        | set[FilterOption]
+        | list[_ScalarFilterOption]
+        | tuple[_ScalarFilterOption, ...]
+        | set[_ScalarFilterOption]
         | None = None,
         fix_errors: bool = False,
         force: bool = False,
@@ -187,9 +188,9 @@ def optimize(
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
     filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
+    | list[_ScalarFilterOption]
+    | tuple[_ScalarFilterOption, ...]
+    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
@@ -216,9 +217,9 @@ def analyze(
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
     filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
+    | list[_ScalarFilterOption]
+    | tuple[_ScalarFilterOption, ...]
+    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
@@ -243,9 +244,9 @@ def optimize_from_memory(
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
     filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
+    | list[_ScalarFilterOption]
+    | tuple[_ScalarFilterOption, ...]
+    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,

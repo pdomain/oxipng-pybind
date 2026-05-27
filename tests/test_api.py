@@ -4,6 +4,7 @@ import array
 import inspect
 import os
 import warnings
+from collections import UserDict
 from io import BytesIO
 from pathlib import Path
 from typing import Any, TypeAlias, cast
@@ -427,10 +428,29 @@ def test_predefined_filter_rejects_empty_sequence() -> None:
         FilterStrategy.predefined([])
 
 
+def test_predefined_filter_accepts_ordered_generator() -> None:
+    predefined = FilterStrategy.predefined(item for item in ["none", "sub", "up"])
+
+    assert predefined.filters == ("none", "sub", "up")
+
+
+@pytest.mark.parametrize("value", [{"none", "sub"}, frozenset({"none", "sub"})])
+def test_predefined_filter_rejects_unordered_collections(value: object) -> None:
+    with pytest.raises(TypeError, match="ordered"):
+        FilterStrategy.predefined(cast("Any", value))
+
+
 @pytest.mark.parametrize("value", ["minsum", FilterStrategy.entropy, "unknown"])
 def test_predefined_filter_rejects_non_basic_filters(value: object) -> None:
     with pytest.raises(ValueError, match="predefined filter"):
         FilterStrategy.predefined([value])
+
+
+def test_filter_rejects_nested_predefined_filter(png_bytes: bytes) -> None:
+    predefined = FilterStrategy.predefined(["none", "sub"])
+
+    with pytest.raises(ValueError, match="filter"):
+        cast("Any", optimize_from_memory)(png_bytes, filter=[predefined])
 
 
 def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
@@ -967,6 +987,91 @@ def test_raw_image_indexed_palette_returns_readable_bytes() -> None:
     output = raw.create_optimized_png()
 
     assert_readable_png_bytes(output)
+
+
+def test_raw_image_indexed_palette_accepts_ordered_sequences() -> None:
+    raw = RawImage(
+        2,
+        1,
+        ColorType.indexed,
+        BitDepth.eight,
+        bytes([0, 1]),
+        palette=((255, 0, 0), [0, 0, 255, 128]),
+    )
+
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
+def test_pyoxipng_indexed_palette_accepts_ordered_sequences() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.indexed(((255, 0, 0), [0, 0, 255, 128]))
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(bytes([0, 1]), 2, 1, color_type=color_type)
+
+    assert_readable_png_bytes(raw.create_optimized_png())
+
+
+@pytest.mark.parametrize(
+    "palette",
+    [
+        {(255, 0, 0)},
+        frozenset({(255, 0, 0)}),
+        {"red": (255, 0, 0)},
+        "red",
+        b"red",
+    ],
+)
+def test_raw_image_rejects_unordered_or_non_sequence_palettes(palette: object) -> None:
+    with pytest.raises(TypeError, match="palette"):
+        cast("Any", RawImage)(1, 1, ColorType.indexed, BitDepth.eight, bytes([0]), palette=palette)
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        "red",
+        b"red",
+        {"r": 255, "g": 0, "b": 0},
+        UserDict({"r": 255, "g": 0, "b": 0}),
+        {255, 1, 0},
+        frozenset({255, 1, 0}),
+    ],
+)
+def test_raw_image_rejects_unordered_or_non_sequence_palette_entries(entry: object) -> None:
+    with pytest.raises(TypeError, match="palette"):
+        cast("Any", RawImage)(
+            1,
+            1,
+            ColorType.indexed,
+            BitDepth.eight,
+            bytes([0]),
+            palette=[entry],
+        )
+
+
+@pytest.mark.parametrize("entry", [(255, 0), (255, 0, 0, 255, 0)])
+def test_raw_image_rejects_wrong_length_palette_entries(entry: object) -> None:
+    with pytest.raises(ValueError, match="palette entries"):
+        cast("Any", RawImage)(
+            1,
+            1,
+            ColorType.indexed,
+            BitDepth.eight,
+            bytes([0]),
+            palette=[entry],
+        )
+
+
+def test_raw_image_rejects_out_of_range_palette_samples() -> None:
+    with pytest.raises(ValueError, match="palette"):
+        RawImage(
+            1,
+            1,
+            ColorType.indexed,
+            BitDepth.eight,
+            bytes([0]),
+            palette=[(256, 0, 0)],
+        )
 
 
 def test_raw_image_add_png_chunk_preserves_allowed_chunk() -> None:

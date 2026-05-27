@@ -46,6 +46,12 @@ raw = RawImage(
 png_bytes = raw.create_optimized_png()
 ```
 
+Palette order is preserved and therefore must come from an ordered finite
+sequence. Tuple entries are the canonical style, but each palette entry may be
+any ordered 3- or 4-channel sequence of integer channel values. This accepts
+JSON-style lists while still rejecting strings, bytes, mappings, sets, and
+frozensets.
+
 Transparent colors are supported for grayscale and RGB raw images:
 
 ```python

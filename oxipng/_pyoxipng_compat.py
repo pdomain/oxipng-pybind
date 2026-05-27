@@ -1,6 +1,7 @@
 """pyoxipng compatibility helpers slated for removal."""
 # pyright: reportImplicitOverride=false
 
+from collections.abc import Mapping, Sequence, Set
 from dataclasses import dataclass
 from enum import EnumMeta
 from warnings import warn
@@ -38,7 +39,7 @@ class PyoxipngCompatEnumMeta(EnumMeta):
 class CompatColorType:
     kind: str
     bit_depth: int
-    palette: list[tuple[int, int, int] | tuple[int, int, int, int]] | None = None
+    palette: list[Sequence[int]] | None = None
     transparent: int | tuple[int, int, int] | None = None
 
 
@@ -57,6 +58,23 @@ class CompatDeflater:
 @dataclass(frozen=True)
 class PredefinedFilters:
     filters: tuple[str, ...]
+
+
+def reject_unordered_predefined_filters(value: object) -> None:
+    """Reject unordered predefined-filter containers."""
+    if isinstance(value, (set, frozenset)):
+        raise TypeError(
+            "predefined filter must be an ordered iterable; pass sorted(values) explicitly"
+        )
+
+
+def ordered_palette_sequence(value: object, context: str) -> Sequence[object]:
+    """Return an ordered finite palette sequence or raise TypeError."""
+    if isinstance(value, (str, bytes, bytearray, memoryview, Mapping, Set)):
+        raise TypeError(f"{context} must be an ordered sequence")
+    if not isinstance(value, Sequence):
+        raise TypeError(f"{context} must be an ordered sequence")
+    return value
 
 
 def basic_row_filter_value(value: object) -> str:

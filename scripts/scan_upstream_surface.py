@@ -288,7 +288,7 @@ def has_new_unexposed(report: dict[str, Any]) -> bool:
 
 
 def append_generated_docs(report: dict[str, Any], root: Path = ROOT) -> None:
-    """Append generated unexposed-surface notes to docs and changelog."""
+    """Append generated unexposed-surface notes to active docs."""
     if not has_new_unexposed(report):
         return
 
@@ -311,12 +311,13 @@ def append_generated_docs(report: dict[str, Any], root: Path = ROOT) -> None:
             path.write_text(text.rstrip() + "\n" + addition, encoding="utf-8")
 
     changelog = root / "CHANGELOG.md"
-    text = changelog.read_text(encoding="utf-8")
-    marker = "## Unreleased\n"
-    note = f"- Documented new unexposed upstream surface for oxipng {version}.\n"
-    if note not in text:
-        text = text.replace(marker, marker + "\n" + note, 1)
-        changelog.write_text(text, encoding="utf-8")
+    if changelog.exists():
+        text = changelog.read_text(encoding="utf-8")
+        marker = "## Unreleased\n"
+        note = f"- Documented new unexposed upstream surface for oxipng {version}.\n"
+        if marker in text and note not in text:
+            text = text.replace(marker, marker + "\n" + note, 1)
+            changelog.write_text(text, encoding="utf-8")
 
 
 def write_outputs(report: dict[str, Any], output_dir: Path = OUTPUT_DIR) -> None:

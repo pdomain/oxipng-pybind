@@ -288,8 +288,6 @@ def test_append_generated_docs_updates_docs_once(tmp_path: Path) -> None:
     docs.mkdir(parents=True)
     for name in ("api-compatibility.md", "options-surface.md"):
         (docs / name).write_text(f"# {name}\n", encoding="utf-8")
-    changelog = tmp_path / "CHANGELOG.md"
-    changelog.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
     report: dict[str, object] = {
         "upstream_version": "10.2.0",
         "new_upstream_options": ["force"],
@@ -302,9 +300,29 @@ def test_append_generated_docs_updates_docs_once(tmp_path: Path) -> None:
 
     api_text = (docs / "api-compatibility.md").read_text(encoding="utf-8")
     options_text = (docs / "options-surface.md").read_text(encoding="utf-8")
-    changelog_text = changelog.read_text(encoding="utf-8")
     assert api_text.count("### oxipng 10.2.0") == 1
     assert options_text.count("`Deflater::Zopfli`") == 1
+    assert not (tmp_path / "CHANGELOG.md").exists()
+
+
+def test_append_generated_docs_updates_existing_changelog_once(tmp_path: Path) -> None:
+    docs = tmp_path / "docs" / "architecture"
+    docs.mkdir(parents=True)
+    for name in ("api-compatibility.md", "options-surface.md"):
+        (docs / name).write_text(f"# {name}\n", encoding="utf-8")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
+    report: dict[str, object] = {
+        "upstream_version": "10.2.0",
+        "new_upstream_options": ["force"],
+        "enums": {"Deflater": {"new_upstream_variants": []}},
+        "blocking": False,
+    }
+
+    append_generated_docs(report, tmp_path)
+    append_generated_docs(report, tmp_path)
+
+    changelog_text = changelog.read_text(encoding="utf-8")
     assert changelog_text.count("Documented new unexposed upstream surface") == 1
 
 
@@ -315,8 +333,6 @@ def test_append_generated_docs_skips_when_report_has_no_new_surface(tmp_path: Pa
     api.write_text("# API\n", encoding="utf-8")
     options = docs / "options-surface.md"
     options.write_text("# Options\n", encoding="utf-8")
-    changelog = tmp_path / "CHANGELOG.md"
-    changelog.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
     report: dict[str, object] = {
         "upstream_version": "10.2.0",
         "new_upstream_options": [],
@@ -328,7 +344,7 @@ def test_append_generated_docs_skips_when_report_has_no_new_surface(tmp_path: Pa
 
     assert api.read_text(encoding="utf-8") == "# API\n"
     assert options.read_text(encoding="utf-8") == "# Options\n"
-    assert changelog.read_text(encoding="utf-8") == "# Changelog\n\n## Unreleased\n"
+    assert not (tmp_path / "CHANGELOG.md").exists()
 
 
 def test_current_manifest_path_uses_pinned_oxipng_version(tmp_path: Path) -> None:

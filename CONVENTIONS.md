@@ -134,24 +134,5 @@ artifact changes need release and version review.
 
 ## Rule: Keep docs easy to read
 
-Write at about a 7th grade English level.
-
-Use short sentences. Avoid long clause chains. Avoid parenthetical em dashes.
-Use parentheses rarely.
-
-Prefer parentheses for first-time acronym write-outs, such as
-`CI (continuous integration)`.
-
-Link standard library types and tools to official docs when the link helps.
-Link only the first instance per doc.
-
-When no public docs page exists, link to source code when practical. Use this
-for local API contracts and generated behavior.
-
-Use line anchors for local source links when practical.
-
-Link related external project pages when helpful. Do not deep-link into
-external project code unless it is needed.
-
-When writing docs, reports, issue text, PR text, or user-facing copy, follow
-`docs/process/writing-style.md`.
+Follow [Writing Style](docs/process/writing-style.md) for docs, reports, issue
+text, PR text, and user-facing copy.

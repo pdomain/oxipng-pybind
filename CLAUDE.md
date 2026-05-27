@@ -31,72 +31,37 @@ Distribution name: `oxipng-pybind`. Import module: `oxipng`. Native extension:
 filtered failure summary. Use the plain target only when full command output is
 needed for debugging.
 
-`make setup` is the normal first command in a fresh checkout. It checks
-`uv.lock`, installs the pinned Rust toolchain and `cargo-deny` if needed, syncs
-locked Python dev dependencies, builds the editable `_oxipng` extension, and
-installs Git hooks.
+`make setup` is the normal first command in a fresh checkout. See
+`CONTRIBUTING.md` and the `setup` target in `Makefile` for setup details.
 
 ## Rules
 
-- Always run focused verification plus `make ci AI=1` before committing.
+- Before committing, follow the verification step in the "Before coding"
+  workflow below.
 - Prefer Make targets first; fall back to direct `cargo`, `uv`, or `maturin`
   commands only when no target exists.
 - Never use bare `python -m pytest`. Python tests need the compiled extension;
   use `make test-py` or `make develop` before focused
   `uv run --no-sync --group dev pytest ...` commands.
-- Keep the wrapper API stable. Add compatibility paths deliberately, document
-  deprecations, and preserve predictable Python exception behavior.
-- Rust code should bind upstream `oxipng`; do not fork or reimplement PNG
-  optimizer algorithms here.
+- Follow `CONVENTIONS.md` for API stability, upstream `oxipng` boundaries,
+  predictable errors, release artifacts, dependency refreshes, and license
+  rules.
 - The Cargo `extension-module` feature is for maturin builds. Keep Cargo tests
   compatible with the repository's existing PyO3 setup.
 - Update `THIRD_PARTY_NOTICES.md` or generated-notice tooling whenever shipped
   dependencies change.
-- No GPL/LGPL dependencies without an explicit licensing decision.
-- Release wheels target Python 3.11+ ABI3. Current expected hosted targets are
-  Linux x86_64, Linux aarch64, macOS x86_64, macOS arm64, and Windows x86_64.
-- PyPI publishing uses Trusted Publishing from `wheels.yml` on protected `v*`
-  tags after aggregated wheel verification. Do not add password or API-token
-  publishing secrets.
-- Dependency refresh automation labels PRs as `release-needed` or
-  `no-release-needed`. Tooling-only lockfile refreshes may auto-merge after
-  checks; release-affecting refreshes need explicit release/version attention.
 
 ## Writing Style
 
-- Write at about a 7th grade English level.
-- Make docs, reports, and user-facing text easy for ESL readers to follow.
-- Use short, clear sentences.
-- Avoid long chains of clauses.
-- Use short paragraphs. Do not make every sentence its own paragraph.
-- Avoid repeating the same idea in nearby sentences.
-- Link to another doc instead of repeating details when that doc is the better
-  source.
-- Combine command steps when the user should run them together before doing
-  other work.
-- Do not use parenthetical em dashes.
-- Use parentheses rarely.
-- Prefer parentheses for first-time acronym write-outs, such as
-  `CI (continuous integration)`.
-- Link standard library types and tools to official docs when the link helps.
-  Link only the first instance per doc.
-- When no public docs page exists, link to source code when practical.
-  Use this for local API contracts and generated behavior.
-- Use line anchors for local source links when practical.
-- Link related external project pages when helpful.
-- Do not deep-link into external project code unless it is needed.
-- Prefer direct wording over dense or tedious prose.
-- When writing docs, reports, issue text, PR text, or user-facing copy, read
-  `docs/process/writing-style.md`.
+Follow `docs/process/writing-style.md` for docs, reports, issue text, PR text,
+and user-facing copy. In short: write clear text, avoid repeated ideas, link to
+the better source instead of copying details, and group command steps when they
+should run together.
 
 ## Project State
 
-The supported API is implemented for files, memory buffers, raw pixel data, and
-analysis. Type stubs, runtime docstrings, pyoxipng migration docs, upstream API
-surface scanning, CI, API matrix, wheel matrix, dependency health automation,
-and release artifact verification are in place.
-
-Active roadmap:
+Core API, compatibility, CI, wheel, dependency health, and release artifact
+work are mostly in place. Check the active roadmap before planning new work:
 
 - `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`
 - `docs/superpowers/plans/2026-05-27-next-work.md`
@@ -120,10 +85,8 @@ Active roadmap:
 
 Interactive agents must not create GitHub PRs from this repository. Work
 locally, verify locally, commit locally, and wait for explicit user direction
-before pushing or merging. If a PR is needed, the user opens it unless they
-explicitly direct otherwise.
-
-The repository uses merge commits, not squash merges.
+before pushing or merging. The repository uses merge commits; see
+`CONTRIBUTING.md` for PR workflow.
 
 <!-- workspace-process:start -->
 
@@ -149,31 +112,26 @@ change any step below.
 
 ### Steps
 
-1. **Check the working tree.** `git status --short`. Surface or resolve stray
-   uncommitted work before starting - don't build on it.
-2. **Read repo guidance.** This repo's `CLAUDE.md` and `CONVENTIONS.md` for
-   repo-specific rules. Read `CONTRIBUTING.md` for contributor workflow.
-3. **Consult `docs/` for authoritative context** (whichever folders exist):
-   `plans/` (the work plan), `specs/` (design specs - follow any `Spec:`
-   pointer from the issue), `research/` (prior investigations), `decisions/`
-   (ADRs / constraints), `architecture/` (shipped design).
-4. **Check live issue status.** `gh issue view <N> --repo <owner/repo>` -
+1. **Gather local context.** Run `git status --short`, read this repo's
+   `CLAUDE.md`, `CONVENTIONS.md`, and `CONTRIBUTING.md`, then consult relevant
+   `docs/` folders for plans, specs, decisions, and architecture.
+2. **Check live issue status.** `gh issue view <N> --repo <owner/repo>` -
    confirm it isn't already closed; note its milestone.
-5. **Check for in-flight work.** Open PRs and existing branches touching the
+3. **Check for in-flight work.** Open PRs and existing branches touching the
    same area, to avoid colliding with work-in-progress.
-6. **Consult agent memory.** `.claude/agent-memory/<repo>/feedback_*.md` for
+4. **Consult agent memory.** `.claude/agent-memory/<repo>/feedback_*.md` for
    corrections not yet promoted to `CONVENTIONS.md`.
-7. **Locate code with `Explore` first.** Use an `Explore` subagent to find
+5. **Locate code with `Explore` first.** Use an `Explore` subagent to find
    relevant files before broad `Read`/grep.
-8. **Isolate in a worktree.** Never work directly in the interactive checkout
+6. **Isolate in a worktree.** Never work directly in the interactive checkout
    at `/workspaces/ocr-container/<repo>/`. Use the `using-git-worktrees` skill
    to set up an isolated worktree. When delegating to a full-power
    implementation agent, pass `isolation: "worktree"` on the `Agent` call
    (skip for `-docs` agents and the `driver` agent). When an agent returns a
    worktree path + branch, use the `finishing-a-development-branch` skill to
    decide how to integrate.
-9. **TDD.** Write the failing test first where the plan calls for it.
-10. **Verify before committing.** Focused verification plus `make ci`.
-11. **Commit locally; do not push** without explicit say-so.
+7. **TDD.** Write the failing test first where the plan calls for it.
+8. **Verify before committing.** Focused verification plus `make ci`.
+9. **Commit locally; do not push** without explicit say-so.
 
 <!-- workspace-process:end -->

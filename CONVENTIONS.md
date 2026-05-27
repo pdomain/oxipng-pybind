@@ -36,35 +36,26 @@ Do not silence these rules with broad `noqa` entries.
 
 ## Rule: Use `uv run` for Python tools
 
-Run Python tools through `uv run`.
+Run Python tools through `uv run` when no Make target fits.
 
 Do not call bare `python`, `python3`, `pytest`, `ruff`, `pyright`, or
-`pre-commit` from Make targets, scripts, hooks, or workflows.
-
-Use project commands such as:
-
-```bash
-uv run --group dev pytest
-uv run --group dev ruff check .
-uv run --group dev basedpyright
-uv run --group dev pre-commit run --all-files
-```
+`pre-commit` from Make targets, scripts, hooks, or workflows. See
+[Local Development](docs/process/local-development.md) for focused test
+commands.
 
 One-off shell use by a human is outside this rule.
 
 ## Rule: Keep active specs in `docs/specs/`
 
-Design specs live in `docs/specs/` while the work is active.
-
-After the work ships, move the final design record to `docs/architecture/`.
-Update any links that still point to the old spec path.
+Design specs live in `docs/specs/` while the work is active. After the work
+ships, move the final design record to `docs/architecture/` and update links
+that still point to the old spec path.
 
 ## Rule: Document each lint suppression
 
-Prefer fixing the lint issue.
-
-If a suppression is correct, make it narrow. Add a short reason next to it.
-Also record it in `docs/conventions/lint-deviations.md`.
+Prefer fixing the lint issue. If a suppression is correct, make it narrow, add
+a short reason next to it, and record it in
+`docs/conventions/lint-deviations.md`.
 
 This applies to:
 
@@ -82,11 +73,9 @@ codes for basedpyright.
 
 ## Rule: Keep the Python API stable
 
-The supported API is stable. Avoid breaking imports, names, signatures, return
-types, or documented errors.
-
-Compatibility paths for `pyoxipng` are allowed. Deprecate them before removal.
-Document any behavior that is different from `pyoxipng`.
+Keep the Python API stable. Follow
+[API Compatibility](docs/architecture/api-compatibility.md) for supported names,
+pyoxipng migration paths, and deprecation behavior.
 
 ## Rule: Bind upstream `oxipng`
 
@@ -97,40 +86,22 @@ prefer an upstream issue or patch.
 
 ## Rule: Keep errors predictable
 
-Caller mistakes should raise normal Python exceptions such as `TypeError`,
-`ValueError`, `FileNotFoundError`, or `OSError`.
-
-PNG decode and optimization failures should raise `PngError`.
-
-When upstream adds new Rust error variants, capture their string form if needed.
-Do not break users only because a new upstream error exists.
+Keep errors predictable. Follow the
+[error mapping](docs/architecture/overview.md#error-mapping): caller mistakes
+use normal Python exceptions, and PNG decode or optimization failures use
+`PngError`.
 
 ## Rule: Treat release artifacts as a contract
 
-Release wheels target Python 3.11+ ABI3.
-
-The expected hosted wheel set is:
-
-- Linux x86_64
-- Linux aarch64
-- macOS x86_64
-- macOS arm64
-- Windows x86_64
-
-Publishing must use verified wheel artifacts. Do not publish with API-token or
-password secrets. Use PyPI Trusted Publishing.
+Treat release artifacts as a contract. Follow
+[Release Artifacts](docs/process/release-artifacts.md) for wheel targets,
+verification, and PyPI Trusted Publishing rules.
 
 ## Rule: Classify dependency refreshes
 
-Dependency refresh PRs must show whether a release is needed.
-
-Use these labels:
-
-- `release-needed`
-- `no-release-needed`
-
-Tooling-only updates can auto-merge after checks pass. Runtime or published
-artifact changes need release and version review.
+Classify dependency refreshes. Follow
+[Dependency Health](docs/process/dependency-health.md#release-classification)
+for `release-needed` and `no-release-needed` rules.
 
 ## Rule: Keep docs easy to read
 

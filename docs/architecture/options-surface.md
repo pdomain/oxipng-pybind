@@ -1,6 +1,6 @@
 # Options Surface
 
-This page maps Python option names and values to Rust
+Python keyword options map to Rust
 [`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
 
 ## Option Parsing
@@ -15,8 +15,6 @@ ergonomic names.
 
 Pass these options as keyword arguments to `optimize`,
 `optimize_from_memory`, `analyze`, or `RawImage.create_optimized_png`.
-
-`backup` and `preserve_attrs` are only valid for `optimize`.
 
 | Python option | Supported values |
 | --- | --- |
@@ -54,8 +52,8 @@ accepts a non-empty sequence of basic row filters:
 - `average`
 - `paeth`
 
-`RowFilter` values also parse as filters for old pyoxipng-style code. Accessing
-`RowFilter` values emits `DeprecationWarning`.
+`RowFilter` values are accepted only for old pyoxipng code. See
+[Move from pyoxipng](../usage/pyoxipng-migration.md#row-filters).
 
 ## Stable Factories
 
@@ -73,21 +71,13 @@ Rust maps those objects to Rust `oxipng` options.
 ## Dry Run
 
 [`analyze`](../../oxipng/__init__.pyi#L211) maps to Rust `OutFile::None`. It
-returns [`OptimizationResult`](../../oxipng/__init__.pyi#L118).
+uses the same parser as memory mode and rejects file-only options.
 
-`OptimizationResult` has:
-
-- `original_size`
-- `optimized_size`
-
-`analyze` uses the same parser as memory mode. It rejects `backup` and
-`preserve_attrs`.
+For return values, see
+[Analyze Without Writing](../usage/file-optimization.md#analyze-without-writing).
 
 ## Source Of Truth
 
 The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
-
-## Unexposed Rust Surface
-
-No generated Rust surface additions have been recorded for 10.1.1.
+It records no generated Rust surface additions for 10.1.1.

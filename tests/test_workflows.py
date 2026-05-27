@@ -68,6 +68,12 @@ def workflow_trigger(workflow: Workflow) -> Workflow:
     return cast("Workflow", trigger)
 
 
+def test_dependabot_version_updates_are_not_configured() -> None:
+    """The dependency-health workflow owns scheduled dependency update PRs."""
+    assert not (ROOT / ".github/dependabot.yml").exists()
+    assert not (ROOT / ".github/dependabot.yaml").exists()
+
+
 def test_write_token_workflows_pin_create_pull_request_to_sha() -> None:
     """Write-scoped PR creation actions must be pinned to immutable SHAs."""
     for relative in WRITE_TOKEN_WORKFLOWS:

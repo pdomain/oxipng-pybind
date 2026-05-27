@@ -39,23 +39,8 @@ I/O failures raise standard Python exceptions such as `TypeError`,
 
 ## Untrusted Input
 
-PNG optimization can spend CPU and memory while decoding and recompressing
-images. When processing attacker-controlled files or bytes, pass explicit
-resource limits:
-
-```python
-from oxipng import optimize_from_memory
-
-optimized = optimize_from_memory(data, timeout=2.0, max_decompressed_size=50_000_000)
-```
-
-The default options preserve upstream `oxipng` behavior and do not impose a
-decompression cap. Use conservative compression settings for request-time
-workloads, and enable `fix_errors` or `force` only when the caller accepts the
-additional processing.
-
-For untrusted file uploads, keep work in private directories with
-server-generated paths. See [Untrusted Input](docs/usage/untrusted-input.md).
+For attacker-controlled files or bytes, see
+[Untrusted Input](docs/usage/untrusted-input.md).
 
 ## pyoxipng Compatibility
 

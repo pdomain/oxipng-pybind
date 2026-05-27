@@ -31,6 +31,8 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
     assert "Wait for wheel workflow" in text
     assert "gh pr merge" in text
     assert "--auto" in text
+    assert "--merge" in text
+    assert "--squash" not in text
     assert text.index("Wait for wheel workflow") < text.index("Enable auto-merge")
 
 
@@ -51,6 +53,8 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert "Run CI" in text
     assert "gh pr merge" in text
     assert "--auto" in text
+    assert "--merge" in text
+    assert "--squash" not in text
     assert text.index("Create pull request") < text.index("Enable auto-merge")
 
 
@@ -72,3 +76,16 @@ def test_wheel_tag_checker_uses_only_stdlib_dependencies() -> None:
     assert "import tomlkit" not in script
     assert "from packaging" not in script
     assert "import packaging" not in script
+
+
+def test_failed_check_retry_is_single_attempt_and_delayed() -> None:
+    """Transient CI failures get one delayed failed-job rerun without retry loops."""
+    text = (ROOT / ".github/workflows/retry-failed-checks.yml").read_text(encoding="utf-8")
+
+    for workflow in ("ci", "api-matrix", "wheels"):
+        assert f"- {workflow}" in text
+    assert "actions: write" in text
+    assert "run_attempt == 1" in text
+    assert "sleep 600" in text
+    assert "gh run rerun" in text
+    assert "--failed" in text

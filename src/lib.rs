@@ -1088,19 +1088,16 @@ impl PyRawImage {
             (PyString::new(args.py(), "rgba"), None, None)
         };
 
-        let color_type = parse_color_type(
+        let bit_depth = bit_depth_value(bit_depth).into_pyobject(args.py())?;
+        Self::from_parts(
+            width,
+            height,
             kind.as_any(),
-            bit_depth,
+            bit_depth.as_any(),
+            &data,
             palette.as_ref(),
             transparent.as_ref(),
-        )?;
-        let data = bytes_like_to_vec(&data)?;
-        if let oxi::ColorType::Indexed { palette } = &color_type {
-            validate_indexed_pixels(&data, width, height, palette.len(), bit_depth)?;
-        }
-        let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
-            .map_err(map_png_error)?;
-        Ok(Self { inner })
+        )
     }
 
     fn raw_image_kwarg<'py>(

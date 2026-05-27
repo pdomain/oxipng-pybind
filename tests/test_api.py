@@ -1069,6 +1069,22 @@ def test_pyoxipng_raw_image_constructor_requires_compat_color_type() -> None:
         cast("Any", RawImage)(bytes([255, 0, 0]), 1, 1, color_type="rgb")
 
 
+def test_pyoxipng_raw_image_constructor_rejects_zero_dimensions() -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(ValueError, match="raw image dimensions"),
+    ):
+        RawImage(b"", 0, 1)
+
+
+def test_pyoxipng_raw_image_constructor_rejects_huge_dimensions_without_panic() -> None:
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(ValueError, match=r"raw image data length|image dimensions|too large"),
+    ):
+        RawImage(b"", 2**32 - 1, 2**32 - 1)
+
+
 def test_stable_raw_image_constructor_does_not_warn() -> None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

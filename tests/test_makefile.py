@@ -62,6 +62,7 @@ def test_dependency_audit_includes_lockfile_python_audit() -> None:
     makefile = Path("Makefile").read_text(encoding="utf-8")
 
     assert "py-audit-lock:" in makefile
-    assert "dependency-audit: rust-deny py-audit py-audit-lock" in makefile
+    assert "dependency-audit: rust-deny py-audit-lock" in makefile
     assert "uv audit --locked" in makefile
+    assert "pip-audit" not in makefile
     assert "uv export --locked" not in makefile

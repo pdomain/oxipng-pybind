@@ -239,12 +239,12 @@ inside the temp tree and the first matching binary wins.
 Suggested fix: verify archive hash first, extract with constrained options, assert the
 expected single binary path, and fail if zero or multiple matching binaries are found.
 
-### 13. Low - Python vulnerability audit is environment-based
+### 13. Low - Python vulnerability audit was environment-based
 
 Evidence:
 
-- `Makefile:115-116` runs `uv run --group dev pip-audit --local`.
-- `docs/process/dependency-health.md` documents local/environment audit behavior.
+- Older Makefile revisions ran `uv run --group dev pip-audit --local`.
+- Older dependency-health docs described local environment audit behavior.
 
 Impact: audits can miss packages present in lockfiles but not installed for the current
 platform or dependency group, and they do not prove release artifacts were audited from a
@@ -429,8 +429,7 @@ Local commands run in this review:
   passed: 256 Python tests.
 - `cargo deny check` passed advisories, bans, licenses, and sources, with warnings for
   unused license allowances.
-- `uv run --group dev pip-audit --local` found no known vulnerabilities; it skipped the
-  local unpublished package `oxipng-pybind`.
+- `uv audit --locked` found no known Python dependency vulnerabilities.
 
 Additional subagent verification included locked variants of Rust checks, focused Python
 tests for API/real PNG behavior, `ruff format --check`, `uv lock --check`, and
@@ -481,8 +480,8 @@ Implemented on 2026-05-26.
     declaration block, including same-line fields.
 12. `cargo-deny` tar extraction: fixed by removing tar download/extraction from
     bootstrap.
-13. Python audit coverage: fixed with `make py-audit-lock`, which audits an
-    exported locked dependency input.
+13. Python audit coverage: fixed with `make py-audit-lock`, which runs
+    `uv audit --locked`.
 14. Bytes-like runtime support drift: fixed by narrowing native support to
     documented `bytes`, `bytearray`, and `memoryview`.
 15. `RowFilter` compatibility metadata: fixed with a

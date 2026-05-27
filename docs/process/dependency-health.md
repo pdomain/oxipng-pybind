@@ -1,11 +1,10 @@
 # Dependency Health
 
-Dependency security is checked by scheduled automation and by manual commands.
+Dependency security is checked by automation and by local commands.
 
-`cargo deny check` audits Rust dependencies with the RustSec advisory database.
-`pip-audit --local` audits the installed Python development environment.
-`make py-audit-lock` runs `uv audit --locked` against the locked Python project
-dependency set.
+Rust dependencies are checked with `cargo deny check`.
+
+Python lockfile dependencies are checked with `uv audit --locked`.
 
 ## Manual Checks
 
@@ -15,18 +14,24 @@ Run the normal audit gate before dependency work:
 make dependency-audit
 ```
 
-Run a full lockfile refresh before opening dependency update PRs:
+Run a full lockfile refresh before dependency update work:
 
 ```bash
 make dependency-refresh-check
 ```
 
-For CVE-driven updates, prefer the smallest lockfile change that clears the
-advisory. A CVE is a public security advisory.
+For CVE (Common Vulnerabilities and Exposures) updates, prefer the smallest
+lockfile change that clears the advisory.
 
 If the vulnerable dependency is transitive, update the direct parent dependency
-first. If no fixed version exists, document the advisory ID, affected path,
-exploitability for this project, and temporary mitigation in the PR body.
+first.
+
+If no fixed version exists, document these items in the PR body:
+
+- advisory ID
+- affected path
+- project exploitability
+- temporary mitigation
 
 Do not ignore advisories in `deny.toml` without a dated comment and an issue.
 
@@ -42,12 +47,6 @@ A separate write-scoped publish job opens or updates the dependency refresh PR
 only if dependency refresh, hook refresh, or generated-file fix steps changed
 files.
 
-Set the `DEPENDENCY_REFRESH_TOKEN` repository secret to a fine-grained PAT or
-GitHub App token that can write contents and pull requests. The workflow
-requires this explicit token so dependency refresh PRs trigger normal CI
-workflows. PRs created with the default `GITHUB_TOKEN` do not trigger those
-downstream workflow events.
-
 The publish job commits the changed files detected by the prepare job. This
 keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, and lint-generated
 fixes together when refresh automation changes them.
@@ -59,6 +58,37 @@ manual repair.
 Use the required repository settings in
 [GitHub Settings](github-settings.md). Dependency refresh PRs use rebase
 auto-merge. The automation command is `gh pr merge --auto --rebase`.
+
+Set the `DEPENDENCY_REFRESH_TOKEN` repository secret.
+
+Use a fine-grained PAT or GitHub App token that can write contents and pull
+requests.
+
+The workflow uses this explicit token so refresh PRs trigger normal PR CI.
+
+PRs created with the default `GITHUB_TOKEN` do not trigger those downstream
+workflow events.
+
+## Release Classification
+
+Dependency refresh PRs are classified before publication.
+
+`no-release-needed` means only tooling or non-runtime dependency state changed.
+
+These PRs enable auto-merge after audits and CI pass.
+
+`release-needed` means the refresh may affect published artifacts.
+
+Examples include:
+
+- a runtime Cargo dependency change
+- a Python `[project.dependencies]` change
+
+These PRs stay open for an explicit wrapper version bump before merge.
+
+Branch protection remains the merge gate.
+
+Failed checks leave the PR open for repair.
 
 Third-party GitHub Actions in write-scoped dependency refresh jobs must be
 pinned to reviewed full commit SHAs.

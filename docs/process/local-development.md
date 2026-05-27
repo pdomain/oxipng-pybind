@@ -1,49 +1,66 @@
 # Local Development
 
-Use `make setup` before local work. If `rustup` is missing, project bootstrap
-runs the official Rustup shell installer as a developer convenience. GitHub CI
-installs Rust before running `make ci`, so CI does not depend on that local
-bootstrap branch.
+Use `make setup` before local work.
 
-`make setup` installs Rust `1.85.1` through `rustup` and installs `cargo-deny`
-through `cargo install --locked` if needed. It checks `uv.lock`, syncs locked
-Python dependencies, builds the editable native extension, and installs
-pre-commit hooks.
+If `rustup` is missing, setup runs the official Rustup installer as a developer
+convenience.
 
-`make setup` runs:
+GitHub CI installs Rust before it runs `make ci`.
+
+That means CI does not depend on the local Rustup installer branch.
+
+## Setup
+
+`make setup` installs Rust `1.85.1` through `rustup`.
+
+It installs `cargo-deny` with `cargo install --locked` if needed.
+
+It also:
+
+- checks `uv.lock`
+- syncs locked Python dependencies
+- builds the editable native extension
+- installs pre-commit hooks
+
+After Rust bootstrap, `make setup` runs:
 
 ```bash
 uv lock --check
 uv sync --locked --group dev --reinstall
-uv run --group dev maturin develop
+make develop
 uv run --group dev pre-commit install --install-hooks
 uv run --group dev pre-commit install --hook-type commit-msg
 ```
 
 ## Editable Extension
 
-`oxipng-pybind` imports a compiled `_oxipng` extension. Rebuild it after Rust
-source changes:
+`oxipng-pybind` imports a compiled `_oxipng` extension.
+
+Rebuild it after Rust source changes:
 
 ```bash
-uv run --group dev maturin develop --quiet
+make develop
 ```
 
-Run Python tests with `--no-sync` after that rebuild:
+Run focused Python tests with `--no-sync` after that rebuild:
 
 ```bash
 uv run --no-sync --group dev pytest
 ```
 
-Without `--no-sync`, `uv run --group dev` can resync the environment and leave
-Python importing an older `_oxipng` extension. That usually appears as an
-`ImportError` for a symbol that exists in the current source.
+Without `--no-sync`, `uv run --group dev` can resync the environment.
 
-The `make test-py` and `make coverage` targets already rebuild the extension and
-run pytest with `--no-sync`.
+That can leave Python importing an older `_oxipng` extension.
 
-`make test-py` runs the Python test suite with branch coverage, `pytest-xdist`,
-and `--cov-fail-under=80`.
+This usually appears as an `ImportError` for a symbol that exists in current
+source.
 
-`make coverage` runs the same coverage gate and writes an HTML report to
-`htmlcov/`.
+## Test Targets
+
+`make test-py` rebuilds the extension and runs pytest with `--no-sync`.
+
+It uses branch coverage, `pytest-xdist`, and `--cov-fail-under=80`.
+
+`make coverage` runs the same coverage gate.
+
+It also writes an HTML report to `htmlcov/`.

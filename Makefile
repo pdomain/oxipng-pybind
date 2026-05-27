@@ -18,7 +18,7 @@ else
 
 .PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
-	rust-deny py-audit py-audit-lock dependency-audit dependency-refresh-check pre-commit-check build wheel clean clean-cache reset remove-venv \
+	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check build wheel clean clean-cache reset remove-venv \
 	upgrade-deps ci
 
 help: ## Show this help message
@@ -39,7 +39,7 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
 	uv lock --check
 	uv sync --locked --group dev --reinstall
-	uv run --group dev maturin develop
+	@$(MAKE) --no-print-directory develop
 	uv run --group dev pre-commit install --install-hooks
 	uv run --group dev pre-commit install --hook-type commit-msg
 
@@ -97,19 +97,16 @@ typecheck: ## Run basedpyright
 rust-deny: ## Run cargo deny
 	cargo deny check
 
-py-audit: ## Audit installed Python environment for known vulnerabilities
-	uv run --group dev pip-audit --local
-
 py-audit-lock: ## Audit locked Python dependency set for known vulnerabilities
 	uv audit --locked
 
-dependency-audit: rust-deny py-audit py-audit-lock ## Run Rust and Python dependency vulnerability checks
+dependency-audit: rust-deny py-audit-lock ## Run Rust and Python dependency vulnerability checks
 
 dependency-refresh-check: ## Refresh lockfiles, then run audits and full CI
 	uv lock --upgrade
 	cargo update
 	uv sync --locked --group dev
-	uv run --group dev maturin develop
+	@$(MAKE) --no-print-directory develop
 	@$(MAKE) --no-print-directory dependency-audit
 	@$(MAKE) --no-print-directory ci
 
@@ -148,7 +145,7 @@ ci: ## Run full CI
 	@$(MAKE) --no-print-directory pre-commit-check
 	@$(MAKE) --no-print-directory lint
 	@$(MAKE) --no-print-directory rust-deny
-	@$(MAKE) --no-print-directory py-audit
+	@$(MAKE) --no-print-directory py-audit-lock
 	@$(MAKE) --no-print-directory typecheck
 	@$(MAKE) --no-print-directory test
 	@$(MAKE) --no-print-directory build

@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
+      changed-paths: ${{ steps.changes.outputs.paths }}
     env:
       UV_PYTHON: "3.13"
     steps:
@@ -33,9 +34,13 @@ jobs:
           uv lock --upgrade
           cargo update
       - name: Sync refreshed dependencies
-        run: uv sync --group dev
-      - name: Build editable extension
-        run: uv run --group dev maturin develop
+        run: uv sync --locked --group dev
+      - name: Refresh pre-commit hooks
+        run: uv run --locked --group dev pre-commit autoupdate
+      - name: Apply lint and generated-file fixes
+        run: make lint-fix
+      - name: Update third-party notices
+        run: make third-party-notices
       - name: Run dependency audits
         run: make dependency-audit
       - name: Run CI
@@ -43,19 +48,27 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet; then
+          paths="$({
+            git diff --name-only
+            git ls-files --others --exclude-standard
+          } | sort -u)"
+          if [ -z "$paths" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "paths<<EOF"
+              echo "$paths"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
           fi
-      - name: Upload refreshed lockfiles
+      - name: Upload dependency refresh workspace
         if: steps.changes.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dependency-refresh
-          path: |
-            Cargo.lock
-            uv.lock
+          include-hidden-files: true
+          path: ${{ steps.changes.outputs.paths }}
 
   publish:
     name: open dependency refresh PR
@@ -93,6 +106,9 @@ jobs:
 
             Verification run in the prepare job:
 
+            - `uv run --locked --group dev pre-commit autoupdate`
+            - `make lint-fix`
+            - `make third-party-notices`
             - `make dependency-audit`
             - `make ci`
 
@@ -100,9 +116,7 @@ jobs:
           branch: automation/dependency-refresh
           delete-branch: true
           labels: dependencies, automated
-          add-paths: |
-            Cargo.lock
-            uv.lock
+          add-paths: ${{ needs.prepare.outputs.changed-paths }}
       - name: Enable auto-merge
         if: >-
           steps.cpr.outputs.pull-request-number != '' &&
@@ -110,4 +124,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --merge --delete-branch
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --rebase --delete-branch

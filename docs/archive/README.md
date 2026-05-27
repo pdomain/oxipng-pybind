@@ -11,4 +11,5 @@ Current status and next work are tracked in
 
 - [Specs](specs/)
 - [Plans](plans/)
+- [Superpowers specs](superpowers/specs/)
 - [Superpowers plans](superpowers/plans/)

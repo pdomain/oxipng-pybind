@@ -59,7 +59,7 @@ def run_stdout(command: list[str], *, cwd: Path = ROOT, check: bool = True) -> s
     result = subprocess.run(  # noqa: S603
         resolved_command, cwd=cwd, check=check, capture_output=True, text=True
     )
-    return result.stdout.strip()
+    return result.stdout
 
 
 def resolve_executable(name: str) -> str:

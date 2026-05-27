@@ -210,7 +210,7 @@ def test_pre_commit_and_formatting_only_refreshes_are_no_release_needed(
     assert "No published runtime dependency changes" in classification.reason
 
 
-def test_run_stdout_uses_resolved_executable_and_strips_stdout(
+def test_run_stdout_uses_resolved_executable_and_preserves_stdout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Command helpers resolve executable paths before invoking subprocesses."""
@@ -241,7 +241,7 @@ def test_run_stdout_uses_resolved_executable_and_strips_stdout(
     monkeypatch.setattr(shutil, "which", fake_which)
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    assert classify_dependency_refresh.run_stdout(["git", "status"]) == "clean"
+    assert classify_dependency_refresh.run_stdout(["git", "status"]) == "clean\n"
     assert calls == [["/fake/bin/git", "status"]]
 
 

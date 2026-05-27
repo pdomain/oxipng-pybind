@@ -3,10 +3,13 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
-> checkbox (`- [ ]`) syntax for tracking.
+> checkbox syntax for tracking.
 
 **Goal:** Fix the major findings from
 [Full Code Review Report](full-code-review-report.md).
+
+**Status:** Complete. All 14 major-finding workstreams were implemented,
+reviewed, and merged into this branch.
 
 **Architecture:** Keep release hardening, RawImage safety, option validation,
 and pyoxipng compatibility as separate workstreams. Stable API behavior stays
@@ -20,35 +23,35 @@ Dependabot, maturin, uv.
 
 ## Decisions
 
-- Major 1: fix now. Pin release-path action SHAs and automate action SHA bump
+- Major 1: complete. Pin release-path action SHAs and automate action SHA bump
   pull requests with Dependabot.
-- Major 2: fix now. Require source `ci` and `api-matrix` success for the tag
+- Major 2: complete. Require source `ci` and `api-matrix` success for the tag
   SHA before publishing.
-- Major 3: fix now. Require the release tag version to match Python and Cargo
+- Major 3: complete. Require the release tag version to match Python and Cargo
   package versions.
-- Major 4: fix now. Build wheels with Cargo `--locked`.
-- Major 5: fix now. Scope `DEPENDENCY_REFRESH_TOKEN` only to steps that need it.
-- Major 6: fix now. Research upstream zero-dimension behavior first. Pass
+- Major 4: complete. Build wheels with Cargo `--locked`.
+- Major 5: complete. Scope `DEPENDENCY_REFRESH_TOKEN` only to steps that need it.
+- Major 6: complete. Research upstream zero-dimension behavior first. Pass
   through a good upstream error if it exists. Add wrapper validation if it does
   not.
-- Major 7: fix now. Research upstream raw-data length arithmetic first. Pass
+- Major 7: complete. Research upstream raw-data length arithmetic first. Pass
   through a good upstream error if it exists. Add wrapper checked validation if
   it does not.
-- Major 8: fix now with Major 6 and Major 7. Validate dimensions before indexed
+- Major 8: complete. Validate dimensions before indexed
   pixel validation.
-- Major 9: fix now. Reject bool for stable `level`. If pyoxipng 9.1.1 accepted
+- Major 9: complete. Reject bool for stable `level`. If pyoxipng 9.1.1 accepted
   bool, allow it only through an explicit compatibility path with
   `DeprecationWarning`.
-- Major 10: fix now. Research pyoxipng 9.1.1 deflater bool behavior. Reject
+- Major 10: complete. Research pyoxipng 9.1.1 deflater bool behavior. Reject
   bool in stable behavior. Allow it only with `DeprecationWarning` if pyoxipng
   accepted it.
-- Major 11: fix soon. Add pyoxipng `RawImage(data, width, height)` default
+- Major 11: complete. Add pyoxipng `RawImage(data, width, height)` default
   compatibility after RawImage safety fixes.
-- Major 12: fix soon with Major 11. Add pyoxipng `RawImage(..., bit_depth=...)`
+- Major 12: complete. Add pyoxipng `RawImage(..., bit_depth=...)`
   compatibility with warning.
-- Major 13: fix soon. Add old pyoxipng `RowFilter` aliases with
+- Major 13: complete. Add old pyoxipng `RowFilter` aliases with
   `DeprecationWarning`.
-- Major 14: fix soon. Support old pyoxipng `StripChunks.none()`,
+- Major 14: complete. Support old pyoxipng `StripChunks.none()`,
   `StripChunks.safe()`, and `StripChunks.all()` callable factories with
   `DeprecationWarning`.
 
@@ -62,7 +65,7 @@ ownership:
 - Group C: Tasks 9 and 10. Bool validation and pyoxipng behavior research.
 - Group D: Tasks 11 through 14. pyoxipng compatibility surface.
 
-Run final full CI after all groups are merged.
+Final full CI must pass before this branch is complete.
 
 ## Task 1: Pin Release Actions And Add Dependabot
 
@@ -77,7 +80,7 @@ opens pull requests for future action updates.
 - Create: `.github/dependabot.yml`
 - Modify or create tests in `tests/test_workflows.py`
 
-- [ ] **Step 1: Record current action SHAs**
+- [x] **Step 1: Record current action SHAs**
 
 Run:
 
@@ -92,7 +95,7 @@ Expected:
 - If the API returns an annotated tag object, resolve the tag object to the
   commit before pinning.
 
-- [ ] **Step 2: Write failing workflow tests**
+- [x] **Step 2: Write failing workflow tests**
 
 Add tests to `tests/test_workflows.py`:
 
@@ -160,7 +163,7 @@ def workflow_action_refs(workflow: dict[str, object]) -> dict[str, ActionRef]:
     return refs
 ```
 
-- [ ] **Step 3: Run test and verify it fails**
+- [x] **Step 3: Run test and verify it fails**
 
 Run:
 
@@ -173,7 +176,7 @@ Expected:
 - Fails because release actions are still tag-pinned or Dependabot config is
   missing.
 
-- [ ] **Step 4: Pin action refs**
+- [x] **Step 4: Pin action refs**
 
 Edit `.github/workflows/wheels.yml`:
 
@@ -189,7 +192,7 @@ Edit `.github/workflows/wheels.yml`:
 
 Replace the sample SHAs above with the real SHAs from Step 1.
 
-- [ ] **Step 5: Add Dependabot config**
+- [x] **Step 5: Add Dependabot config**
 
 Create `.github/dependabot.yml`:
 
@@ -206,7 +209,7 @@ updates:
           - "*"
 ```
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 Run:
 
@@ -234,7 +237,7 @@ for the tag SHA.
 - Modify: `.github/workflows/wheels.yml`
 - Modify: `tests/test_workflows.py`
 
-- [ ] **Step 1: Write failing unit tests**
+- [x] **Step 1: Write failing unit tests**
 
 Create `tests/test_release_checks.py`:
 
@@ -284,7 +287,7 @@ def test_required_workflows_fail_when_not_successful() -> None:
     assert errors == ["ci did not complete successfully for abc"]
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -296,7 +299,7 @@ Expected:
 
 - Fails because `scripts.verify_release_checks` does not exist.
 
-- [ ] **Step 3: Add verification script**
+- [x] **Step 3: Add verification script**
 
 Create `scripts/verify_release_checks.py`:
 
@@ -381,7 +384,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Add release gate job**
+- [x] **Step 4: Add release gate job**
 
 Modify `.github/workflows/wheels.yml`:
 
@@ -414,7 +417,7 @@ Update publish dependencies:
       - verify-source-checks
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -443,7 +446,7 @@ Expected:
 - Create: `tests/test_release_version.py`
 - Modify: `.github/workflows/wheels.yml`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_release_version.py`:
 
@@ -481,7 +484,7 @@ def test_release_version_rejects_cargo_mismatch() -> None:
     assert errors == ["cargo version 10.1.0 does not match pyproject version 10.1.1"]
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -493,7 +496,7 @@ Expected:
 
 - Fails because `scripts.verify_release_version` does not exist.
 
-- [ ] **Step 3: Add version verification script**
+- [x] **Step 3: Add version verification script**
 
 Create `scripts/verify_release_version.py`:
 
@@ -560,7 +563,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Add workflow step**
+- [x] **Step 4: Add workflow step**
 
 In `.github/workflows/wheels.yml`, add this to `verify-release-artifacts`
 before artifact verification:
@@ -572,7 +575,7 @@ before artifact verification:
 
 Also add the same step in `publish` before publishing.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -601,7 +604,7 @@ Expected:
 - Modify: `tests/test_makefile.py`
 - Modify: `tests/test_workflows.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to `tests/test_makefile.py`:
 
@@ -621,7 +624,7 @@ def test_wheel_workflow_uses_locked_cargo_dependencies() -> None:
     assert "--release --locked --out dist --interpreter python3.11" in workflow_text
 ```
 
-- [ ] **Step 2: Run tests and verify they fail**
+- [x] **Step 2: Run tests and verify they fail**
 
 Run:
 
@@ -633,7 +636,7 @@ Expected:
 
 - Fails because `--locked` is not present.
 
-- [ ] **Step 3: Add `--locked`**
+- [x] **Step 3: Add `--locked`**
 
 In `Makefile`, change:
 
@@ -659,7 +662,7 @@ to:
 args: --release --locked --out dist --interpreter python3.11
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run:
 
@@ -685,7 +688,7 @@ need it.
 - Modify: `.github/workflows/dependency-health.yml`
 - Modify: `tests/test_workflows.py`
 
-- [ ] **Step 1: Write failing workflow test**
+- [x] **Step 1: Write failing workflow test**
 
 Add to `tests/test_workflows.py`:
 
@@ -712,7 +715,7 @@ def test_dependency_refresh_token_is_step_scoped() -> None:
     assert create_pr["with"]["token"] == "${{ secrets.DEPENDENCY_REFRESH_TOKEN }}"
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -724,7 +727,7 @@ Expected:
 
 - Fails because token is currently job-scoped.
 
-- [ ] **Step 3: Scope token to steps**
+- [x] **Step 3: Scope token to steps**
 
 In `.github/workflows/dependency-health.yml`, remove job-level env:
 
@@ -762,7 +765,7 @@ Change token uses:
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --rebase --delete-branch
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run:
 
@@ -786,7 +789,7 @@ Expected:
 
 - Modify: `docs/plans/major-review-fixes-plan.md`
 
-- [ ] **Step 1: Inspect pinned upstream source**
+- [x] **Step 1: Inspect pinned upstream source**
 
 Run:
 
@@ -799,7 +802,7 @@ Expected:
 
 - Locate `oxipng-10.1.1` raw image construction code.
 
-- [ ] **Step 2: Run behavior probes**
+- [x] **Step 2: Run behavior probes**
 
 Run:
 
@@ -827,7 +830,7 @@ Expected:
 
 - Clear output for zero dimensions and huge dimensions.
 
-- [ ] **Step 3: Record research result**
+- [x] **Step 3: Record research result**
 
 Append a short note under this task:
 
@@ -855,7 +858,7 @@ raise predictable Python errors before optimization.
 - Modify: `src/lib.rs`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests to `tests/test_api.py`:
 
@@ -871,7 +874,7 @@ def test_raw_image_rejects_huge_dimensions_without_panic() -> None:
         RawImage(2**32 - 1, 2**32 - 1, ColorType.rgba, BitDepth.eight, b"")
 ```
 
-- [ ] **Step 2: Run tests and verify they fail or expose upstream behavior**
+- [x] **Step 2: Run tests and verify they fail or expose upstream behavior**
 
 Run:
 
@@ -888,7 +891,7 @@ Expected:
 - If upstream already returns a different good error, adjust expected message
   to match the mapped Python error.
 
-- [ ] **Step 3: Add wrapper validation only if Task 6 showed upstream is unsafe**
+- [x] **Step 3: Add wrapper validation only if Task 6 showed upstream is unsafe**
 
 Add helpers in `src/lib.rs` near raw image helpers:
 
@@ -914,7 +917,7 @@ If Task 6 shows upstream length math is unsafe, add checked length validation
 with code that matches upstream format rules. Keep this helper private to
 `src/lib.rs`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run:
 
@@ -944,7 +947,7 @@ pixel loop.
 - Modify: `tests/test_api.py`
 - Modify: `src/lib.rs` only if Task 7 did not already fix this
 
-- [ ] **Step 1: Add focused test**
+- [x] **Step 1: Add focused test**
 
 Add to `tests/test_api.py`:
 
@@ -963,7 +966,7 @@ def test_indexed_raw_image_rejects_zero_width_before_pixel_scan() -> None:
         )
 ```
 
-- [ ] **Step 2: Run test**
+- [x] **Step 2: Run test**
 
 Run:
 
@@ -989,7 +992,7 @@ pyoxipng accepted bool.
 - Modify: `src/lib.rs`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Research pyoxipng behavior**
+- [x] **Step 1: Research pyoxipng behavior**
 
 Run in the pyoxipng venv or install pyoxipng 9.1.1 in `/tmp`:
 
@@ -1014,7 +1017,7 @@ PY
 
 Record whether pyoxipng accepted bool.
 
-- [ ] **Step 2: Write failing stable tests**
+- [x] **Step 2: Write failing stable tests**
 
 Add to `tests/test_api.py`:
 
@@ -1025,7 +1028,7 @@ def test_level_rejects_bool(png_bytes: bytes, value: bool) -> None:
         optimize_from_memory(png_bytes, level=value)
 ```
 
-- [ ] **Step 3: Run test and verify it fails**
+- [x] **Step 3: Run test and verify it fails**
 
 Run:
 
@@ -1038,7 +1041,7 @@ Expected:
 
 - Fails because bool is accepted today.
 
-- [ ] **Step 4: Reject bool in stable parser**
+- [x] **Step 4: Reject bool in stable parser**
 
 In `src/lib.rs`, update `parse_level`:
 
@@ -1050,7 +1053,7 @@ fn parse_level(value: &Bound<'_, PyAny>) -> PyResult<u8> {
         .map_err(|_| PyValueError::new_err("level must be an integer from 0 to 6"))?;
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -1078,7 +1081,7 @@ compat behavior may allow it with `DeprecationWarning`.
 - Modify: `src/lib.rs`
 - Modify: `tests/test_api.py`
 
-- [ ] **Step 1: Research pyoxipng behavior**
+- [x] **Step 1: Research pyoxipng behavior**
 
 Run:
 
@@ -1098,7 +1101,7 @@ PY
 
 Record whether pyoxipng accepted bool.
 
-- [ ] **Step 2: Write tests for target behavior**
+- [x] **Step 2: Write tests for target behavior**
 
 If pyoxipng rejected bool, add:
 
@@ -1120,7 +1123,7 @@ def test_deflater_bool_compatibility_warns(factory: Any, value: bool) -> None:
         factory(value)
 ```
 
-- [ ] **Step 3: Implement target behavior**
+- [x] **Step 3: Implement target behavior**
 
 If rejecting bool, add a bool check in `Deflaters` Python factory methods:
 
@@ -1144,7 +1147,7 @@ _compat.warn_pyoxipng_compat()
 
 before returning the compatibility object for bool values.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run:
 
@@ -1172,7 +1175,7 @@ compatibility path.
 - Modify: `tests/test_api.py`
 - Modify: `docs/usage/pyoxipng-migration.md`
 
-- [ ] **Step 1: Research pyoxipng defaults**
+- [x] **Step 1: Research pyoxipng defaults**
 
 Run:
 
@@ -1191,7 +1194,7 @@ Confirm:
 - default `bit_depth`
 - accepted keyword names
 
-- [ ] **Step 2: Write failing tests**
+- [x] **Step 2: Write failing tests**
 
 Add to `tests/test_api.py`:
 
@@ -1205,13 +1208,13 @@ def test_pyoxipng_raw_image_default_constructor_warns() -> None:
     assert_readable_png_bytes(raw.create_optimized_png())
 ```
 
-- [ ] **Step 3: Implement compatibility branch**
+- [x] **Step 3: Implement compatibility branch**
 
 In `PyRawImage::new`, route `args.len() == 3` to the compatibility constructor.
 In `new_pyoxipng_compat`, default the missing `color_type` to the pyoxipng
 default found in Step 1.
 
-- [ ] **Step 4: Update stub**
+- [x] **Step 4: Update stub**
 
 Add overload in `oxipng/__init__.pyi`:
 
@@ -1225,7 +1228,7 @@ Add overload in `oxipng/__init__.pyi`:
     ) -> None: ...
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -1255,7 +1258,7 @@ works as a warning-emitting compatibility path.
 - Modify: `tests/test_api.py`
 - Modify: `docs/usage/pyoxipng-migration.md`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to `tests/test_api.py`:
 
@@ -1269,7 +1272,7 @@ def test_pyoxipng_raw_image_constructor_accepts_bit_depth_kwarg() -> None:
     assert_readable_png_bytes(raw.create_optimized_png())
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -1282,7 +1285,7 @@ Expected:
 
 - Fails because `bit_depth` is currently rejected.
 
-- [ ] **Step 3: Implement `bit_depth` compatibility**
+- [x] **Step 3: Implement `bit_depth` compatibility**
 
 In `new_pyoxipng_compat`, allow kwargs:
 
@@ -1299,7 +1302,7 @@ let bit_depth = Self::raw_image_kwarg(Some(kwargs), "bit_depth")?;
 Use it when present. Otherwise use the descriptor bit depth or pyoxipng
 default found in Task 11 research.
 
-- [ ] **Step 4: Update stub**
+- [x] **Step 4: Update stub**
 
 Update the compatibility overload:
 
@@ -1316,7 +1319,7 @@ Update the compatibility overload:
     ) -> None: ...
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -1346,7 +1349,7 @@ Expected:
 - Modify: `tests/test_api.py`
 - Modify: `docs/usage/pyoxipng-migration.md`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to `tests/test_api.py`:
 
@@ -1373,7 +1376,7 @@ def test_pyoxipng_rowfilter_old_names_warn(old_name: str, stable: FilterStrategy
     assert value.value == stable.value
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -1385,7 +1388,7 @@ Expected:
 
 - Fails because old aliases are missing.
 
-- [ ] **Step 3: Add aliases**
+- [x] **Step 3: Add aliases**
 
 In `RowFilter`, add old names:
 
@@ -1404,14 +1407,14 @@ In `RowFilter`, add old names:
 
 Add those names to `__pyoxipng_deprecated_names__`.
 
-- [ ] **Step 4: Update stub and docs**
+- [x] **Step 4: Update stub and docs**
 
 Add the same aliases to `oxipng/__init__.pyi`.
 
 In `docs/usage/pyoxipng-migration.md`, update the row filter migration table
 to include old pyoxipng names such as `RowFilter.NoOp`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -1440,7 +1443,7 @@ Expected:
 - Modify: `tests/test_api.py`
 - Modify: `docs/usage/pyoxipng-migration.md`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to `tests/test_api.py`:
 
@@ -1463,7 +1466,7 @@ def test_pyoxipng_strip_chunk_enum_members_are_callable(
     assert value is member
 ```
 
-- [ ] **Step 2: Run test and verify it fails**
+- [x] **Step 2: Run test and verify it fails**
 
 Run:
 
@@ -1475,7 +1478,7 @@ Expected:
 
 - Fails because enum members are not callable.
 
-- [ ] **Step 3: Make `StripChunks` enum members callable**
+- [x] **Step 3: Make `StripChunks` enum members callable**
 
 Add to `StripChunks`:
 
@@ -1486,7 +1489,7 @@ Add to `StripChunks`:
         return self
 ```
 
-- [ ] **Step 4: Update stub**
+- [x] **Step 4: Update stub**
 
 Add to `StripChunks` in `oxipng/__init__.pyi`:
 
@@ -1495,7 +1498,7 @@ Add to `StripChunks` in `oxipng/__init__.pyi`:
         """Return this enum member for pyoxipng callable factory compatibility."""
 ```
 
-- [ ] **Step 5: Update docs**
+- [x] **Step 5: Update docs**
 
 In `docs/usage/pyoxipng-migration.md`, add a short table:
 
@@ -1507,7 +1510,7 @@ In `docs/usage/pyoxipng-migration.md`, add a short table:
 | `StripChunks.all()` | `StripChunks.all` |
 ```
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 Run:
 

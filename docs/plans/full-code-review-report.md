@@ -3,7 +3,9 @@
 This report consolidates the full-code review findings from the Rust, Python
 API, security, CI, release, and test passes.
 
-No fixes are claimed here.
+Status note: the major findings are addressed by
+[Major Review Fixes Implementation Plan](major-review-fixes-plan.md). Minor
+findings remain recorded here unless they were part of that plan.
 
 ## Major
 
@@ -468,7 +470,7 @@ No fixes are claimed here.
     Proposed fix: Move pyoxipng-specific helpers into `_pyoxipng_compat.py`.
     Keep `__init__.py` focused on stable public names.
 
-    Status: Addressed in the current uncommitted facade cleanup.
+    Status: Addressed by the facade cleanup committed on this branch.
 
 14. **Type aliases add typing clutter.**
 

@@ -1,8 +1,7 @@
 """Python facade for the native oxipng extension."""
 
-from collections.abc import Iterator, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from . import _pyoxipng_compat as _compat
 
@@ -27,14 +26,18 @@ class StripChunks(Enum):
     all = "all"
 
     @staticmethod
-    def strip(names: list[str] | tuple[str, ...] | set[str]) -> _compat.CompatStripChunks:
+    def strip(
+        names: _compat.StableIterable[str],
+    ) -> _compat.CompatStripChunks:
         """Create a strip-chunk option for explicit PNG chunk names."""
-        return _compat.CompatStripChunks("strip", tuple(names))
+        return _compat.CompatStripChunks("strip", _compat.chunk_names(names))
 
     @staticmethod
-    def keep(names: list[str] | tuple[str, ...] | set[str]) -> _compat.CompatStripChunks:
+    def keep(
+        names: _compat.StableIterable[str],
+    ) -> _compat.CompatStripChunks:
         """Create a keep-chunk option for explicit PNG chunk names."""
-        return _compat.CompatStripChunks("keep", tuple(names))
+        return _compat.CompatStripChunks("keep", _compat.chunk_names(names))
 
 
 class Deflater(Enum):
@@ -73,12 +76,14 @@ class FilterStrategy(Enum):
     brute = "brute"
 
     @staticmethod
-    def predefined(filters: Sequence[object] | Iterator[object]) -> _compat.PredefinedFilters:
+    def predefined(
+        filters: _compat.StableIterable[object],
+    ) -> _compat.PredefinedFilters:
         """Create a predefined row-filter sequence."""
-        _compat.reject_unordered_predefined_filters(filters)
-        parsed = tuple(_compat.basic_row_filter_value(filter_value) for filter_value in filters)
-        if not parsed:
+        values = _compat.stable_values(filters, context="predefined filters")
+        if not values:
             raise ValueError("predefined filter must not be empty")
+        parsed = tuple(_compat.basic_row_filter_value(filter_value) for filter_value in values)
         return _compat.PredefinedFilters(parsed)
 
 
@@ -133,7 +138,10 @@ class ColorType(Enum):
 
     def __call__(
         self,
-        transparent: int | tuple[int, int, int] | Sequence[Sequence[int]] | None = None,
+        transparent: int
+        | tuple[int, int, int]
+        | list[tuple[int, int, int] | tuple[int, int, int, int]]
+        | None = None,
         *,
         bit_depth: int | BitDepth = BitDepth.eight,
     ) -> _compat.CompatColorType:
@@ -141,26 +149,16 @@ class ColorType(Enum):
         _compat.warn_pyoxipng_compat()
         raw_bit_depth = bit_depth.value if isinstance(bit_depth, BitDepth) else bit_depth
         if self is ColorType.indexed:
-            if transparent is None:
+            if not isinstance(transparent, list):
                 raise ValueError("indexed color_type requires a palette")
-            palette = _compat.ordered_palette_sequence(transparent, "indexed palette")
-            palette_snapshot = tuple(tuple(cast("Sequence[int]", color)) for color in palette)
-            return _compat.CompatColorType(
-                "indexed",
-                raw_bit_depth,
-                palette=palette_snapshot,
-            )
+            return _compat.CompatColorType("indexed", raw_bit_depth, palette=list(transparent))
         if self in {ColorType.rgba, ColorType.grayscale_alpha}:
             if transparent is not None:
                 raise ValueError(f"{self.value} does not accept transparent")
             return _compat.CompatColorType(self.value, raw_bit_depth)
         if isinstance(transparent, list):
             raise TypeError(f"{self.value} does not accept palette")
-        return _compat.CompatColorType(
-            self.value,
-            raw_bit_depth,
-            transparent=cast("int | tuple[int, int, int] | None", transparent),
-        )
+        return _compat.CompatColorType(self.value, raw_bit_depth, transparent=transparent)
 
 
 ColorType.__call__.__doc__ = (

@@ -1,6 +1,11 @@
 # Move From pyoxipng
 
-Use this guide when old code imports `pyoxipng` or uses pyoxipng names.
+Use this guide when old code depends on the `pyoxipng` distribution or uses
+old pyoxipng API shapes.
+
+Compatibility behavior is checked against
+[`pyoxipng` 9.1.1](https://github.com/nfrasser/pyoxipng/tree/v9.1.1),
+commit `357ea12453f352685acaf1b7a9c4573866b5bbf6`.
 
 Stable API means the supported `oxipng-pybind` names. A compatibility path is
 an old pyoxipng shape that still works for now. Compatibility paths emit
@@ -15,15 +20,19 @@ Examples:
 - `Deflaters.libdeflater`
 - `Deflaters.zopfli`
 
-## Import Name
+## Package And Import Names
 
-Change imports to `oxipng`:
+`pyoxipng` was the package name on PyPI. Its import module was already
+`oxipng`.
+
+Keep imports as `oxipng`:
 
 ```python
 from oxipng import optimize, optimize_from_memory
 ```
 
-Do not import `pyoxipng` from this package.
+Change package metadata and install commands from `pyoxipng` to
+`oxipng-pybind`.
 
 ## Row Filters
 
@@ -206,10 +215,11 @@ This keeps process stream handling in caller code.
 
 ## Migration Checklist
 
-1. Change imports from `pyoxipng` to `oxipng`.
-2. Replace `RowFilter` with `FilterStrategy`.
-3. Replace `Interlacing.Off` and `Interlacing.Adam7`.
-4. Replace callable `ColorType` values in new `RawImage` code.
-5. Use the stable `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)` order.
-6. Run tests with `DeprecationWarning` visible.
-7. Remove all compatibility paths before a future release removes them.
+1. Change dependency metadata from `pyoxipng` to `oxipng-pybind`.
+2. Keep imports as `oxipng`.
+3. Replace `RowFilter` with `FilterStrategy`.
+4. Replace `Interlacing.Off` and `Interlacing.Adam7`.
+5. Replace callable `ColorType` values in new `RawImage` code.
+6. Use the stable `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)` order.
+7. Run tests with `DeprecationWarning` visible.
+8. Remove all compatibility paths before a future release removes them.

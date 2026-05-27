@@ -217,7 +217,7 @@ def test_pyoxipng_color_factories_warn_and_stable_factories_do_not_warn() -> Non
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         strip = StripChunks.strip(["tEXt"])
-        keep = StripChunks.keep({"iCCP"})
+        keep = StripChunks.keep(["iCCP"])
         libdeflater = Deflaters.libdeflater(12)
         zopfli = Deflaters.zopfli(15)
 
@@ -763,7 +763,7 @@ def test_stable_option_paths_do_not_emit_deprecation_warnings(png_bytes: bytes) 
 
 
 @pytest.mark.parametrize("names", [["abc"], ["abcde"], ["ab1d"]])
-def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
+def test_strip_factories_reject_invalid_chunk_names(
     png_bytes: bytes,
     names: list[str],
 ) -> None:
@@ -771,6 +771,50 @@ def test_pyoxipng_strip_factories_reject_invalid_chunk_names(
 
     with pytest.raises(ValueError, match="chunk name"):
         optimize_from_memory(png_bytes, strip=strip)
+
+
+def test_strip_factories_accept_iterables(png_bytes: bytes) -> None:
+    strip = StripChunks.strip(name for name in ["tEXt"])
+    keep = StripChunks.keep(name for name in ["IHDR", "IDAT", "IEND"])
+
+    assert_readable_png_bytes(optimize_from_memory(png_bytes, strip=strip))
+    assert_readable_png_bytes(optimize_from_memory(png_bytes, strip=keep))
+
+
+def test_predefined_filter_accepts_iterables(png_bytes: bytes) -> None:
+    filters = FilterStrategy.predefined(name for name in ["none", "sub"])
+
+    assert_readable_png_bytes(optimize_from_memory(png_bytes, filter=filters))
+
+
+def test_predefined_filter_rejects_mapping() -> None:
+    with pytest.raises(TypeError, match="predefined filters must be an iterable"):
+        cast("Any", FilterStrategy.predefined)({"none": True})
+
+
+@pytest.mark.parametrize(
+    "names",
+    ["tEXt", b"tEXt", bytearray(b"tEXt"), memoryview(b"tEXt"), {"tEXt": True}],
+)
+def test_strip_factories_reject_scalar_and_mapping_outer_containers(names: object) -> None:
+    with pytest.raises(TypeError, match="chunk names must be an iterable"):
+        cast("Any", StripChunks.strip)(names)
+
+
+def test_strip_factories_reject_byte_chunk_names() -> None:
+    with pytest.raises(TypeError, match="chunk names must be strings"):
+        cast("Any", StripChunks.strip)([b"tEXt"])
+
+
+@pytest.mark.parametrize(
+    "filters",
+    ["none", b"none", bytearray(b"none"), memoryview(b"none"), {"none": True}],
+)
+def test_predefined_filter_rejects_scalar_and_mapping_outer_containers(
+    filters: object,
+) -> None:
+    with pytest.raises(TypeError, match="predefined filters must be an iterable"):
+        cast("Any", FilterStrategy.predefined)(filters)
 
 
 @pytest.mark.parametrize(("factory", "value"), [(Deflaters.libdeflater, 13), (Deflaters.zopfli, 0)])

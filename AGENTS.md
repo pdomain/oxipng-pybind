@@ -1,10 +1,12 @@
-# Agent guidance
+# Agent Guidance
 
-Codex and other AI coding assistants: read these files before making changes:
+AI coding agents should read these project guides before making changes:
 
-- `CLAUDE.md`
-- `CONVENTIONS.md`
-- `CONTRIBUTING.md`
+- [CLAUDE.md](CLAUDE.md)
+- [CONVENTIONS.md](CONVENTIONS.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 
-This file is a static pointer. The authoritative project guidance lives in
-those files.
+For docs or user-facing text, also follow
+[Writing Style](docs/process/writing-style.md).
+
+This file is only a pointer. The linked files are authoritative.

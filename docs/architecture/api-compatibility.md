@@ -70,7 +70,6 @@ Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
 
 These paths are not supported:
 
-- pyoxipng-specific raw buffer helpers beyond `RawImage`
 - stdin and stdout stream handling inside the library
 
 Unsupported paths may fail, warn, or stay absent.

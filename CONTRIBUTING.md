@@ -9,104 +9,72 @@ a drop-in replacement for `pyoxipng`, with a stable Python API.
 
 Read these files first:
 
-- `README.md`
-- `CONVENTIONS.md`
-- `docs/README.md`
+- [README](README.md)
+- [Conventions](CONVENTIONS.md)
+- [Docs index](docs/README.md)
 
 `CLAUDE.md` is only for AI coding agents.
 
 When writing docs or user-facing text, also read
-`docs/process/writing-style.md`.
+[Writing Style](docs/process/writing-style.md).
 
-Check `docs/plans/unfinished-work.md` before large changes.
+Check [Unfinished Work](docs/plans/unfinished-work.md) before large changes.
 
 ## Setup
 
-Install the pinned Rust toolchain, Python dependencies, editable extension, and
-Git hooks:
+Run the normal setup before local work:
 
 ```bash
 make setup
 ```
 
-`make setup` is the normal first command for local work. It checks `uv.lock`,
-syncs locked Python dev dependencies, builds the editable `_oxipng` extension,
-and installs Git hooks. It also installs the pinned Rust toolchain and
-`cargo-deny` if they are missing.
+See [Local Development](docs/process/local-development.md) for setup details,
+editable extension rules, and focused test commands.
 
 ## Common checks
 
-Use Make targets when possible.
+Use Make targets when possible. Run focused checks while you work, then run
+the full CI gate before review:
 
 ```bash
-make test
-make lint
-make typecheck
-make dependency-audit
 make ci
 ```
 
-For focused Python tests, rebuild the extension first:
-
-```bash
-make develop
-uv run --no-sync --group dev pytest tests/test_api.py -q
-```
-
-Do not use bare `python -m pytest`. The tests need the project environment and
-the compiled extension.
+Do not use bare `python -m pytest`. Python tests need the project environment
+and the compiled extension.
 
 ## Code changes
 
-Keep changes small and focused.
+Keep changes small and focused. Add tests for new behavior. Update docs when
+user-facing behavior changes.
 
-Preserve the stable API unless the active plan says otherwise. Add tests for
-new behavior. Update docs when user-facing behavior changes.
-
-Use predictable errors:
-
-- Caller mistakes raise standard Python exceptions.
-- PNG decode and optimization failures raise `PngError`.
+Follow [Conventions](CONVENTIONS.md) for API stability, upstream `oxipng`
+boundaries, predictable errors, release artifacts, dependency refreshes, and
+license rules.
 
 ## Dependency changes
 
-This repo has Rust and Python lockfiles.
-
-Use:
+This repo has Rust and Python lockfiles. For dependency work, run:
 
 ```bash
 make upgrade-deps
 make dependency-refresh-check
 ```
 
-Dependency refreshes are classified as `release-needed` or `no-release-needed`.
-Runtime and published artifact changes usually need release review.
-
-Update third-party notice tooling or `THIRD_PARTY_NOTICES.md` when shipped
-dependencies change.
+Follow [Dependency Health](docs/process/dependency-health.md) for refresh
+classification, audit handling, and notice updates.
 
 ## Release changes
 
-Release wheels target Python 3.11+ ABI3.
+Release wheels target Python 3.11+ ABI3. Publishing uses PyPI Trusted
+Publishing from GitHub Actions. Do not add PyPI password or API-token secrets.
 
-Publishing uses PyPI Trusted Publishing from GitHub Actions. Do not add PyPI
-password or API-token secrets.
-
-Before release work, read:
-
-- `docs/process/release-artifacts.md`
-- `docs/process/upstream-bumps.md`
-- `docs/process/dependency-health.md`
+Before release work, read [Release Artifacts](docs/process/release-artifacts.md)
+and [Rust oxipng updates](docs/process/upstream-bumps.md).
 
 ## Pull requests
 
-Before asking for review, run:
-
-```bash
-make ci
-```
-
-If the change touches release, wheel, or dependency automation, also run the
-focused tests for that area.
+Before asking for review, run `make ci`. If the change touches release, wheel,
+or dependency automation, also run the focused checks for that area.
 
 Use merge commits. Do not squash unless the maintainer explicitly asks for it.

@@ -6,7 +6,7 @@ How documentation is organized in this repo.
 | --- | --- | --- |
 | `architecture/` | Durable reference: how the system works today. | Capturing current shape, contracts, and current-state diagrams. |
 | `api-surface/` | Package-specific upstream API manifests. | Tracking Rust `oxipng` API surface snapshots. |
-| `plans/` | Project state, retained review records, and active plans. | Checking open work or in-tree review history. |
+| `plans/` | Current project plan. | Checking open work. |
 | `process/` | Workflow conventions and release process. | Capturing how the team works. |
 | `usage/` | Downstream reference. | A user or integrator needs to know how to use it. |
 
@@ -42,8 +42,3 @@ package-specific. Use Git history for old plans, specs, and reports.
 ## Project State
 
 - [Unfinished work](plans/unfinished-work.md)
-
-## Review Records
-
-- [Full code review report](plans/full-code-review-report.md)
-- [Major review fixes implementation plan](plans/major-review-fixes-plan.md)

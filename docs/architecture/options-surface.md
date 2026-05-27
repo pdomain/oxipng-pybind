@@ -1,11 +1,7 @@
 # Options Surface
 
-Python options map to Rust `oxipng::Options`.
-
-For Rust option behavior, see
+This page maps Python option names and values to Rust
 [`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
-
-This page records the Python mapping.
 
 ## Option Parsing
 

@@ -65,10 +65,8 @@ optimize(input="cover.png", output="out.png", preserve_attrs=True)
 
 Most optimization options map to Rust
 [`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
-
-This package uses Python names and Python value types for those options.
-See [Options Surface](../architecture/options-surface.md) for the Python
-mapping.
+See [Options Surface](../architecture/options-surface.md) for the Python names
+and value types.
 
 Enum-like options accept enum members or string aliases.
 

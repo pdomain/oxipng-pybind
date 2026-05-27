@@ -69,6 +69,11 @@ installs Git hooks.
 - Use short, clear sentences.
 - Avoid long chains of clauses.
 - Use short paragraphs. Do not make every sentence its own paragraph.
+- Avoid repeating the same idea in nearby sentences.
+- Link to another doc instead of repeating details when that doc is the better
+  source.
+- Combine command steps when the user should run them together before doing
+  other work.
 - Do not use parenthetical em dashes.
 - Use parentheses rarely.
 - Prefer parentheses for first-time acronym write-outs, such as

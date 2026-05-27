@@ -20,6 +20,10 @@ Use about a 7th grade English level.
 - Avoid dense paragraphs.
 - Do not turn every sentence into its own paragraph.
 - Group closely related sentences into short paragraphs.
+- Avoid repeating the same idea in nearby sentences.
+- If another doc explains a topic, link to it instead of repeating the detail.
+- Combine command steps when the user should run them together before doing
+  other work.
 - Do not use parenthetical em dashes.
 - Use parentheses rarely.
 - Prefer parentheses for first-time acronym write-outs, such as

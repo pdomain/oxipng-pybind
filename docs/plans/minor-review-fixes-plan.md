@@ -876,9 +876,9 @@ In `docs/plans/full-code-review-report.md`, move the minor findings out of the o
 - Minor 19: No code change. The bounded one-time CI retry remains acceptable because it does not checkout secrets or expand permissions.
 ```
 
-- [x] **Step 5: Mark this plan complete**
+- [ ] **Step 5: Mark this plan complete**
 
-Change this plan’s task checkboxes from incomplete to complete only after the corresponding commits and verification have happened. Leave any skipped optional workflow file unchanged and note why in the final execution summary.
+Change this plan’s task checkboxes from incomplete to complete only after the corresponding commits and verification have happened. Final pre-commit, final CI, and merge-back steps remain intentionally unchecked until they have run.
 
 - [x] **Step 6: Commit the integration docs**
 

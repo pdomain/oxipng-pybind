@@ -117,6 +117,7 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
         [
             "Sync dependencies",
             "Bump upstream",
+            "Generate third-party notices",
             "Scan upstream surface",
             "Run CI before opening PR",
             "Upload bump workspace",
@@ -125,6 +126,9 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
     assert step_by_name(prepare_steps, "Sync dependencies")["run"] == "uv sync --locked --group dev"
     assert step_by_name(prepare_steps, "Bump upstream")["run"] == (
         "uv run --locked --group dev python scripts/bump_upstream.py"
+    )
+    assert step_by_name(prepare_steps, "Generate third-party notices")["run"] == (
+        "make third-party-notices"
     )
     for gated_step in (
         "Fetch upstream source",
@@ -242,6 +246,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
             "Sync refreshed dependencies",
             "Refresh pre-commit hooks",
             "Apply lint and generated-file fixes",
+            "Generate third-party notices",
             "Run dependency audits",
             "Run CI",
             "Check for changes",
@@ -259,6 +264,9 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     )
     assert step_by_name(prepare_steps, "Apply lint and generated-file fixes")["run"] == (
         "make lint-fix"
+    )
+    assert step_by_name(prepare_steps, "Generate third-party notices")["run"] == (
+        "make third-party-notices"
     )
     assert step_by_name(prepare_steps, "Run dependency audits")["run"] == "make dependency-audit"
     assert step_by_name(prepare_steps, "Run CI")["run"] == "make ci"

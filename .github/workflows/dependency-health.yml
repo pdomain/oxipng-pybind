@@ -39,6 +39,8 @@ jobs:
         run: uv run --locked --group dev pre-commit autoupdate
       - name: Apply lint and generated-file fixes
         run: make lint-fix
+      - name: Generate third-party notices
+        run: make third-party-notices
       - name: Run dependency audits
         run: make dependency-audit
       - name: Run CI

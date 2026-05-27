@@ -37,6 +37,8 @@ jobs:
       - name: Bump upstream
         id: bump
         run: uv run --locked --group dev python scripts/bump_upstream.py
+      - name: Generate third-party notices
+        run: make third-party-notices
       - name: Fetch upstream source
         if: steps.bump.outputs.upstream-crate-available != 'false'
         run: |
@@ -77,6 +79,7 @@ jobs:
             Cargo.lock
             pyproject.toml
             uv.lock
+            THIRD_PARTY_NOTICES.md
             CHANGELOG.md
             docs/api-surface/*.toml
             docs/architecture/api-compatibility.md

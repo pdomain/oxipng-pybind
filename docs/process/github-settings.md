@@ -9,8 +9,10 @@ Maintainers can audit the API-visible settings with:
 - Allow rebase merges and disable merge commits and squash merges.
 - Enable repository auto-merge.
 - Require the `source ci` check before merging.
-- Require the wheel matrix checks before merging release-relevant and upstream
-  bump pull requests:
+- Do not globally require path-filtered wheel checks. Dependency refresh PRs
+  may not trigger them, and upstream bump automation waits for
+  `.github/workflows/wheels.yml` before enabling auto-merge.
+- Review these wheel checks when configuring release-relevant branch rules:
   - `wheels-linux-x86_64`
   - `wheels-linux-aarch64`
   - `wheels-macos-x86_64`

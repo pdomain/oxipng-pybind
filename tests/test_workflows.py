@@ -283,6 +283,12 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
     assert step_by_name(publish_steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     )
+    assert step_by_name(publish_steps, "Verify release artifact set")["run"] == (
+        "python scripts/verify_release_artifacts.py dist/*"
+    )
+    assert step_index(publish_steps, "Verify release artifact set") < step_index(
+        publish_steps, "Publish to PyPI"
+    )
     assert step_by_name(publish_steps, "Publish to PyPI")["uses"] == (
         f"pypa/gh-action-pypi-publish@{PYPI_PUBLISH_SHA}"
     )

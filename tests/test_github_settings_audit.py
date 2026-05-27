@@ -24,18 +24,13 @@ def test_audit_github_settings_accepts_expected_settings(
             "default_branch": "main",
             "allow_auto_merge": True,
             "allow_rebase_merge": True,
+            "allow_merge_commit": False,
+            "allow_squash_merge": False,
         },
         "repos/example/oxipng-pybind/branches/main/protection": {
             "required_status_checks": {
                 "contexts": ["source ci"],
-                "checks": [
-                    {"context": "wheels-linux-x86_64"},
-                    {"context": "wheels-linux-aarch64"},
-                    {"context": "wheels-macos-x86_64"},
-                    {"context": "wheels-macos-aarch64"},
-                    {"context": "wheels-windows-x86_64"},
-                    {"context": "sdist"},
-                ],
+                "checks": [],
             }
         },
         "repos/example/oxipng-pybind/actions/secrets": {
@@ -53,7 +48,8 @@ def test_audit_github_settings_accepts_expected_settings(
     output = capsys.readouterr().out
     assert "PASS default branch is main" in output
     assert "PASS required check present: source ci" in output
-    assert "PASS required check present: wheels-linux-x86_64" in output
+    assert "PASS merge commits are disabled" in output
+    assert "PASS squash merges are disabled" in output
     assert "PASS required secret available: UPSTREAM_BUMP_TOKEN" in output
 
 
@@ -65,6 +61,8 @@ def test_audit_github_settings_reports_failed_checks(
             "default_branch": "develop",
             "allow_auto_merge": False,
             "allow_rebase_merge": False,
+            "allow_merge_commit": True,
+            "allow_squash_merge": True,
         },
         "repos/example/oxipng-pybind/branches/develop/protection": {
             "required_status_checks": {"contexts": ["lint"], "checks": []}
@@ -80,5 +78,7 @@ def test_audit_github_settings_reports_failed_checks(
     assert "FAIL default branch is develop, expected main" in output
     assert "FAIL repository auto-merge is disabled" in output
     assert "FAIL rebase merge is disabled" in output
+    assert "FAIL merge commits are enabled" in output
+    assert "FAIL squash merges are enabled" in output
     assert "FAIL required check missing: source ci" in output
     assert "FAIL required secret missing: DEPENDENCY_REFRESH_TOKEN" in output

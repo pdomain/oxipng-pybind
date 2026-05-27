@@ -13,15 +13,7 @@ from pathlib import Path
 from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REQUIRED_CHECKS = (
-    "source ci",
-    "wheels-linux-x86_64",
-    "wheels-linux-aarch64",
-    "wheels-macos-x86_64",
-    "wheels-macos-aarch64",
-    "wheels-windows-x86_64",
-    "sdist",
-)
+DEFAULT_REQUIRED_CHECKS = ("source ci",)
 DEFAULT_REQUIRED_SECRETS = ("DEPENDENCY_REFRESH_TOKEN", "UPSTREAM_BUMP_TOKEN")
 GITHUB_API_HEADERS = (
     "Accept: application/vnd.github+json",
@@ -134,6 +126,18 @@ def audit_settings(
             "rebase merge is enabled"
             if repo_payload.get("allow_rebase_merge") is True
             else "rebase merge is disabled",
+        ),
+        AuditLine(
+            repo_payload.get("allow_merge_commit") is False,
+            "merge commits are disabled"
+            if repo_payload.get("allow_merge_commit") is False
+            else "merge commits are enabled",
+        ),
+        AuditLine(
+            repo_payload.get("allow_squash_merge") is False,
+            "squash merges are disabled"
+            if repo_payload.get("allow_squash_merge") is False
+            else "squash merges are enabled",
         ),
     ]
 

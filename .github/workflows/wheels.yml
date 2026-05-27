@@ -139,6 +139,8 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Verify release artifact set
+        run: python scripts/verify_release_artifacts.py dist/*
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
         with:

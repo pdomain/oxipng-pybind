@@ -12,7 +12,10 @@ Workflow = dict[Any, Any]
 Step = dict[str, Any]
 FULL_SHA = "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b"
 PYPI_PUBLISH_SHA = "cef221092ed1bacb1cc03d23a2d87d1d172e277b"
-DOWNLOAD_ARTIFACT_SHA = "d3f86a106a0bac45b974a628896c90dbdf5c8093"
+UPLOAD_ARTIFACT_SHA = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+DOWNLOAD_ARTIFACT_SHA = "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
+CREATE_PULL_REQUEST_SHA = "5f6978faf089d4d20b00c7766989d076bb2fc7f1"
+RUST_TOOLCHAIN_VERSION = "1.95.0"
 WRITE_TOKEN_WORKFLOWS = (
     ".github/workflows/upstream-bump.yml",
     ".github/workflows/dependency-health.yml",
@@ -89,8 +92,26 @@ def test_write_token_workflows_pin_create_pull_request_to_sha() -> None:
         create_pr = step_by_name(steps, "Create pull request")
         action, ref = create_pr["uses"].rsplit("@", 1)
         assert action == "peter-evans/create-pull-request"
+        assert ref == CREATE_PULL_REQUEST_SHA
         assert len(ref) == 40
         assert all(char in "0123456789abcdef" for char in ref)
+
+
+def test_workflows_use_current_rust_toolchain() -> None:
+    """GitHub workflows install the reviewed stable Rust toolchain."""
+    for relative in (
+        ".github/workflows/api-matrix.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/dependency-health.yml",
+        ".github/workflows/upstream-bump.yml",
+        ".github/workflows/wheels.yml",
+    ):
+        workflow = load_workflow(relative)
+        for job in workflow["jobs"].values():
+            for step in job["steps"]:
+                uses = step.get("uses")
+                if isinstance(uses, str) and uses.startswith("dtolnay/rust-toolchain@"):
+                    assert uses == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
 
 
 def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
@@ -124,6 +145,9 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
         ],
     )
     assert step_by_name(prepare_steps, "Sync dependencies")["run"] == "uv sync --locked --group dev"
+    assert step_by_name(prepare_steps, "Upload bump workspace")["uses"] == (
+        f"actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}"
+    )
     assert step_by_name(prepare_steps, "Bump upstream")["run"] == (
         "uv run --locked --group dev python scripts/bump_upstream.py"
     )
@@ -150,6 +174,7 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
         publish_steps,
         ["Create pull request", "Wait for wheel workflow", "Enable auto-merge"],
     )
+    assert publish_steps[1]["uses"] == f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     wait = step_by_name(publish_steps, "Wait for wheel workflow")
     assert 'contains(fromJSON(\'["created", "updated"]\')' in wait["if"]
     assert "gh run list --workflow wheels.yml" in wait["run"]
@@ -291,7 +316,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
 
     artifact = step_by_name(prepare_steps, "Upload dependency refresh workspace")
     assert artifact["if"] == "steps.changes.outputs.changed == 'true'"
-    assert artifact["uses"] == "actions/upload-artifact@v4"
+    assert artifact["uses"] == f"actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}"
     assert artifact["with"] == {
         "name": "dependency-refresh",
         "include-hidden-files": True,
@@ -299,6 +324,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     }
 
     assert_ordered_steps(publish_steps, ["Create pull request", "Enable auto-merge"])
+    assert publish_steps[1]["uses"] == f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     create_pr = step_by_name(publish_steps, "Create pull request")
     assert create_pr["with"]["add-paths"] == "${{ needs.prepare.outputs.changed-paths }}"
     assert "Release classification:" in create_pr["with"]["body"]
@@ -350,7 +376,7 @@ def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
     assert build["strategy"]["fail-fast"] is False
     assert steps[0]["uses"] == "actions/checkout@v6"
     assert steps[1]["uses"] == "actions/setup-python@v6"
-    assert steps[2]["uses"] == "dtolnay/rust-toolchain@1.85.1"
+    assert steps[2]["uses"] == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
     assert step_index(steps, "Set TestPyPI version") < step_index(steps, "Build wheel")
     assert step_by_name(steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(steps, "Build wheel")["with"]["args"] == (
@@ -373,6 +399,12 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
 
     assert step_by_name(build_steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(sdist_steps, "Build sdist")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert step_by_name(build_steps, "Upload wheels")["uses"] == (
+        f"actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}"
+    )
+    assert step_by_name(sdist_steps, "Upload sdist")["uses"] == (
+        f"actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}"
+    )
     assert publish_steps[0]["uses"] == "actions/checkout@v6"
     assert step_by_name(publish_steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"

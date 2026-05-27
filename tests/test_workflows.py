@@ -322,7 +322,9 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
         "default": "none",
         "options": ["none", "testpypi"],
     }
-    assert publish["if"] == "startsWith(github.ref, 'refs/tags/v')"
+    assert publish["if"] == (
+        "github.event_name == 'push' && needs.validate-release-tag.outputs.release-version != ''"
+    )
     assert testpypi["if"] == (
         "github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'"
     )
@@ -353,6 +355,46 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
         "packages-dir": "dist",
         "repository-url": "https://test.pypi.org/legacy/",
     }
+
+
+def test_pypi_publish_requires_strict_release_tag_validation() -> None:
+    """Real PyPI publish is gated by strict tag validation and the pypi environment."""
+    workflow = load_workflow(".github/workflows/wheels.yml")
+    jobs = workflow["jobs"]
+    validate = jobs["validate-release-tag"]
+    publish = jobs["publish"]
+    validate_steps = validate["steps"]
+
+    assert list(jobs).index("validate-release-tag") < list(jobs).index("publish")
+    assert validate["name"] == "validate release tag"
+    assert validate["runs-on"] == "ubuntu-latest"
+    assert validate["if"] == (
+        "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
+    )
+    assert validate["permissions"] == {"contents": "read"}
+    assert validate["outputs"] == {
+        "release-version": "${{ steps.validate.outputs.release-version }}"
+    }
+    checkout = validate_steps[0]
+    assert checkout["uses"] == "actions/checkout@v6"
+    assert checkout["with"]["fetch-depth"] == 0
+
+    validate_step = step_by_name(validate_steps, "Validate release tag")
+    assert validate_step["id"] == "validate"
+    assert "python scripts/validate_release_tag.py" in validate_step["run"]
+    assert '--tag "$GITHUB_REF_NAME"' in validate_step["run"]
+    assert "release-version=" in validate_step["run"]
+    assert '>> "$GITHUB_OUTPUT"' in validate_step["run"]
+
+    assert publish["needs"] == ["build", "sdist", "validate-release-tag"]
+    assert publish["if"] == (
+        "github.event_name == 'push' && needs.validate-release-tag.outputs.release-version != ''"
+    )
+    assert publish["environment"] == "pypi"
+    assert publish["permissions"] == {"id-token": "write", "contents": "read"}
+
+    paths = workflow_trigger(workflow)["pull_request"]["paths"]
+    assert "scripts/validate_release_tag.py" in paths
 
 
 def test_api_matrix_uses_locked_dev_dependencies() -> None:

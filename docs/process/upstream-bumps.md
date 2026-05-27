@@ -29,6 +29,33 @@ The prepare job uploads only the bump workspace that the publish job needs:
 `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `uv.lock`, `CHANGELOG.md`, API
 surface docs, the target-version file, and the generated PR body section.
 
+## Automated Release Tags
+
+`.github/workflows/release-tag.yml` creates release tags for eligible automated
+upstream bump commits after they land on `main`. It runs after successful
+`ci` workflow runs on `main` and can also be started with `workflow_dispatch`.
+
+The workflow is intentionally narrow. It checks out current `origin/main` and
+continues only when the latest commit is an automated upstream bump commit and
+`project.version` changed from the parent commit. For `workflow_run` events, it
+also verifies that current `main` still matches the completed run's
+`head_sha`; if `main` moved, the workflow exits without tagging.
+
+Before creating a tag, the workflow waits for both `ci.yml` and
+`api-matrix.yml` to complete successfully on the same commit. It then validates
+the strict release tag, checks that no matching Git tag already exists, and
+checks that the version is absent from PyPI.
+
+Automated tags use `v<project.version>`, such as `v10.1.1` or
+`v10.1.1.post1`. The tag then triggers `.github/workflows/wheels.yml`, which
+builds fresh artifacts from the tag and publishes through the `pypi`
+environment.
+
+`RELEASE_TAG_TOKEN` must be a repository secret backed by a PAT or GitHub App
+token that can push tags and trigger downstream workflows. Do not use the
+default `GITHUB_TOKEN` for release tag creation; tag pushes made with
+`GITHUB_TOKEN` do not trigger the normal tag-driven wheel publishing workflow.
+
 ## Version Policy
 
 The Python package version is the public wrapper release version.

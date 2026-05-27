@@ -168,6 +168,53 @@ def test_upstream_bump_docs_describe_ci_gated_auto_merge() -> None:
     assert "human review is required" not in text
 
 
+def test_release_docs_describe_tag_gates_and_automation() -> None:
+    """Release docs must describe TestPyPI rehearsal, PyPI gates, and tag automation."""
+    release = (ROOT / "docs/process/release-artifacts.md").read_text(encoding="utf-8")
+    upstream = (ROOT / "docs/process/upstream-bumps.md").read_text(encoding="utf-8")
+    release_lower = release.lower()
+    upstream_lower = upstream.lower()
+
+    assert "workflow_dispatch" in release
+    assert "testpypi" in release_lower
+    assert ".devnnn" in release_lower
+    assert "tag-driven" in release_lower
+    assert "pypi" in release_lower
+    assert "duplicate" in release_lower or "already present on pypi" in release_lower
+    for accepted_tag in ("v10.1.1", "v10.1.1.post1"):
+        assert accepted_tag in release
+    for rejected_tag in ("vtest", "v10.1", "v10.1.1.dev1", "v10.1.1rc1"):
+        assert rejected_tag in release
+    for trusted_publisher_value in (
+        "oxipng-pybind",
+        "pdomain",
+        "wheels.yml",
+        "pypi",
+        "testpypi",
+    ):
+        assert trusted_publisher_value in release
+    assert "trusted publisher" in release_lower
+    assert "environment: `pypi`" in release_lower
+    assert "environment: `testpypi`" in release_lower
+
+    assert "release-tag.yml" in upstream
+    assert "workflow_dispatch" in upstream
+    assert "workflow_run" in upstream
+    assert "ci" in upstream_lower
+    assert "main" in upstream_lower
+    assert "project.version" in upstream
+    assert "head_sha" in upstream
+    assert "ci.yml" in upstream
+    assert "api-matrix.yml" in upstream
+    assert "same commit" in upstream_lower
+    assert "no matching git tag already exists" in upstream_lower
+    assert "absent from pypi" in upstream_lower
+    assert "release_tag_token" in upstream_lower
+    assert "github_token" in upstream_lower
+    assert "pat" in upstream_lower
+    assert "github app" in upstream_lower
+
+
 def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     """Dependency refresh PRs auto-merge through branch protection after audits and CI."""
     workflow = load_workflow(".github/workflows/dependency-health.yml")

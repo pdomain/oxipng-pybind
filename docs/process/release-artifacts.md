@@ -5,7 +5,7 @@ workflow also publishes a source distribution for unsupported platforms and
 source-build fallback users.
 
 `.github/workflows/wheels.yml` builds and validates release wheel and sdist
-artifacts.
+artifacts. It is also the only artifact publishing workflow.
 
 It runs on `workflow_dispatch`, on `v*` tags, and on pull requests that touch
 release-relevant files.
@@ -21,6 +21,47 @@ Manual `workflow_dispatch` runs are build-only by default. Maintainers can set
 `publish-target` to `testpypi` to publish the verified wheel and sdist artifacts
 to TestPyPI through the `testpypi` GitHub environment and TestPyPI Trusted
 Publishing.
+
+Manual TestPyPI runs rewrite `project.version` only inside the workflow
+workspace before building artifacts. The release version becomes a `.devNNN`
+version derived from `GITHUB_RUN_NUMBER` and `GITHUB_RUN_ATTEMPT`, so repeated
+TestPyPI rehearsals do not collide with earlier uploads.
+
+Real PyPI publishing is tag-driven. Push a strict final release tag, or let the
+automated upstream bump release tag workflow create one, and `wheels.yml` builds
+fresh artifacts from that tag before publishing to PyPI.
+
+Accepted real release tag examples:
+
+- `v10.1.1`
+- `v10.1.1.post1`
+
+Rejected tag examples:
+
+- `vtest`
+- `v10.1`
+- `v10.1.1.dev1`
+- `v10.1.1rc1`
+
+The release tag must match `project.version` in `pyproject.toml`. The PyPI
+publish gate also checks that the version is not already present on PyPI before
+the publish job can upload artifacts.
+
+The PyPI Trusted Publisher must be configured with:
+
+- project: `oxipng-pybind`
+- owner: `pdomain`
+- repository: `oxipng-pybind`
+- workflow: `wheels.yml`
+- environment: `pypi`
+
+The TestPyPI Trusted Publisher must be configured with:
+
+- project: `oxipng-pybind`
+- owner: `pdomain`
+- repository: `oxipng-pybind`
+- workflow: `wheels.yml`
+- environment: `testpypi`
 
 ## Wheel Tags
 

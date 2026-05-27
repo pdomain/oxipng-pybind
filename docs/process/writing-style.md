@@ -18,6 +18,8 @@ Use about a 7th grade English level.
 - Use active voice when it is natural.
 - Avoid long chains of clauses.
 - Avoid dense paragraphs.
+- Do not turn every sentence into its own paragraph.
+- Group closely related sentences into short paragraphs.
 - Do not use parenthetical em dashes.
 - Use parentheses rarely.
 - Prefer parentheses for first-time acronym write-outs, such as

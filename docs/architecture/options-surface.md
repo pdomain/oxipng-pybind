@@ -9,13 +9,11 @@ This page records the Python mapping.
 
 ## Option Parsing
 
-Rust starts with `oxipng::Options::from_preset(level)`.
+Rust starts with `oxipng::Options::from_preset(level)`. Then it applies
+explicit Python overrides.
 
-Then it applies explicit Python overrides.
-
-The Rust extension owns validation and path conversion.
-
-The Python facade owns ergonomic names.
+The Rust extension owns validation and path conversion. The Python facade owns
+ergonomic names.
 
 ## Python Keyword Options
 
@@ -49,12 +47,10 @@ Pass these options as keyword arguments to `optimize`,
 ## Filter Values
 
 `FilterStrategy` exposes Rust `oxipng` filter strategies as Python enum values.
-
 It also accepts string aliases.
 
-`FilterStrategy.predefined(...)` maps to Rust `FilterStrategy::Predefined`.
-
-It accepts a non-empty sequence of basic row filters:
+`FilterStrategy.predefined(...)` maps to Rust `FilterStrategy::Predefined`. It
+accepts a non-empty sequence of basic row filters:
 
 - `none`
 - `sub`
@@ -62,9 +58,8 @@ It accepts a non-empty sequence of basic row filters:
 - `average`
 - `paeth`
 
-`RowFilter` values also parse as filters for old pyoxipng-style code.
-
-Accessing `RowFilter` values emits `DeprecationWarning`.
+`RowFilter` values also parse as filters for old pyoxipng-style code. Accessing
+`RowFilter` values emits `DeprecationWarning`.
 
 ## Stable Factories
 
@@ -76,25 +71,21 @@ These factories create Python option objects:
 - `Deflaters.zopfli(iterations)`
 
 Rust maps those objects to Rust `oxipng` options.
-
 `Deflaters.libdeflater(compression)` accepts `0` through `12`.
-
 `Deflaters.zopfli(iterations)` accepts `1` through `255`.
 
 ## Dry Run
 
-[`analyze`](../../oxipng/__init__.pyi#L211) maps to Rust `OutFile::None`.
-
-It returns [`OptimizationResult`](../../oxipng/__init__.pyi#L118).
+[`analyze`](../../oxipng/__init__.pyi#L211) maps to Rust `OutFile::None`. It
+returns [`OptimizationResult`](../../oxipng/__init__.pyi#L118).
 
 `OptimizationResult` has:
 
 - `original_size`
 - `optimized_size`
 
-`analyze` uses the same parser as memory mode.
-
-It rejects `backup` and `preserve_attrs`.
+`analyze` uses the same parser as memory mode. It rejects `backup` and
+`preserve_attrs`.
 
 ## Source Of Truth
 

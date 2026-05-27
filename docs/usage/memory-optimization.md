@@ -51,9 +51,8 @@ mapping.
 
 Enum-like options accept enum members or string aliases.
 
-`backup` and `preserve_attrs` are file-only options.
-
-`optimize_from_memory` rejects them.
+`backup` and `preserve_attrs` are file-only options. `optimize_from_memory`
+rejects them.
 
 ## Untrusted Input
 
@@ -62,9 +61,8 @@ For bytes from untrusted users, see
 
 ## stdin and stdout
 
-stdin and stdout optimization are caller-owned.
-
-Read bytes first. Then call `optimize_from_memory`:
+stdin and stdout optimization are caller-owned. Read bytes first. Then call
+`optimize_from_memory`:
 
 ```python
 import sys
@@ -78,9 +76,8 @@ sys.stdout.buffer.write(optimized)
 
 ## Errors
 
-Caller errors raise `TypeError` or `ValueError`.
-
-Invalid PNG data raises `PngError`.
+Caller errors raise `TypeError` or `ValueError`. Invalid PNG data raises
+`PngError`.
 
 ```python
 from oxipng import PngError, optimize_from_memory

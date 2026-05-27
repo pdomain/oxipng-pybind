@@ -68,6 +68,7 @@ installs Git hooks.
 - Make docs, reports, and user-facing text easy for ESL readers to follow.
 - Use short, clear sentences.
 - Avoid long chains of clauses.
+- Use short paragraphs. Do not make every sentence its own paragraph.
 - Do not use parenthetical em dashes.
 - Use parentheses rarely.
 - Prefer parentheses for first-time acronym write-outs, such as

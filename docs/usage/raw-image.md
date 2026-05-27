@@ -33,9 +33,8 @@ png_bytes = raw.create_optimized_png(level=3)
 - bit depth
 - packed pixel data
 
-Width and height are in pixels.
-
-These values may be positional or keyword arguments.
+Width and height are in pixels. These values may be positional or keyword
+arguments.
 
 `color_type` accepts `ColorType` enum values or string aliases.
 See Rust
@@ -96,11 +95,9 @@ rgb = RawImage(
 )
 ```
 
-`transparent` is not accepted for indexed, grayscale-alpha, or RGBA images.
-
-Use alpha values in palette entries for indexed transparency.
-
-Transparent values must fit the selected bit depth.
+`transparent` is not accepted for indexed, grayscale-alpha, or RGBA images. Use
+alpha values in palette entries for indexed transparency. Transparent values
+must fit the selected bit depth.
 
 ## PNG Chunks
 
@@ -120,11 +117,8 @@ raw.add_png_chunk(b"tEXt", b"Comment\x00created from raw pixels")
 png_bytes = raw.create_optimized_png()
 ```
 
-The chunk name must be four ASCII letters.
-
-It must be public, ancillary, and safe to copy.
-
-The binding rejects structural chunks such as:
+The chunk name must be four ASCII letters. It must be public, ancillary, and
+safe to copy. The binding rejects structural chunks such as:
 
 - `IHDR`
 - `PLTE`
@@ -195,9 +189,8 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
-This path emits `DeprecationWarning`.
-
-Move color details into stable `RawImage` arguments:
+This path emits `DeprecationWarning`. Move color details into stable `RawImage`
+arguments:
 
 ```python
 from oxipng import BitDepth, ColorType, RawImage
@@ -214,9 +207,7 @@ raw = RawImage(
 )
 ```
 
-Do not mix the two shapes.
-
-This call is rejected:
+Do not mix the two shapes. This call is rejected:
 
 ```python
 from oxipng import ColorType, RawImage

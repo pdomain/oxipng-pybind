@@ -2,13 +2,9 @@
 
 Use this guide when old code imports `pyoxipng` or uses pyoxipng names.
 
-Stable API means the supported `oxipng-pybind` names.
-
-A compatibility path is an old pyoxipng shape that still works for now.
-
-Compatibility paths emit `DeprecationWarning`.
-
-They will be removed in a future release.
+Stable API means the supported `oxipng-pybind` names. A compatibility path is
+an old pyoxipng shape that still works for now. Compatibility paths emit
+`DeprecationWarning` and will be removed in a future release.
 
 Some names also existed in pyoxipng and are stable here. They do not warn.
 
@@ -114,9 +110,7 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
-That path emits `DeprecationWarning`.
-
-Do not mix the two shapes.
+That path emits `DeprecationWarning`. Do not mix the two shapes.
 
 This call is rejected:
 
@@ -129,9 +123,8 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba)
 ```
 
-The pyoxipng order requires a descriptor such as `ColorType.rgba()`.
-
-The stable order requires an enum value such as `ColorType.rgba`.
+The pyoxipng order requires a descriptor such as `ColorType.rgba()`. The stable
+order requires an enum value such as `ColorType.rgba`.
 
 ## Color Types
 
@@ -196,9 +189,8 @@ deflater = Deflaters.libdeflater(11)
 
 ## stdin and stdout
 
-stdin and stdout are caller-owned.
-
-Read bytes first. Then call `optimize_from_memory`:
+stdin and stdout are caller-owned. Read bytes first. Then call
+`optimize_from_memory`:
 
 ```python
 import sys

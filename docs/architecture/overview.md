@@ -1,10 +1,7 @@
 # Architecture Overview
 
-`oxipng-pybind` is a Python package over the Rust `oxipng` crate.
-
-The package name is `oxipng-pybind`.
-
-The import name is `oxipng`.
+`oxipng-pybind` is a Python package over the Rust `oxipng` crate. The package
+name is `oxipng-pybind`. The import name is `oxipng`.
 
 ## Package Layout
 
@@ -18,9 +15,7 @@ The import name is `oxipng`.
 
 ## Rust and Python Split
 
-The Python facade owns user-facing names.
-
-Examples:
+The Python facade owns user-facing names:
 
 - `Interlacing`
 - `StripChunks`
@@ -42,16 +37,13 @@ The Rust extension owns:
 - calls into Rust `oxipng`
 
 The GIL (Global Interpreter Lock) is the Python lock that normally stops Python
-code from running in parallel.
-
-Rust copies Python-owned data before long optimization work. Then it releases
-the GIL.
+code from running in parallel. Rust copies Python-owned data before long
+optimization work. Then it releases the GIL.
 
 ## File Flow
 
-`optimize(input=..., output=None, ...)` accepts path-like objects.
-
-Rust converts those paths to `PathBuf` values.
+`optimize(input=..., output=None, ...)` accepts path-like objects. Rust converts
+those paths to `PathBuf` values.
 
 Rust handles file-only controls:
 
@@ -59,14 +51,11 @@ Rust handles file-only controls:
 - `preserve_attrs`
 
 When `backup=True`, Rust creates `<input>.bak` before an in-place write.
-
 Existing backup paths raise `FileExistsError`.
 
-Then Rust calls `oxipng::optimize` with the GIL released.
-
-If `output` is omitted, Rust `oxipng` writes in place.
-
-If `output` is set, Rust `oxipng` writes to that path.
+Then Rust calls `oxipng::optimize` with the GIL released. If `output` is
+omitted, Rust `oxipng` writes in place. If `output` is set, Rust `oxipng` writes
+to that path.
 
 ## Memory Flow
 
@@ -76,37 +65,26 @@ If `output` is set, Rust `oxipng` writes to that path.
 - `bytearray`
 - `memoryview`
 
-The binding copies the input into Rust memory before it releases the GIL.
-
-Rust calls `oxipng::optimize_from_memory`.
-
-The Python return value is optimized PNG bytes.
+The binding copies the input into Rust memory before it releases the GIL. Rust
+calls `oxipng::optimize_from_memory`. The Python return value is optimized PNG
+bytes.
 
 Memory mode rejects file-write options such as `backup` and `preserve_attrs`.
-
 `analyze` and `RawImage.create_optimized_png` reject those options too.
 
 ## Raw Image Flow
 
 `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)`
-wraps Rust `oxipng::RawImage`.
+wraps Rust `oxipng::RawImage`. The stable constructor does not warn.
 
-The stable constructor does not warn.
+Python `ColorType` and `BitDepth` values become Rust raw-image metadata. Packed
+pixel bytes are copied into Rust memory.
 
-Python `ColorType` and `BitDepth` values become Rust raw-image metadata.
+`RawImage.create_optimized_png(...)` uses the memory-mode option parser and
+returns PNG bytes.
 
-Packed pixel bytes are copied into Rust memory.
-
-`RawImage.create_optimized_png(...)` uses the memory-mode option parser.
-
-It returns PNG bytes.
-
-`add_png_chunk` adds auxiliary chunks.
-
-`add_icc_profile` attaches ICC profile data.
-
-`add_png_chunk` accepts only valid safe-to-copy ancillary PNG chunk names.
-
+`add_png_chunk` adds auxiliary chunks. `add_icc_profile` attaches ICC profile
+data. `add_png_chunk` accepts only valid safe-to-copy ancillary PNG chunk names.
 It rejects structural chunks such as:
 
 - `IHDR`
@@ -129,23 +107,16 @@ The wrapper keeps caller mistakes separate from image failures.
 
 ## Wheel Strategy
 
-PyO3 uses `abi3-py311`.
-
-Each release wheel supports Python 3.11 and newer for one platform.
-
-The wheel workflow uploads wheel artifacts.
+PyO3 uses `abi3-py311`. Each release wheel supports Python 3.11 and newer for
+one platform. The wheel workflow uploads wheel artifacts.
 
 On release tags, the workflow verifies the complete wheel set before PyPI
 publishing.
 
 ## Rust oxipng Surface
 
-This wrapper exposes a small subset of Rust `oxipng`.
-
-The API surface manifest records what is exposed and what is intentionally not
-exposed.
+This wrapper exposes a small subset of Rust `oxipng`. The API surface manifest
+records what is exposed and what is intentionally not exposed.
 
 During Rust `oxipng` updates, `scripts/scan_upstream_surface.py` reports new or
-removed Rust surface area.
-
-It does not expose new Python API by itself.
+removed Rust surface area. It does not expose new Python API by itself.

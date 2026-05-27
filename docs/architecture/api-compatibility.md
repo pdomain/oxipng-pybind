@@ -1,10 +1,8 @@
 # API Compatibility
 
-`oxipng-pybind` exposes a small stable API over Rust `oxipng`.
-
-A stable API is safe for normal callers to use.
-
-Stable API calls must not emit compatibility warnings.
+`oxipng-pybind` exposes a small stable API over Rust `oxipng`. A stable API is
+safe for normal callers to use. Stable API calls must not emit compatibility
+warnings.
 
 ## Stable API
 
@@ -26,15 +24,9 @@ These names are the public contract:
 
 ## pyoxipng Compatibility
 
-`pyoxipng` exposed older Python shapes.
-
-Some of those shapes do not match Rust `oxipng` option contracts.
-
-This package keeps selected old shapes as migration paths.
-
-Those paths emit `DeprecationWarning`.
-
-A migration path is a short-term bridge for old callers. It is not stable API.
+`pyoxipng` exposed older Python shapes. Some of those shapes do not match Rust
+`oxipng` option contracts. This package keeps selected old shapes as migration
+paths. They emit `DeprecationWarning` and are not stable API.
 
 Warning-emitting paths include:
 
@@ -45,7 +37,6 @@ Warning-emitting paths include:
 - `RowFilter`
 
 Every compatibility warning says the path will be removed in a future release.
-
 Stable enum members do not warn.
 
 Examples:
@@ -59,10 +50,7 @@ Examples:
 - `Deflaters.libdeflater`
 - `Deflaters.zopfli`
 
-`RowFilter` exists only for old pyoxipng-style code.
-
-Do not use it in new code.
-
+`RowFilter` exists only for old pyoxipng-style code. Do not use it in new code.
 Use `FilterStrategy` or `FilterStrategy.predefined(...)` instead.
 
 ## Unsupported Paths

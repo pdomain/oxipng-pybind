@@ -43,13 +43,10 @@ The result has `original_size` and `optimized_size` values in bytes.
 
 `level` must be an integer from `0` through `6`.
 
-Use `backup=True` when an in-place write should keep the original file.
-
-The backup path is the input path plus `.bak`.
-
-If that backup file already exists, `optimize` raises `FileExistsError`.
-
-It does not replace the existing backup file.
+Use `backup=True` when an in-place write should keep the original file. The
+backup path is the input path plus `.bak`. If that backup file already exists,
+`optimize` raises `FileExistsError`. It does not replace the existing backup
+file.
 
 ```python
 from oxipng import optimize
@@ -75,9 +72,8 @@ mapping.
 
 Enum-like options accept enum members or string aliases.
 
-`backup` and `preserve_attrs` are only valid for `optimize`.
-
-These options are rejected by:
+`backup` and `preserve_attrs` are only valid for `optimize`. These options are
+rejected by:
 
 - `analyze`
 - `optimize_from_memory`

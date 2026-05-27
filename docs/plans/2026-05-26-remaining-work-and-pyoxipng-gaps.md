@@ -55,8 +55,8 @@ The workflow files exist, but hosted runs still need proof.
 Completed workflow pieces:
 
 - Wheel tag and smoke-test helper scripts exist.
-- `wheels.yml` builds artifact-only wheels for Linux x86_64, Linux aarch64,
-  macOS x86_64, macOS aarch64, and Windows x86_64.
+- `wheels.yml` builds release wheels for Linux x86_64, Linux aarch64, macOS
+  x86_64, macOS aarch64, and Windows x86_64.
 - Wheel builds use PyO3 ABI3 for Python 3.11 and newer.
 - `api-matrix.yml` covers Python 3.11, 3.12, 3.13, and 3.14.
 - `dependency-health.yml` covers scheduled lockfile refreshes, audits, and
@@ -80,10 +80,8 @@ Open CI and release work:
   required checks, and repository auto-merge.
 - Replace mutable GitHub Action references with pinned full commit SHAs before
   release hardening.
-- Decide whether the project should publish to PyPI. Current wheel work is
-  artifact-only by design.
-- If PyPI publishing is approved, add Trusted Publishing and decide whether
-  publishing remains wheel-only.
+- Confirm PyPI publishing credentials, Trusted Publishing, and release
+  permissions.
 - Before PyPI upload, add a release aggregation job that downloads every wheel
   artifact, verifies the complete expected wheel set is present exactly once,
   rejects unexpected wheels, and then runs the existing smoke checks against the
@@ -136,7 +134,8 @@ This project is not a full drop-in replacement for `pyoxipng`.
 - Python version policy differs. `pyoxipng` 9.1.1 advertises Python 3.8+ on
   PyPI. This project requires Python 3.11+.
 - Distribution artifacts differ. `pyoxipng` publishes PyPI wheels and an sdist.
-  This project builds artifact-only wheels and does not publish to PyPI.
+  This project publishes PyPI wheels and keeps source builds as the fallback
+  for unsupported platforms.
 - Wheel strategy differs. `pyoxipng` publishes CPython-version-specific wheels.
   This project targets ABI3 `cp311-abi3` wheels for Python 3.11+.
 - Platform coverage differs. `pyoxipng` publishes extra targets such as
@@ -168,8 +167,6 @@ Preserve the current stable API. Add pyoxipng-compatible aliases only where
 they do not create unsafe defaults.
 
 1. Packaging parity:
-   - Decide whether `oxipng-pybind` should publish to PyPI.
-   - Add Trusted Publishing if PyPI distribution is approved.
    - Decide whether to publish an sdist.
    - Add or reject musllinux and 32-bit Windows wheel targets.
 
@@ -212,8 +209,8 @@ Split future work into small phases:
 
 - Release hardening: pin GitHub Actions by SHA, prove hosted wheel runs, verify
   artifact metadata, and document the first release checklist.
-- PyPI phase: add Trusted Publishing, choose wheel-only or wheel-plus-sdist
-  policy, and document rollback expectations.
+- PyPI phase: verify Trusted Publishing, keep wheel-only or choose
+  wheel-plus-sdist policy, and document rollback expectations.
 - Compatibility phase: keep the migration guide synced with tested examples.
 - Upstream option phase: keep process stream handling outside this API.
 - Platform phase: decide whether musllinux, 32-bit Windows, or extra Linux
@@ -228,9 +225,9 @@ Split future work into small phases:
 1. Run and inspect hosted `wheels.yml` with the current tree.
 2. Run and inspect hosted `api-matrix.yml`.
 3. Confirm required repository secrets and branch protection.
-4. Choose the next milestone: PyPI packaging parity or migration guide tests.
-5. If packaging parity is chosen, add Trusted Publishing and artifact metadata
-   verification first.
+4. Choose the next milestone: release hardening or migration guide tests.
+5. If release hardening is chosen, verify Trusted Publishing and artifact
+   metadata first.
 6. If migration guide tests are chosen, verify the examples against tests. Make
    the warning-emitting compatibility paths clear.
 7. Turn the chosen milestone into a focused implementation plan before adding

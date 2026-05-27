@@ -8,8 +8,13 @@ Python module.
 
 The distribution name is `oxipng-pybind`. The import module is `oxipng`.
 
-Release artifacts require Python 3.11 or newer. PyPI publishing is not enabled
-yet. Install from a built wheel artifact, or build a local wheel:
+Install the supported PyPI wheel on Python 3.11 or newer:
+
+```bash
+python -m pip install oxipng-pybind
+```
+
+For unsupported platforms, build a local wheel from source:
 
 ```bash
 make wheel
@@ -48,6 +53,9 @@ The default options preserve upstream `oxipng` behavior and do not impose a
 decompression cap. Use conservative compression settings for request-time
 workloads, and enable `fix_errors` or `force` only when the caller accepts the
 additional processing.
+
+For untrusted file uploads, keep work in private directories with
+server-generated paths. See [Untrusted Input](docs/usage/untrusted-input.md).
 
 ## pyoxipng Compatibility
 

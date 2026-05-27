@@ -86,6 +86,9 @@ optimize("upload.png", timeout=2.0, max_decompressed_size=50_000_000)
 inflated image data would exceed the configured byte count. Defaults preserve
 upstream behavior and do not impose a decompression cap.
 
+File APIs also need caller-side path controls for untrusted uploads. See
+[Untrusted Input](untrusted-input.md).
+
 stdin and stdout optimization are not part of this API. Callers must decide
 when to read from stdin and when to write to stdout. Use `optimize_from_memory`
 after reading bytes.

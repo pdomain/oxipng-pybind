@@ -65,15 +65,16 @@ commit SHAs. Review updated SHAs before merging workflow maintenance changes.
 
 ## Required Repository Settings
 
-Enable these GitHub settings for CI-gated upstream bump pull requests. CI is
-continuous integration.
+Use the required repository settings in
+[GitHub Settings](github-settings.md). CI is continuous integration.
 
-- Add an `UPSTREAM_BUMP_TOKEN` repository secret. The token must be able to
-  create pull requests so bump PRs trigger normal PR CI checks.
-- Allow GitHub Actions to create and approve pull requests.
-- Protect `main`.
-- Require the `ci` workflow to pass before merging.
-- Enable repository auto-merge.
+The `UPSTREAM_BUMP_TOKEN` token must be able to create pull requests so bump
+PRs trigger normal PR CI checks.
+
+## Merge Policy
+
+Upstream bump pull requests use rebase auto-merge after required checks pass.
+The automation command is `gh pr merge --auto --rebase`.
 
 Native dependency bump PRs are expected to auto-merge when CI and wheel checks
 pass. If upstream `oxipng` changes break the wrapper, CI fails and the bump PR

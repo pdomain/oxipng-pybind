@@ -52,5 +52,9 @@ Dependency refresh PRs enable auto-merge after audits and CI pass. Branch
 protection remains the merge gate, so failed checks leave the PR open for
 manual repair.
 
+Use the required repository settings in
+[GitHub Settings](github-settings.md). Dependency refresh PRs use rebase
+auto-merge. The automation command is `gh pr merge --auto --rebase`.
+
 Third-party GitHub Actions in write-scoped dependency refresh jobs must be
 pinned to reviewed full commit SHAs.

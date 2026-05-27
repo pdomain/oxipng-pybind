@@ -1,15 +1,18 @@
 # Release Artifacts
 
-`.github/workflows/wheels.yml` builds release wheel artifacts.
+PyPI wheels are the supported release path for `oxipng-pybind`.
 
-The workflow is artifact-only in this phase.
+`.github/workflows/wheels.yml` builds and validates release wheel artifacts.
 
 It runs on `workflow_dispatch`, on `v*` tags, and on pull requests that touch
 release-relevant files.
 
 It builds wheels with `PyO3/maturin-action@v1` and Python 3.11. It uploads
-platform-specific wheel artifacts. It does not publish to PyPI or TestPyPI. It
-does not build or upload an sdist.
+platform-specific wheel artifacts for publishing to PyPI.
+
+Source builds are the fallback for unsupported platforms. They require Rust and
+a compatible build environment. The release process does not build or upload an
+sdist.
 
 ## Wheel Tags
 

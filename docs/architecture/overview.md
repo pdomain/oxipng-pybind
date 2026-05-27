@@ -46,6 +46,9 @@ Then Rust calls `oxipng::optimize` while the GIL is released.
 If `output` is omitted, upstream writes in place. If `output` is set, upstream
 writes to that path.
 
+Callers that process untrusted files must provide safe work directories and
+server-generated paths. See [Untrusted Input](../usage/untrusted-input.md).
+
 ## Memory Flow
 
 `optimize_from_memory(data, *, ...)` accepts `bytes`, `bytearray`, and
@@ -86,8 +89,8 @@ The wrapper keeps caller mistakes separate from image failures:
 PyO3 uses `abi3-py311`. Release wheels use one ABI3 extension per supported
 platform for Python 3.11 and newer.
 
-The wheel workflow uploads artifacts only. It does not publish to PyPI. It does
-not build an sdist.
+PyPI wheels are the supported release path. Source builds remain the fallback
+for unsupported platforms and require Rust plus a compatible build environment.
 
 ## Upstream Surface Policy
 

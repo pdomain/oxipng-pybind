@@ -817,7 +817,7 @@ git commit -m "fix: pin cargo-deny bootstrap version"
 - Modify: `docs/plans/full-code-review-report.md`
 - Modify: `docs/plans/minor-review-fixes-plan.md`
 
-- [ ] **Step 1: Rebase the isolated branch on main**
+- [x] **Step 1: Rebase the isolated branch on main**
 
 Run from the minor fixes worktree:
 
@@ -828,7 +828,7 @@ git rebase main
 
 Expected: branch rebases cleanly. Resolve conflicts by preserving all committed worker fixes and the latest report wording from `main`.
 
-- [ ] **Step 2: Run pre-commit before full CI**
+- [x] **Step 2: Run pre-commit before full CI**
 
 Run:
 
@@ -838,7 +838,7 @@ uv run pre-commit run --all-files
 
 Expected: pass. If hooks autoformat files, include those changes in the final docs or integration commit.
 
-- [ ] **Step 3: Run full CI**
+- [x] **Step 3: Run full CI**
 
 Run:
 
@@ -876,9 +876,9 @@ In `docs/plans/full-code-review-report.md`, move the minor findings out of the o
 - Minor 19: No code change. The bounded one-time CI retry remains acceptable because it does not checkout secrets or expand permissions.
 ```
 
-- [ ] **Step 5: Mark this plan complete**
+- [x] **Step 5: Mark this plan complete**
 
-Change this plan’s task checkboxes from incomplete to complete only after the corresponding commits and verification have happened. Final pre-commit, final CI, and merge-back steps remain intentionally unchecked until they have run.
+Change this plan’s task checkboxes from incomplete to complete only after the corresponding commits and verification have happened. Merge-back remains intentionally unchecked until it has run.
 
 - [x] **Step 6: Commit the integration docs**
 
@@ -905,6 +905,6 @@ Expected: `main` fast-forwards. Do not squash; preserve the task commits for rev
 - [x] pyoxipng compatibility preserves accepted set inputs where pyoxipng accepted them and emits an additional warning.
 - [x] Direct backup file behavior preserves upstream Rust behavior.
 - [x] The upstream scanner uses rustdoc JSON, not a custom Rust source parser.
-- [ ] Full pre-commit and final CI remain pending for merge prep; focused
-  markdownlint verification ran for this docs commit.
-- [ ] `make ci AI=1` passes before merging back to `main`.
+- [x] Full pre-commit runs before full CI so autoformatting is included before
+  CI.
+- [x] `make ci AI=1` passes before merging back to `main`.

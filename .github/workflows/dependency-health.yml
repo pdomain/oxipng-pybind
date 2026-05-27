@@ -15,6 +15,9 @@ jobs:
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       changed-paths: ${{ steps.changes.outputs.paths }}
+      release-needed: ${{ steps.classification.outputs.release-needed }}
+      release-label: ${{ steps.classification.outputs.label }}
+      release-reason: ${{ steps.classification.outputs.reason }}
     env:
       UV_PYTHON: "3.13"
     steps:
@@ -62,6 +65,10 @@ jobs:
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
           fi
+      - name: Classify dependency refresh
+        id: classification
+        if: steps.changes.outputs.changed == 'true'
+        run: uv run --locked --group dev python scripts/classify_dependency_refresh.py --base-ref origin/main
       - name: Upload dependency refresh workspace
         if: steps.changes.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
@@ -111,13 +118,21 @@ jobs:
             - `make dependency-audit`
             - `make ci`
 
-            Auto-merge is enabled after required checks pass.
+            Release classification:
+
+            - `${{ needs.prepare.outputs.release-label }}`
+            - `${{ needs.prepare.outputs.release-reason }}`
+
+            `no-release-needed` PRs auto-merge after required checks pass.
+            `release-needed` PRs stay open for an explicit wrapper version bump
+            before merge.
           branch: automation/dependency-refresh
           delete-branch: true
-          labels: dependencies, automated
+          labels: dependencies, automated, ${{ needs.prepare.outputs.release-label }}
           add-paths: ${{ needs.prepare.outputs.changed-paths }}
       - name: Enable auto-merge
         if: >-
+          needs.prepare.outputs.release-needed == 'false' &&
           steps.cpr.outputs.pull-request-number != '' &&
           contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
         env:

@@ -231,6 +231,9 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert prepare["outputs"] == {
         "changed": "${{ steps.changes.outputs.changed }}",
         "changed-paths": "${{ steps.changes.outputs.paths }}",
+        "release-label": "${{ steps.classification.outputs.label }}",
+        "release-needed": "${{ steps.classification.outputs.release-needed }}",
+        "release-reason": "${{ steps.classification.outputs.reason }}",
     }
     assert publish["needs"] == "prepare"
     assert publish["if"] == "needs.prepare.outputs.changed == 'true'"
@@ -250,6 +253,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
             "Run dependency audits",
             "Run CI",
             "Check for changes",
+            "Classify dependency refresh",
             "Upload dependency refresh workspace",
         ],
     )
@@ -277,6 +281,14 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert "git ls-files --others --exclude-standard" in changes["run"]
     assert "paths<<EOF" in changes["run"]
 
+    classify = step_by_name(prepare_steps, "Classify dependency refresh")
+    assert classify["id"] == "classification"
+    assert classify["if"] == "steps.changes.outputs.changed == 'true'"
+    assert classify["run"] == (
+        "uv run --locked --group dev python "
+        "scripts/classify_dependency_refresh.py --base-ref origin/main"
+    )
+
     artifact = step_by_name(prepare_steps, "Upload dependency refresh workspace")
     assert artifact["if"] == "steps.changes.outputs.changed == 'true'"
     assert artifact["uses"] == "actions/upload-artifact@v4"
@@ -289,9 +301,15 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert_ordered_steps(publish_steps, ["Create pull request", "Enable auto-merge"])
     create_pr = step_by_name(publish_steps, "Create pull request")
     assert create_pr["with"]["add-paths"] == "${{ needs.prepare.outputs.changed-paths }}"
+    assert "Release classification:" in create_pr["with"]["body"]
+    assert "${{ needs.prepare.outputs.release-label }}" in create_pr["with"]["body"]
+    assert create_pr["with"]["labels"] == (
+        "dependencies, automated, ${{ needs.prepare.outputs.release-label }}"
+    )
 
     auto_merge = step_by_name(publish_steps, "Enable auto-merge")
     assert auto_merge["env"] == {"GH_TOKEN": "${{ secrets.DEPENDENCY_REFRESH_TOKEN }}"}
+    assert "needs.prepare.outputs.release-needed == 'false'" in auto_merge["if"]
     assert 'contains(fromJSON(\'["created", "updated"]\')' in auto_merge["if"]
     assert "gh pr merge" in auto_merge["run"]
     assert "--auto --rebase --delete-branch" in auto_merge["run"]
@@ -304,7 +322,8 @@ def test_dependency_refresh_docs_describe_ci_gated_auto_merge() -> None:
     text = (ROOT / "docs/process/dependency-health.md").read_text(encoding="utf-8").lower()
 
     assert "auto-merge" in text
-    assert "audits and ci pass" in text
+    assert "required checks pass" in text
+    assert "classify_dependency_refresh.py --base-ref origin/main" in text
     assert "review lockfile diffs before merge" not in text
 
 

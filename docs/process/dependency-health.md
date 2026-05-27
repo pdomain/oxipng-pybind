@@ -55,13 +55,20 @@ A separate write-scoped publish job opens or updates the dependency refresh PR
 only if dependency refresh, hook refresh, or generated-file fix steps changed
 files.
 
+The prepare job runs `scripts/classify_dependency_refresh.py --base-ref origin/main`
+after it detects changed files. The publish job adds the classifier label and
+reason to the PR.
+
 The publish job commits the changed files detected by the prepare job. This
 keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, and lint-generated
 fixes together when refresh automation changes them.
 
-Dependency refresh PRs enable auto-merge after audits and CI pass. Branch
-protection remains the merge gate, so failed checks leave the PR open for
-manual repair.
+`no-release-needed` PRs may auto-merge after required checks pass.
+`release-needed` PRs are opened but not auto-merged; they stay open for wrapper
+version review.
+
+Branch protection remains the merge gate, so failed checks leave the PR open
+for manual repair.
 
 Use the required repository settings in
 [GitHub Settings](github-settings.md). Dependency refresh PRs use rebase
@@ -81,9 +88,13 @@ workflow events.
 
 Dependency refresh PRs are classified before publication.
 
+The prepare job runs `scripts/classify_dependency_refresh.py --base-ref origin/main`
+after it detects changed files. The publish job adds the classifier label and
+reason to the PR.
+
 `no-release-needed` means only tooling or non-runtime dependency state changed.
 
-These PRs enable auto-merge after audits and CI pass.
+These PRs may auto-merge after required checks pass.
 
 `release-needed` means the refresh may affect published artifacts.
 
@@ -92,7 +103,8 @@ Examples include:
 - a runtime Cargo dependency change
 - a Python `[project.dependencies]` change
 
-These PRs stay open for an explicit wrapper version bump before merge.
+These PRs are opened but not auto-merged; they stay open for wrapper version
+review.
 
 Branch protection remains the merge gate.
 

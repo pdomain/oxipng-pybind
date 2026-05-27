@@ -13,7 +13,15 @@ from pathlib import Path
 from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REQUIRED_CHECKS = ("ci", "wheels")
+DEFAULT_REQUIRED_CHECKS = (
+    "source ci",
+    "wheels-linux-x86_64",
+    "wheels-linux-aarch64",
+    "wheels-macos-x86_64",
+    "wheels-macos-aarch64",
+    "wheels-windows-x86_64",
+    "sdist",
+)
 DEFAULT_REQUIRED_SECRETS = ("DEPENDENCY_REFRESH_TOKEN", "UPSTREAM_BUMP_TOKEN")
 GITHUB_API_HEADERS = (
     "Accept: application/vnd.github+json",

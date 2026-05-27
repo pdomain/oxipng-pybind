@@ -10,6 +10,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 Workflow = dict[Any, Any]
 Step = dict[str, Any]
+FULL_SHA = "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b"
+PYPI_PUBLISH_SHA = "cef221092ed1bacb1cc03d23a2d87d1d172e277b"
 WRITE_TOKEN_WORKFLOWS = (
     ".github/workflows/upstream-bump.yml",
     ".github/workflows/dependency-health.yml",
@@ -82,6 +84,9 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
 
     assert workflow["permissions"] == {"contents": "read"}
     assert publish["needs"] == "prepare"
+    assert prepare["outputs"]["upstream-crate-available"] == (
+        "${{ steps.bump.outputs.upstream-crate-available }}"
+    )
     assert publish["permissions"] == {
         "contents": "write",
         "issues": "write",
@@ -102,6 +107,14 @@ def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
     assert step_by_name(prepare_steps, "Bump upstream")["run"] == (
         "uv run --locked --group dev python scripts/bump_upstream.py"
     )
+    for gated_step in (
+        "Fetch upstream source",
+        "Prepare API surface manifest",
+        "Scan upstream surface",
+    ):
+        assert step_by_name(prepare_steps, gated_step)["if"] == (
+            "steps.bump.outputs.upstream-crate-available != 'false'"
+        )
     assert step_by_name(prepare_steps, "Scan upstream surface")["run"] == (
         "uv run --locked --group dev python scripts/scan_upstream_surface.py --update-docs"
     )
@@ -163,7 +176,6 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
             "Sync refreshed dependencies",
             "Refresh pre-commit hooks",
             "Apply lint and generated-file fixes",
-            "Update third-party notices",
             "Run dependency audits",
             "Run CI",
             "Check for changes",
@@ -181,9 +193,6 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     )
     assert step_by_name(prepare_steps, "Apply lint and generated-file fixes")["run"] == (
         "make lint-fix"
-    )
-    assert step_by_name(prepare_steps, "Update third-party notices")["run"] == (
-        "make third-party-notices"
     )
     assert step_by_name(prepare_steps, "Run dependency audits")["run"] == "make dependency-audit"
     assert step_by_name(prepare_steps, "Run CI")["run"] == "make ci"
@@ -249,13 +258,30 @@ def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
     assert steps[0]["uses"] == "actions/checkout@v6"
     assert steps[1]["uses"] == "actions/setup-python@v6"
     assert steps[2]["uses"] == "dtolnay/rust-toolchain@1.85.1"
-    assert step_by_name(steps, "Build wheel")["uses"] == "PyO3/maturin-action@v1"
+    assert step_by_name(steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert step_by_name(steps, "Build wheel")["with"]["args"] == (
+        "--release --locked --out dist --interpreter python3.11"
+    )
 
     smoke = step_by_name(steps, "Smoke wheel")
     assert smoke["if"] == "matrix.smoke"
     assert '"$smoke_python" -m pip install dist/*.whl "pillow==12.2.0"' in smoke["run"]
     assert "dist/*.whl pillow" not in smoke["run"]
     assert step_index(steps, "Smoke wheel") < step_index(steps, "Upload wheels")
+
+
+def test_release_actions_are_pinned_to_reviewed_shas() -> None:
+    """Release workflow actions that build or publish artifacts use immutable refs."""
+    workflow = load_workflow(".github/workflows/wheels.yml")
+    build_steps = workflow["jobs"]["build"]["steps"]
+    sdist_steps = workflow["jobs"]["sdist"]["steps"]
+    publish_steps = workflow["jobs"]["publish"]["steps"]
+
+    assert step_by_name(build_steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert step_by_name(sdist_steps, "Build sdist")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert step_by_name(publish_steps, "Publish to PyPI")["uses"] == (
+        f"pypa/gh-action-pypi-publish@{PYPI_PUBLISH_SHA}"
+    )
 
 
 def test_api_matrix_uses_locked_dev_dependencies() -> None:

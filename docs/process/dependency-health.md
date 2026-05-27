@@ -35,7 +35,8 @@ Do not ignore advisories in `deny.toml` without a dated comment and an issue.
 `.github/workflows/dependency-health.yml` runs weekly and on demand.
 
 The prepare job has read-only repository permissions. It refreshes `uv.lock` and
-`Cargo.lock`, then runs dependency audits and full CI.
+`Cargo.lock`, refreshes pre-commit hook revisions, applies lint fixes, then
+runs dependency audits and full CI.
 
 A separate write-scoped publish job opens or updates the dependency refresh PR
 only if dependency refresh, hook refresh, or generated-file fix steps changed
@@ -48,8 +49,8 @@ workflows. PRs created with the default `GITHUB_TOKEN` do not trigger those
 downstream workflow events.
 
 The publish job commits the changed files detected by the prepare job. This
-keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, third-party notices,
-and lint-generated fixes together when refresh automation changes them.
+keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, and lint-generated
+fixes together when refresh automation changes them.
 
 Dependency refresh PRs enable auto-merge after audits and CI pass. Branch
 protection remains the merge gate, so failed checks leave the PR open for

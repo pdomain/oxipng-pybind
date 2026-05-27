@@ -221,10 +221,9 @@ This plan records the interactive review decisions for the 15 medium findings.
   3. `uv sync --locked --group dev`
   4. `uv run --locked --group dev pre-commit autoupdate`
   5. `make lint-fix`
-  6. `make third-party-notices`
-  7. `make dependency-audit`
-  8. `make ci`
-  9. detect changed files and create the PR
+  6. `make dependency-audit`
+  7. `make ci`
+  8. detect changed files and create the PR
 - Ensure the PR includes `.pre-commit-config.yaml` and hook or fix-generated formatting changes.
 - Prefer a changed-file driven artifact and add-path strategy so autoformatted files are not silently dropped.
 

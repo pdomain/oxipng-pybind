@@ -10,9 +10,10 @@ artifacts.
 It runs on `workflow_dispatch`, on `v*` tags, and on pull requests that touch
 release-relevant files.
 
-It builds wheels with `PyO3/maturin-action@v1` and Python 3.11. It also builds
-one sdist, verifies it, builds a wheel back from that sdist in a clean virtual
-environment, and uploads the verified artifacts for publishing to PyPI.
+It builds wheels with a reviewed SHA-pinned `PyO3/maturin-action` action and
+Python 3.11. It also builds one sdist, verifies it, builds a wheel back from
+that sdist in a clean virtual environment, and uploads the verified artifacts
+for publishing to PyPI.
 
 Source builds require Rust and a compatible build environment.
 

@@ -27,8 +27,15 @@ def test_audit_github_settings_accepts_expected_settings(
         },
         "repos/example/oxipng-pybind/branches/main/protection": {
             "required_status_checks": {
-                "contexts": ["ci"],
-                "checks": [{"context": "wheels"}],
+                "contexts": ["source ci"],
+                "checks": [
+                    {"context": "wheels-linux-x86_64"},
+                    {"context": "wheels-linux-aarch64"},
+                    {"context": "wheels-macos-x86_64"},
+                    {"context": "wheels-macos-aarch64"},
+                    {"context": "wheels-windows-x86_64"},
+                    {"context": "sdist"},
+                ],
             }
         },
         "repos/example/oxipng-pybind/actions/secrets": {
@@ -45,7 +52,8 @@ def test_audit_github_settings_accepts_expected_settings(
     assert audit_github_settings.main(["--repo", "example/oxipng-pybind"], run_gh=run) == 0
     output = capsys.readouterr().out
     assert "PASS default branch is main" in output
-    assert "PASS required check present: ci" in output
+    assert "PASS required check present: source ci" in output
+    assert "PASS required check present: wheels-linux-x86_64" in output
     assert "PASS required secret available: UPSTREAM_BUMP_TOKEN" in output
 
 
@@ -72,5 +80,5 @@ def test_audit_github_settings_reports_failed_checks(
     assert "FAIL default branch is develop, expected main" in output
     assert "FAIL repository auto-merge is disabled" in output
     assert "FAIL rebase merge is disabled" in output
-    assert "FAIL required check missing: ci" in output
+    assert "FAIL required check missing: source ci" in output
     assert "FAIL required secret missing: DEPENDENCY_REFRESH_TOKEN" in output

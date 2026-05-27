@@ -15,6 +15,7 @@ jobs:
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       target-version: ${{ steps.bump.outputs.target-version }}
+      upstream-crate-available: ${{ steps.bump.outputs.upstream-crate-available }}
     env:
       UV_PYTHON: "3.13"
     steps:
@@ -35,10 +36,12 @@ jobs:
         id: bump
         run: uv run --locked --group dev python scripts/bump_upstream.py
       - name: Fetch upstream source
+        if: steps.bump.outputs.upstream-crate-available != 'false'
         run: |
           version="${{ steps.bump.outputs.target-version }}"
           git clone --depth 1 --branch "v$version" https://github.com/oxipng/oxipng .cache/upstream/oxipng
       - name: Prepare API surface manifest
+        if: steps.bump.outputs.upstream-crate-available != 'false'
         run: |
           version="${{ steps.bump.outputs.target-version }}"
           mkdir -p docs/api-surface
@@ -48,6 +51,7 @@ jobs:
             sed -i "s/^upstream_version = .*/upstream_version = \"$version\"/" "docs/api-surface/oxipng-$version.toml"
           fi
       - name: Scan upstream surface
+        if: steps.bump.outputs.upstream-crate-available != 'false'
         run: uv run --locked --group dev python scripts/scan_upstream_surface.py --update-docs
       - name: Check for changes
         id: changes

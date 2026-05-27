@@ -8,9 +8,15 @@ Maintainers can audit the API-visible settings with:
 - Protect `main`.
 - Allow rebase merges and disable merge commits and squash merges.
 - Enable repository auto-merge.
-- Require the `ci` workflow before merging.
-- Require the `wheels` workflow before merging release-relevant and upstream
-  bump pull requests.
+- Require the `source ci` check before merging.
+- Require the wheel matrix checks before merging release-relevant and upstream
+  bump pull requests:
+  - `wheels-linux-x86_64`
+  - `wheels-linux-aarch64`
+  - `wheels-macos-x86_64`
+  - `wheels-macos-aarch64`
+  - `wheels-windows-x86_64`
+  - `sdist`
 - Allow GitHub Actions to create and approve pull requests.
 - Add an `UPSTREAM_BUMP_TOKEN` repository secret that can create pull requests.
 - Add a `DEPENDENCY_REFRESH_TOKEN` repository secret that can write contents

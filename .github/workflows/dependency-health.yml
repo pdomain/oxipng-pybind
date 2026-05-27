@@ -25,7 +25,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           version: 0.11.12
-      - uses: dtolnay/rust-toolchain@1.85.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy
       - name: Install cargo-deny
@@ -71,7 +71,7 @@ jobs:
         run: uv run --locked --group dev python scripts/classify_dependency_refresh.py --base-ref origin/main
       - name: Upload dependency refresh workspace
         if: steps.changes.outputs.changed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-refresh
           include-hidden-files: true
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dependency-refresh
           path: .
@@ -103,7 +103,7 @@ jobs:
           fi
       - name: Create pull request
         id: cpr
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
         with:
           token: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
           commit-message: "chore: refresh dependency lockfiles"

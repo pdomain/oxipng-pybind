@@ -21,7 +21,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           version: 0.11.12
-      - uses: dtolnay/rust-toolchain@1.85.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy
       - name: Install cargo-deny

@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - uses: dtolnay/rust-toolchain@1.85.1
+      - uses: dtolnay/rust-toolchain@1.100.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
         shell: bash
@@ -122,7 +122,7 @@ jobs:
           "$smoke_python" -m pip install dist/*.whl "pillow==12.2.0"
           "$smoke_python" scripts/smoke_wheel.py
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: dist/*.whl
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - uses: dtolnay/rust-toolchain@1.85.1
+      - uses: dtolnay/rust-toolchain@1.100.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
         shell: bash
@@ -178,7 +178,7 @@ jobs:
           .sdist-smoke/bin/python -m pip install source-wheel/*.whl
           .sdist-smoke/bin/python -c "import oxipng; assert callable(oxipng.optimize)"
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -218,7 +218,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Download release artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: dist
           merge-multiple: true
@@ -243,7 +243,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Download release artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: dist
           merge-multiple: true

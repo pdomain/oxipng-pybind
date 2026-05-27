@@ -47,8 +47,8 @@ filters = FilterStrategy.predefined(["none", "sub", "up"])
 
 Do not use `RowFilter` in new code.
 
-`RowFilter` exists only for old pyoxipng code. It warns when you access a
-member:
+`RowFilter` exists only for old pyoxipng code. It warns when you access
+deprecated members:
 
 ```python
 from oxipng import RowFilter
@@ -65,6 +65,16 @@ Migration rule:
 | `RowFilter.up` | `FilterStrategy.up` |
 | `RowFilter.average` | `FilterStrategy.average` |
 | `RowFilter.paeth` | `FilterStrategy.paeth` |
+| `RowFilter.NoOp` | `FilterStrategy.none` |
+| `RowFilter.Sub` | `FilterStrategy.sub` |
+| `RowFilter.Up` | `FilterStrategy.up` |
+| `RowFilter.Average` | `FilterStrategy.average` |
+| `RowFilter.Paeth` | `FilterStrategy.paeth` |
+| `RowFilter.MinSum` | `FilterStrategy.minsum` |
+| `RowFilter.Entropy` | `FilterStrategy.entropy` |
+| `RowFilter.Bigrams` | `FilterStrategy.bigrams` |
+| `RowFilter.BigEnt` | `FilterStrategy.bigent` |
+| `RowFilter.Brute` | `FilterStrategy.brute` |
 | `[RowFilter.none, RowFilter.sub]` | `FilterStrategy.predefined(["none", "sub"])` |
 
 `FilterStrategy.predefined(...)` preserves the supplied order. It accepts
@@ -120,6 +130,31 @@ raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
 That path emits `DeprecationWarning`. Do not mix the two shapes.
+
+If `color_type` and `bit_depth` are omitted, the pyoxipng defaults are used:
+
+```python
+from oxipng import RawImage
+
+data = bytes([255, 0, 0, 255])
+width = 1
+height = 1
+raw = RawImage(data, width, height)
+```
+
+`bit_depth` can be provided alongside a compatibility color type:
+
+```python
+from oxipng import BitDepth, ColorType, RawImage
+
+raw = RawImage(
+    data=bytes([255, 0, 0, 255, 0, 0]),
+    width=1,
+    height=1,
+    color_type=ColorType.rgb(),
+    bit_depth=BitDepth.sixteen,
+)
+```
 
 This call is rejected:
 
@@ -194,6 +229,16 @@ from oxipng import Deflaters, StripChunks
 
 strip = StripChunks.strip(["tEXt"])
 deflater = Deflaters.libdeflater(11)
+```
+
+These old factories are deprecated and emit `DeprecationWarning`:
+
+```python
+from oxipng import StripChunks
+
+strip = StripChunks.none()
+strip = StripChunks.safe()
+strip = StripChunks.all()
 ```
 
 ## stdin and stdout

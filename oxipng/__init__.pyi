@@ -22,6 +22,9 @@ class StripChunks(Enum):
     safe = "safe"
     all = "all"
 
+    def __call__(self) -> _CompatStripChunks:
+        """Create a pyoxipng-compatible strip factory; emits DeprecationWarning."""
+
     @staticmethod
     def strip(
         names: StableIterable[str],
@@ -76,6 +79,16 @@ class RowFilter(Enum):
     bigrams = "bigrams"
     bigent = "bigent"
     brute = "brute"
+    NoOp = "none"
+    Sub = "sub"
+    Up = "up"
+    Average = "average"
+    Paeth = "paeth"
+    MinSum = "minsum"
+    Entropy = "entropy"
+    Bigrams = "bigrams"
+    BigEnt = "bigent"
+    Brute = "brute"
 
 class _CompatColorType:
     kind: str
@@ -152,7 +165,8 @@ class RawImage:
         width: int,
         height: int,
         *,
-        color_type: _CompatColorType,
+        color_type: _CompatColorType | None = None,
+        bit_depth: BitDepth | int = BitDepth.eight,
     ) -> None: ...
     def add_png_chunk(self, name: BytesLike, data: BytesLike) -> None:
         """Add an auxiliary PNG chunk."""

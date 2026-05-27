@@ -40,6 +40,17 @@ class StripChunks(Enum):
         """Create a keep-chunk option for explicit PNG chunk names."""
         return _compat.CompatStripChunks("keep", _compat.chunk_names(names))
 
+    def __call__(self) -> _compat.CompatStripChunks:
+        """Create a deprecated pyoxipng-compatible factory."""
+        _compat.warn_pyoxipng_compat()
+        if self is StripChunks.none:
+            return _compat.CompatStripChunks("none", ())
+        if self is StripChunks.safe:
+            return _compat.CompatStripChunks("safe", ())
+        if self is StripChunks.all:
+            return _compat.CompatStripChunks("all", ())
+        raise TypeError("unsupported pyoxipng StripChunks factory")
+
 
 class Deflater(Enum):
     """DEFLATE backend."""
@@ -109,6 +120,16 @@ class RowFilter(Enum, metaclass=_compat.PyoxipngCompatEnumMeta):
             "bigrams",
             "bigent",
             "brute",
+            "NoOp",
+            "Sub",
+            "Up",
+            "Average",
+            "Paeth",
+            "MinSum",
+            "Entropy",
+            "Bigrams",
+            "BigEnt",
+            "Brute",
         }
     )
 
@@ -122,6 +143,17 @@ class RowFilter(Enum, metaclass=_compat.PyoxipngCompatEnumMeta):
     bigrams = "bigrams"
     bigent = "bigent"
     brute = "brute"
+
+    NoOp = "none"
+    Sub = "sub"
+    Up = "up"
+    Average = "average"
+    Paeth = "paeth"
+    MinSum = "minsum"
+    Entropy = "entropy"
+    Bigrams = "bigrams"
+    BigEnt = "bigent"
+    Brute = "brute"
 
 
 class BitDepth(Enum):

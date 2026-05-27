@@ -174,6 +174,37 @@ def test_deprecated_enum_aliases_warn_on_access() -> None:
     assert brute.value == "brute"
 
 
+def test_pyoxipng_rowfilter_aliases_warn_on_access() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        no_op = RowFilter.NoOp
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        sub = RowFilter.Sub
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        up = RowFilter.Up
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        average = RowFilter.Average
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        paeth = RowFilter.Paeth
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        entropy = RowFilter.Entropy
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        bigrams = RowFilter.Bigrams
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        big_ent = RowFilter.BigEnt
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        brute = RowFilter.Brute
+
+    assert no_op.value == "none"
+    assert sub.value == "sub"
+    assert up.value == "up"
+    assert average.value == "average"
+    assert paeth.value == "paeth"
+    assert entropy.value == "entropy"
+    assert bigrams.value == "bigrams"
+    assert big_ent.value == "bigent"
+    assert brute.value == "brute"
+
+
 def test_stable_enum_members_do_not_warn_on_access() -> None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -453,6 +484,30 @@ def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
     optimize(png_path, strip=strip)
 
     assert_readable_png_path(png_path)
+
+
+def test_pyoxipng_strip_member_factories_warn_and_work(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        none = StripChunks.none()
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        safe = StripChunks.safe()
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        all_ = StripChunks.all()
+
+    assert none.mode == "none"
+    assert safe.mode == "safe"
+    assert all_.mode == "all"
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        output_none = optimize_from_memory(png_bytes, strip=none)
+        output_safe = optimize_from_memory(png_bytes, strip=safe)
+        output_all = optimize_from_memory(png_bytes, strip=all_)
+
+    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_readable_png_bytes(output_none)
+    assert_readable_png_bytes(output_safe)
+    assert_readable_png_bytes(output_all)
 
 
 def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
@@ -966,6 +1021,32 @@ def test_pyoxipng_raw_image_constructor_accepts_rgba_descriptor() -> None:
         raw = RawImage(bytes([255, 0, 0, 255]), 1, 1, color_type=color_type)
 
     assert_readable_png_bytes(raw.create_optimized_png())
+
+
+def test_pyoxipng_raw_image_constructor_default_signature_compat() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(bytes([255, 0, 0, 255]), 1, 1)
+
+    output = raw.create_optimized_png()
+
+    assert_readable_png_bytes(output)
+
+
+def test_pyoxipng_raw_image_constructor_with_compat_bit_depth() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.rgb()
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        raw = RawImage(
+            bytes([255, 0, 0, 255, 0, 0]),
+            1,
+            1,
+            color_type=color_type,
+            bit_depth=BitDepth.sixteen,
+        )
+
+    output = raw.create_optimized_png()
+
+    assert_readable_png_bytes(output)
 
 
 def test_pyoxipng_raw_image_constructor_accepts_indexed_descriptor() -> None:

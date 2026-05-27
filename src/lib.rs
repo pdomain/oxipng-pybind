@@ -255,8 +255,11 @@ fn parse_strip(value: &Bound<'_, PyAny>) -> PyResult<oxi::StripChunks> {
         return match mode.as_str() {
             "strip" => Ok(oxi::StripChunks::Strip(parsed)),
             "keep" => Ok(oxi::StripChunks::Keep(parsed)),
+            "none" => Ok(oxi::StripChunks::None),
+            "safe" => Ok(oxi::StripChunks::Safe),
+            "all" => Ok(oxi::StripChunks::All),
             _ => Err(PyValueError::new_err(
-                "strip compatibility mode must be strip or keep",
+                "strip compatibility mode must be strip, keep, none, safe, or all",
             )),
         };
     }
@@ -1036,39 +1039,61 @@ impl PyRawImage {
         let data = args.get_item(0)?;
         let width = extract_u32_strict(&args.get_item(1)?, "width")?;
         let height = extract_u32_strict(&args.get_item(2)?, "height")?;
-        let kwargs = kwargs.ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
-        let color_type = kwargs
-            .get_item("color_type")?
-            .ok_or_else(|| PyTypeError::new_err("color_type is required"))?;
-        Self::reject_extra_kwargs(Some(kwargs), &["color_type"])?;
+        let color_type = match Self::raw_image_kwarg(kwargs, "color_type")? {
+            Some(color_type) => {
+                if !is_oxipng_compat_type(&color_type, "_CompatColorType")? {
+                    return Err(PyTypeError::new_err(
+                        "color_type must be created by ColorType compatibility factories",
+                    ));
+                }
+                Some(color_type)
+            }
+            None => None,
+        };
+        let bit_depth_opt = Self::raw_image_kwarg(kwargs, "bit_depth")?;
+        Self::reject_extra_kwargs(kwargs, &["color_type", "bit_depth"])?;
 
-        if !is_oxipng_compat_type(&color_type, "_CompatColorType")? {
-            return Err(PyTypeError::new_err(
-                "color_type must be created by ColorType compatibility factories",
-            ));
-        }
+        let bit_depth = if let Some(bit_depth) = bit_depth_opt {
+            parse_bit_depth(&bit_depth)?
+        } else if let Some(color_type) = &color_type {
+            let raw_bit_depth = py_int_attr(color_type, "bit_depth")?.ok_or_else(|| {
+                PyValueError::new_err("color_type compatibility object missing bit_depth")
+            })?;
+            let raw_bit_depth = u8::try_from(raw_bit_depth)
+                .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
+            oxi::BitDepth::try_from(raw_bit_depth)
+                .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?
+        } else {
+            oxi::BitDepth::Eight
+        };
+        let (kind, palette, transparent) = if let Some(color_type) = color_type {
+            let kind = py_string_attr(&color_type, "kind")?.ok_or_else(|| {
+                PyValueError::new_err("color_type compatibility object missing kind")
+            })?;
+            let palette = color_type.getattr("palette")?;
+            let transparent = color_type.getattr("transparent")?;
+            (
+                PyString::new(args.py(), &kind),
+                (!palette.is_none()).then_some(palette),
+                (!transparent.is_none()).then_some(transparent),
+            )
+        } else {
+            (PyString::new(args.py(), "rgba"), None, None)
+        };
 
-        let kind = py_string_attr(&color_type, "kind")?
-            .ok_or_else(|| PyValueError::new_err("color_type compatibility object missing kind"))?;
-        let raw_bit_depth = py_int_attr(&color_type, "bit_depth")?.ok_or_else(|| {
-            PyValueError::new_err("color_type compatibility object missing bit_depth")
-        })?;
-        let bit_depth = u8::try_from(raw_bit_depth)
-            .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
-        let palette = color_type.getattr("palette")?;
-        let transparent = color_type.getattr("transparent")?;
-        let kind = PyString::new(args.py(), &kind);
-        let bit_depth = bit_depth.into_pyobject(args.py())?;
-
-        Self::from_parts(
-            width,
-            height,
+        let color_type = parse_color_type(
             kind.as_any(),
-            bit_depth.as_any(),
-            &data,
-            (!palette.is_none()).then_some(palette.as_any()),
-            (!transparent.is_none()).then_some(transparent.as_any()),
-        )
+            bit_depth,
+            palette.as_ref(),
+            transparent.as_ref(),
+        )?;
+        let data = bytes_like_to_vec(&data)?;
+        if let oxi::ColorType::Indexed { palette } = &color_type {
+            validate_indexed_pixels(&data, width, height, palette.len(), bit_depth)?;
+        }
+        let inner = oxi::RawImage::new(width, height, color_type, bit_depth, data)
+            .map_err(map_png_error)?;
+        Ok(Self { inner })
     }
 
     fn raw_image_kwarg<'py>(
@@ -1101,10 +1126,6 @@ impl PyRawImage {
                 "RawImage missing required argument '{name}' for stable constructor"
             ))
         })
-    }
-
-    fn has_raw_image_kwarg(kwargs: Option<&Bound<'_, PyDict>>, name: &str) -> PyResult<bool> {
-        Ok(Self::raw_image_kwarg(kwargs, name)?.is_some())
     }
 
     fn reject_extra_kwargs(kwargs: Option<&Bound<'_, PyDict>>, allowed: &[&str]) -> PyResult<()> {
@@ -1149,7 +1170,7 @@ impl PyRawImage {
     #[new]
     #[pyo3(signature = (*args, **kwargs))]
     fn new(args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        if args.len() == 3 && Self::has_raw_image_kwarg(kwargs, "color_type")? {
+        if args.len() == 3 {
             return Self::new_pyoxipng_compat(args, kwargs);
         }
         if args.len() <= 5 {
@@ -1157,7 +1178,7 @@ impl PyRawImage {
         }
 
         Err(PyTypeError::new_err(
-            "RawImage expects either (width, height, color_type, bit_depth, data) or (data, width, height, color_type=...)",
+            "RawImage expects either (width, height, color_type, bit_depth, data) or (data, width, height, *, color_type=..., bit_depth=...)",
         ))
     }
 

@@ -7,23 +7,14 @@ Compatibility behavior is checked against
 [`pyoxipng` 9.1.1](https://github.com/nfrasser/pyoxipng/tree/v9.1.1),
 commit `357ea12453f352685acaf1b7a9c4573866b5bbf6`.
 
-`pyoxipng` exposed Python shapes over Rust `oxipng`, but it was not this
-project's stable API contract. Do not treat every old pyoxipng method shape as
-a stable mirror of the Rust API. The stable contract here is the
-`oxipng-pybind` Python API documented in this repository.
+`pyoxipng` exposed older Python shapes over Rust `oxipng`. Those shapes are
+not this project's stable API contract. For supported names, see
+[API Compatibility](../architecture/api-compatibility.md).
 
-Stable API means the supported `oxipng-pybind` names. A compatibility path is
-an old pyoxipng shape that still works for now. Compatibility paths emit
-`DeprecationWarning` and will be removed in a future release.
-
-Some names also existed in pyoxipng and are stable here. They do not warn.
-
-Examples:
-
-- `StripChunks.strip`
-- `StripChunks.keep`
-- `Deflaters.libdeflater`
-- `Deflaters.zopfli`
+Compatibility paths emit `DeprecationWarning`. They will be removed in a
+future release. Some names also existed in pyoxipng and are stable here, so
+they do not warn. Examples include `StripChunks.strip`, `StripChunks.keep`,
+`Deflaters.libdeflater`, and `Deflaters.zopfli`.
 
 ## Package And Import Names
 
@@ -50,10 +41,8 @@ filter = FilterStrategy.none
 filters = FilterStrategy.predefined(["none", "sub", "up"])
 ```
 
-Do not use `RowFilter` in new code.
-
-`RowFilter` exists only for old pyoxipng code. It warns when you access
-deprecated members:
+Do not use `RowFilter` in new code. It exists only for old pyoxipng code and
+warns when you access its members:
 
 ```python
 from oxipng import RowFilter
@@ -82,9 +71,12 @@ Migration rule:
 | `RowFilter.Brute` | `FilterStrategy.brute` |
 | `[RowFilter.none, RowFilter.sub]` | `FilterStrategy.predefined(["none", "sub"])` |
 
-`FilterStrategy.predefined(...)` preserves the supplied order. It accepts
-ordered sequences and generators, and it rejects `set` and `frozenset`. Pass
-`sorted(values)` if old code intentionally built predefined filters from a set.
+`FilterStrategy.predefined(...)` preserves order. It accepts ordered iterables
+and rejects mappings and scalar values. Pass `sorted(values)` if old code built
+predefined filters from a set.
+
+For full option values, see
+[Options Surface](../architecture/options-surface.md#filter-values).
 
 ## Interlacing
 
@@ -112,11 +104,9 @@ Use the stable `RawImage` order:
 from oxipng import BitDepth, ColorType, RawImage
 
 data = bytes([255, 0, 0, 255])
-width = 1
-height = 1
 raw = RawImage(
-    width=width,
-    height=height,
+    width=1,
+    height=1,
     color_type=ColorType.rgba,
     bit_depth=BitDepth.eight,
     data=data,
@@ -129,38 +119,11 @@ The old pyoxipng order still works only as a migration path:
 from oxipng import ColorType, RawImage
 
 data = bytes([255, 0, 0, 255])
-width = 1
-height = 1
-raw = RawImage(data, width, height, color_type=ColorType.rgba())
+raw = RawImage(data, 1, 1, color_type=ColorType.rgba())
 ```
 
 That path emits `DeprecationWarning`. The callable `ColorType` value also
 warns. Do not mix the two shapes.
-
-If `color_type` and `bit_depth` are omitted, the pyoxipng defaults are used:
-
-```python
-from oxipng import RawImage
-
-data = bytes([255, 0, 0, 255])
-width = 1
-height = 1
-raw = RawImage(data, width, height)
-```
-
-`bit_depth` can be provided alongside a compatibility color type:
-
-```python
-from oxipng import BitDepth, ColorType, RawImage
-
-raw = RawImage(
-    data=bytes([255, 0, 0, 255, 0, 0]),
-    width=1,
-    height=1,
-    color_type=ColorType.rgb(),
-    bit_depth=BitDepth.sixteen,
-)
-```
 
 This call is rejected:
 
@@ -168,13 +131,14 @@ This call is rejected:
 from oxipng import ColorType, RawImage
 
 data = bytes([255, 0, 0, 255])
-width = 1
-height = 1
-raw = RawImage(data, width, height, color_type=ColorType.rgba)
+raw = RawImage(data, 1, 1, color_type=ColorType.rgba)
 ```
 
 The pyoxipng order requires a descriptor such as `ColorType.rgba()`. The stable
 order requires an enum value such as `ColorType.rgba`.
+
+For constructor details, defaults, palette rules, and examples, see
+[Create PNGs From Raw Pixels](raw-image.md).
 
 ## Color Types
 
@@ -196,21 +160,12 @@ ColorType.indexed([(255, 0, 0)])
 
 They emit `DeprecationWarning`.
 
-Indexed palettes preserve order. Tuple palette entries are the canonical style,
-but both stable `RawImage(..., palette=...)` and the `ColorType.indexed(...)`
-compatibility path accept ordered 3- or 4-channel sequences, including
-JSON-style lists. They reject strings, bytes, mappings, sets, frozensets, wrong
-entry lengths, boolean channels, and channel values outside `0..255`.
+For palette and transparency rules, see
+[Create PNGs From Raw Pixels](raw-image.md).
 
 ## Other Options
 
-The common optimization options are stable.
-
-Underlying option behavior comes from Rust
-[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
-This package maps those options to Python names and values.
-
-Use these names directly:
+Common optimization options are stable. Use Python option names directly:
 
 ```python
 optimize_from_memory(
@@ -247,22 +202,17 @@ strip = StripChunks.safe()
 strip = StripChunks.all()
 ```
 
+For the full option surface, see
+[Options Surface](../architecture/options-surface.md).
+
 ## stdin and stdout
 
 stdin and stdout are caller-owned. Read bytes first. Then call
-`optimize_from_memory`:
+`optimize_from_memory`.
 
-```python
-import sys
-
-from oxipng import optimize_from_memory
-
-data = sys.stdin.buffer.read()
-optimized = optimize_from_memory(data=data)
-sys.stdout.buffer.write(optimized)
-```
-
-This keeps process stream handling in caller code.
+See
+[Optimize PNG data in memory](memory-optimization.md#stdin-and-stdout)
+for the stream example.
 
 ## Migration Checklist
 
@@ -271,7 +221,7 @@ This keeps process stream handling in caller code.
 3. Replace `RowFilter` with `FilterStrategy`.
 4. Replace `Interlacing.Off` and `Interlacing.Adam7`.
 5. Replace callable `ColorType` values in new `RawImage` code.
-6. Use the stable `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)` order.
-7. Replace `StripChunks.none()`, `StripChunks.safe()`, and `StripChunks.all()` with enum values.
+6. Use the stable `RawImage(width, height, color_type, bit_depth, data)` order.
+7. Replace `StripChunks.none()`, `StripChunks.safe()`, and `StripChunks.all()`.
 8. Run tests with `DeprecationWarning` visible.
 9. Remove all compatibility paths before a future release removes them.

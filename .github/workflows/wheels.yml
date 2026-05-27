@@ -13,6 +13,7 @@ on:
       - "pyproject.toml"
       - "oxipng/**"
       - "scripts/check_wheel_tags.py"
+      - "scripts/verify_release_artifacts.py"
       - "scripts/smoke_wheel.py"
       - "src/**"
       - "tests/**"
@@ -70,6 +71,9 @@ jobs:
       - name: Check wheel tags
         shell: bash
         run: python scripts/check_wheel_tags.py --expected-python cp311 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
+      - name: Verify wheel artifact contents
+        shell: bash
+        run: python scripts/verify_release_artifacts.py dist/*.whl
       - name: Smoke wheel
         if: matrix.smoke
         shell: bash
@@ -87,3 +91,55 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: dist/*.whl
+
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@1.85.1
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Verify sdist artifact contents
+        shell: bash
+        run: python scripts/verify_release_artifacts.py dist/*.tar.gz
+      - name: Build wheel from sdist
+        shell: bash
+        run: |
+          python -m venv .sdist-smoke
+          .sdist-smoke/bin/python -m pip wheel --no-deps --wheel-dir source-wheel dist/*.tar.gz
+          python scripts/verify_release_artifacts.py source-wheel/*.whl
+          .sdist-smoke/bin/python -m pip install source-wheel/*.whl
+          .sdist-smoke/bin/python -c "import oxipng; assert callable(oxipng.optimize)"
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - sdist
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

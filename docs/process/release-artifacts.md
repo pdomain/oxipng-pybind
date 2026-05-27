@@ -1,18 +1,20 @@
 # Release Artifacts
 
-PyPI wheels are the supported release path for `oxipng-pybind`.
+PyPI wheels are the primary release path for `oxipng-pybind`. The release
+workflow also publishes a source distribution for unsupported platforms and
+source-build fallback users.
 
-`.github/workflows/wheels.yml` builds and validates release wheel artifacts.
+`.github/workflows/wheels.yml` builds and validates release wheel and sdist
+artifacts.
 
 It runs on `workflow_dispatch`, on `v*` tags, and on pull requests that touch
 release-relevant files.
 
-It builds wheels with `PyO3/maturin-action@v1` and Python 3.11. It uploads
-platform-specific wheel artifacts for publishing to PyPI.
+It builds wheels with `PyO3/maturin-action@v1` and Python 3.11. It also builds
+one sdist, verifies it, builds a wheel back from that sdist in a clean virtual
+environment, and uploads the verified artifacts for publishing to PyPI.
 
-Source builds are the fallback for unsupported platforms. They require Rust and
-a compatible build environment. The release process does not build or upload an
-sdist.
+Source builds require Rust and a compatible build environment.
 
 ## Wheel Tags
 
@@ -47,3 +49,21 @@ The smoke test also verifies wheel typing files:
 
 Linux aarch64 uses GitHub's native `ubuntu-24.04-arm` runner. Runtime smoke
 testing gates that target.
+
+## Artifact Content Verification
+
+`scripts/verify_release_artifacts.py` opens release artifacts before they are
+uploaded or published.
+
+For wheels, it verifies:
+
+- wheel metadata files under `.dist-info`;
+- license and third-party notice files;
+- package files, including stubs and `py.typed`;
+- exactly one native extension under the `_oxipng` package layout.
+
+For sdists, it verifies required source, package, metadata, license, and notice
+files. The workflow also builds a wheel from the sdist and verifies that derived
+wheel before publishing.
+
+The PyPI publish job runs only after all wheel jobs and the sdist job pass.

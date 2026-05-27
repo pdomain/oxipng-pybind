@@ -1,15 +1,13 @@
 # Build From Source
 
-Use this guide when your platform does not have a published wheel, or when you
-need to build a local wheel from a source checkout.
+Use this guide when your platform does not have a published wheel.
 
-Source builds compile the Rust extension on your machine.
-
-They need more tools than a wheel install.
+Source builds compile the Rust extension on your machine. They need more tools
+than a wheel install.
 
 ## Required Tools
 
-Install these before building from a source checkout:
+Install these tools first:
 
 - [Python 3.11 or newer](https://www.python.org/downloads/)
 - [uv](https://docs.astral.sh/uv/)
@@ -31,15 +29,30 @@ development package. It is often named `python3-dev` or `python3-devel`.
 
 The build backend is [maturin](https://www.maturin.rs/).
 
-`make wheel` runs the maturin version from the project dependency lockfile.
+## Build From an sdist
 
-## Build a Local Wheel
+Released source distributions (sdists) include the source needed to build a
+wheel locally. Use this path when you want to build from the published release
+source instead of a Git checkout.
+
+```bash
+python -m pip download --no-binary oxipng-pybind oxipng-pybind
+python -m pip wheel --no-binary oxipng-pybind oxipng-pybind-*.tar.gz
+python -m pip install oxipng_pybind-*.whl
+```
+
+`pip install --no-binary oxipng-pybind oxipng-pybind` also builds from the
+sdist in one step.
+
+## Build From a Checkout
 
 From a source checkout:
 
 ```bash
 make wheel
 ```
+
+`make wheel` uses the locked maturin version through `uv`.
 
 The wheel is written to `target/wheels/`.
 
@@ -49,14 +62,25 @@ Install that wheel with pip:
 python -m pip install target/wheels/oxipng_pybind-*.whl
 ```
 
-Current releases are wheel-only. Source distributions are deferred until
-source-install behavior is tested.
+## Build a Pure Source Tree
+
+Use a pure source tree when you need to confirm that generated files are not
+required before packaging.
+
+```bash
+git clean -xfd target dist
+make wheel
+```
+
+Do not run this in a checkout with uncommitted generated files you want to keep.
+
+For released wheel and source distribution policy, see
+[Release Artifacts](../process/release-artifacts.md).
 
 ## Notes
 
-Source builds are slower than wheel installs.
-
-If the build fails, check that these commands are on `PATH`:
+Source builds are slower than wheel installs. If the build fails, check that
+these commands are on `PATH`:
 
 - `rustc`
 - `cargo`

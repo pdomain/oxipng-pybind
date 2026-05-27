@@ -62,7 +62,8 @@ focused test workflows.
 - Interactive agents must not create GitHub PRs from this repo.
 - Work locally, verify locally, and commit locally only when asked.
 - Do not push or merge without explicit user direction.
-- The repo uses merge commits. See `CONTRIBUTING.md` for PR workflow.
+- For PRs, pull the branch, rebase it on current `main`, then use a rebase
+  merge after required checks pass. See `CONTRIBUTING.md`.
 
 ## Project Docs
 

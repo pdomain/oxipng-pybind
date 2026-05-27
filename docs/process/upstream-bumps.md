@@ -4,57 +4,48 @@
 
 ## Scheduled Check
 
-The scheduled `.github/workflows/upstream-bump.yml` workflow:
+The scheduled
+[`upstream-bump`](../../.github/workflows/upstream-bump.yml) workflow runs
+weekly and on demand.
 
-1. Reads the latest release from `oxipng/oxipng`.
+The prepare job uses read-only repository permissions. It:
+
+1. Reads the latest release from upstream `oxipng`.
 2. Updates `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, and `uv.lock`.
-3. Fetches the matching upstream tag into `.cache/upstream/oxipng`.
-4. Copies the prior API surface manifest to the target version when needed.
+3. Fetches the matching upstream source tag.
+4. Copies the prior API surface manifest when the target version needs one.
 5. Runs `scripts/scan_upstream_surface.py --update-docs`.
-6. Runs the full repository CI.
-7. Opens a pull request when files changed, including the scan summary.
-8. Opens or updates one `upstream-surface` triage issue per upstream version.
-9. Waits for `.github/workflows/wheels.yml` on the pull request commit.
-10. Enables PR auto-merge after CI and wheel checks pass. Branch protection
-    still controls the required pull request checks. The scan must also report
-    no broken exposed mappings.
+6. Runs the full CI gate before any pull request is published.
 
-The workflow does not push directly to `main`.
+The publish job has write permissions. It opens or updates the bump pull
+request only when files changed. The pull request body includes the upstream
+surface scan summary. The job also opens or updates one `upstream-surface`
+triage issue per upstream version.
 
-The upstream bump workflow keeps dependency updates, source scans, and CI in a
-read-only job. Only the PR and issue publication job receives write
-permissions.
+The workflow never pushes directly to `main`.
 
-The prepare job uploads only the bump workspace that the publish job needs:
-`Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `uv.lock`, `CHANGELOG.md`, API
-surface docs, the target-version file, and the generated PR body section.
+## Release Tags
 
-## Automated Release Tags
+[`release-tag`](../../.github/workflows/release-tag.yml) creates tags for
+eligible automated upstream bump commits after they land on `main`.
 
-`.github/workflows/release-tag.yml` creates release tags for eligible automated
-upstream bump commits after they land on `main`. It runs after successful
-`ci` workflow runs on `main` and can also be started with `workflow_dispatch`.
+It continues only when the latest `main` commit is the automated upstream bump
+commit and `project.version` changed from the parent commit. For
+`workflow_run` events, it also confirms that `main` still matches the completed
+run.
 
-The workflow is intentionally narrow. It checks out current `origin/main` and
-continues only when the latest commit is an automated upstream bump commit and
-`project.version` changed from the parent commit. For `workflow_run` events, it
-also verifies that current `main` still matches the completed run's
-`head_sha`; if `main` moved, the workflow exits without tagging.
-
-Before creating a tag, the workflow waits for both `ci.yml` and
-`api-matrix.yml` to complete successfully on the same commit. It then validates
-the strict release tag, checks that no matching Git tag already exists, and
-checks that the version is absent from PyPI.
+Before tagging, it waits for `ci.yml` and `api-matrix.yml` to pass on the same
+commit. It then checks the strict release tag, confirms that no matching Git
+tag exists, and checks that the version is absent from PyPI.
 
 Automated tags use `v<project.version>`, such as `v10.1.1` or
-`v10.1.1.post1`. The tag then triggers `.github/workflows/wheels.yml`, which
-builds fresh artifacts from the tag and publishes through the `pypi`
-environment.
+`v10.1.1.post1`. See [Release Artifacts](release-artifacts.md) for tag-driven
+wheel publishing.
 
 `RELEASE_TAG_TOKEN` must be a repository secret backed by a PAT or GitHub App
 token that can push tags and trigger downstream workflows. Do not use the
-default `GITHUB_TOKEN` for release tag creation; tag pushes made with
-`GITHUB_TOKEN` do not trigger the normal tag-driven wheel publishing workflow.
+default `GITHUB_TOKEN` for release tags, because those tag pushes do not start
+the normal wheel publishing workflow.
 
 ## Version Policy
 
@@ -67,7 +58,7 @@ The `Cargo.toml` `oxi` dependency pin records the upstream `oxipng` version.
 
 The API surface manifest records the same upstream version as the `oxi` pin.
 
-For wrapper-only fixes, run:
+For wrapper-only fixes, run the wrapper post bump:
 
 ```bash
 uv run --group dev python scripts/bump_upstream.py --wrapper-post
@@ -76,30 +67,28 @@ uv run --group dev python scripts/bump_upstream.py --wrapper-post
 This changes `pyproject.toml` from `10.1.1` to `10.1.1.post1`, or from
 `10.1.1.post1` to `10.1.1.post2`. It also refreshes `uv.lock`.
 
-For upstream releases, run the default bump path:
+For upstream releases, run the default bump:
 
 ```bash
 uv run --group dev python scripts/bump_upstream.py
 ```
 
 The script checks crates.io for the target `oxipng` crate before editing files.
-If GitHub has published a release tag but crates.io has not indexed the matching
-crate version yet, the scheduled run exits successfully without file changes and
-prints a retryable message. The next scheduled or manual run can pick up the
-same upstream version after crates.io catches up.
+If crates.io has not indexed the matching crate yet, the scheduled run exits
+successfully without file changes. It prints a retryable message. The next
+scheduled or manual run can pick up the same upstream version.
 
 If the pinned upstream version is already current, the script leaves existing
-wrapper post releases unchanged. If upstream moved from `10.1.1` to `10.2.0`,
-the script resets the Python package version to `10.2.0`, updates the Cargo
-package version to `10.2.0`, and pins `oxi` to `=10.2.0`.
+wrapper post releases unchanged. When upstream moves from `10.1.1` to
+`10.2.0`, the script resets the Python and Cargo package versions to `10.2.0`
+and pins `oxi` to `=10.2.0`.
 
 Third-party GitHub Actions in write-scoped jobs must be pinned to reviewed full
 commit SHAs. Review updated SHAs before merging workflow maintenance changes.
 
 ## Required Repository Settings
 
-Use the required repository settings in
-[GitHub Settings](github-settings.md). CI is continuous integration.
+Use the required repository settings in [GitHub Settings](github-settings.md).
 
 The `UPSTREAM_BUMP_TOKEN` token must be able to create pull requests so bump
 PRs trigger normal PR CI checks.
@@ -107,8 +96,18 @@ PRs trigger normal PR CI checks.
 ## Merge Policy
 
 Upstream bump pull requests use rebase auto-merge after required checks pass.
-The automation command is `gh pr merge --auto --rebase`.
+The workflow waits for wheel checks before enabling auto-merge. The scan must
+also report no broken exposed mappings.
 
-Native dependency bump PRs are expected to auto-merge when CI and wheel checks
-pass. If upstream `oxipng` changes break the wrapper, CI fails and the bump PR
-remains open for manual repair.
+The automation command is:
+
+```bash
+gh pr merge --auto --rebase --delete-branch
+```
+
+For manual repair, pull the PR branch, rebase it on current `main`, then merge
+with the rebase merge method.
+
+Automated upstream bump PRs are expected to auto-merge when CI and wheel checks
+pass. If upstream `oxipng` changes break the wrapper, CI fails and the bump
+pull request remains open for manual repair.

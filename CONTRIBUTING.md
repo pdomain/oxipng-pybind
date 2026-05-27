@@ -77,4 +77,6 @@ and [Rust oxipng updates](docs/process/upstream-bumps.md).
 Before asking for review, run `make ci`. If the change touches release, wheel,
 or dependency automation, also run the focused checks for that area.
 
-Use merge commits. Do not squash unless the maintainer explicitly asks for it.
+For PRs, pull the branch, rebase it on current `main`, then use a rebase merge
+after required checks pass. Do not squash unless the maintainer explicitly asks
+for it.

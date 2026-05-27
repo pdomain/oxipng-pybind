@@ -300,6 +300,44 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
             assert all(char in "0123456789abcdef" for char in ref)
 
 
+def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
+    """Manual wheel runs can publish verified artifacts to TestPyPI only when requested."""
+    workflow = load_workflow(".github/workflows/wheels.yml")
+    dispatch = workflow_trigger(workflow)["workflow_dispatch"]
+    publish = workflow["jobs"]["publish"]
+    testpypi = workflow["jobs"]["publish-testpypi"]
+    steps = testpypi["steps"]
+
+    assert dispatch["inputs"]["publish-target"] == {
+        "description": "Optional publish target for verified artifacts",
+        "type": "choice",
+        "required": True,
+        "default": "none",
+        "options": ["none", "testpypi"],
+    }
+    assert publish["if"] == "startsWith(github.ref, 'refs/tags/v')"
+    assert testpypi["if"] == (
+        "github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'"
+    )
+    assert testpypi["environment"] == "testpypi"
+    assert testpypi["permissions"] == {"id-token": "write", "contents": "read"}
+    assert step_by_name(steps, "Download release artifacts")["uses"] == (
+        f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
+    )
+    assert step_by_name(steps, "Verify release artifact set")["run"] == (
+        "python scripts/verify_release_artifacts.py dist/*"
+    )
+    assert step_index(steps, "Verify release artifact set") < step_index(
+        steps, "Publish to TestPyPI"
+    )
+    publish_step = step_by_name(steps, "Publish to TestPyPI")
+    assert publish_step["uses"] == f"pypa/gh-action-pypi-publish@{PYPI_PUBLISH_SHA}"
+    assert publish_step["with"] == {
+        "packages-dir": "dist",
+        "repository-url": "https://test.pypi.org/legacy/",
+    }
+
+
 def test_api_matrix_uses_locked_dev_dependencies() -> None:
     """API matrix jobs consume the checked-in lockfile."""
     workflow = load_workflow(".github/workflows/api-matrix.yml")

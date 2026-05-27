@@ -17,6 +17,11 @@ for publishing to PyPI.
 
 Source builds require Rust and a compatible build environment.
 
+Manual `workflow_dispatch` runs are build-only by default. Maintainers can set
+`publish-target` to `testpypi` to publish the verified wheel and sdist artifacts
+to TestPyPI through the `testpypi` GitHub environment and TestPyPI Trusted
+Publishing.
+
 ## Wheel Tags
 
 Expected wheel Python and ABI tags use `cp311-abi3` for Python 3.11 and newer.
@@ -68,3 +73,7 @@ files. The workflow also builds a wheel from the sdist and verifies that derived
 wheel before publishing.
 
 The PyPI publish job runs only after all wheel jobs and the sdist job pass.
+
+The TestPyPI publish job uses the same verified artifact set. It runs only for
+manual workflow dispatches where `publish-target` is `testpypi`; tag pushes keep
+publishing to PyPI through the normal release job.

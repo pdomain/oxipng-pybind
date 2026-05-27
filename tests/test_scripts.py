@@ -150,28 +150,11 @@ def test_issue_body_mentions_manual_surface_triage() -> None:
     assert "- [ ] reject as intentionally unsupported" in body
 
 
-def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -> None:
+def test_scan_upstream_surface_tracks_color_type_and_bit_depth(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     upstream = tmp_path / "upstream"
-    src = upstream / "src"
-    (src / "deflate").mkdir(parents=True)
-    (src / "options.rs").write_text("pub struct Options { pub force: bool }\n", encoding="utf-8")
-    (src / "filters.rs").write_text(
-        "pub enum FilterStrategy { MinSum }\npub enum RowFilter { None }\n",
-        encoding="utf-8",
-    )
-    (src / "headers.rs").write_text("pub enum StripChunks { None }\n", encoding="utf-8")
-    (src / "deflate/mod.rs").write_text("pub enum Deflater { Libdeflater }\n", encoding="utf-8")
-    (src / "lib.rs").write_text(
-        "pub fn optimize() {}\npub fn optimize_from_memory() {}\n",
-        encoding="utf-8",
-    )
-    (src / "colors.rs").write_text(
-        (
-            "pub enum ColorType { Grayscale, RGB, NewColor }\n"
-            "pub enum BitDepth { One = 1, Eight = 8, ThirtyTwo = 32 }\n"
-        ),
-        encoding="utf-8",
-    )
+    upstream.mkdir()
     manifest = {
         "upstream_version": "test",
         "options": {"exposed": {"force": "Options.force"}},
@@ -185,6 +168,68 @@ def test_scan_upstream_surface_tracks_color_type_and_bit_depth(tmp_path: Path) -
             "BitDepth": {"unexposed": {"One": "known", "Eight": "known"}},
         },
     }
+
+    def fake_load(crate_dir: Path) -> dict[str, object]:
+        assert crate_dir == upstream
+        return {
+            "root": 0,
+            "index": {
+                "1": {"name": "optimize", "visibility": "public", "inner": {"function": {}}},
+                "2": {
+                    "name": "optimize_from_memory",
+                    "visibility": "public",
+                    "inner": {"function": {}},
+                },
+                "3": {
+                    "name": "Options",
+                    "visibility": "public",
+                    "inner": {"struct": {"kind": {"plain": {"fields": [4]}}}},
+                },
+                "4": {"name": "force", "visibility": "public", "inner": {"struct_field": []}},
+                "5": {
+                    "name": "FilterStrategy",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [6]}},
+                },
+                "6": {"name": "MinSum", "visibility": "public", "inner": {"variant": {}}},
+                "7": {
+                    "name": "RowFilter",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [8]}},
+                },
+                "8": {"name": "None", "visibility": "public", "inner": {"variant": {}}},
+                "9": {
+                    "name": "StripChunks",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [10]}},
+                },
+                "10": {"name": "None", "visibility": "public", "inner": {"variant": {}}},
+                "11": {
+                    "name": "Deflater",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [12]}},
+                },
+                "12": {"name": "Libdeflater", "visibility": "public", "inner": {"variant": {}}},
+                "13": {
+                    "name": "ColorType",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [14, 15, 16]}},
+                },
+                "14": {"name": "Grayscale", "visibility": "public", "inner": {"variant": {}}},
+                "15": {"name": "RGB", "visibility": "public", "inner": {"variant": {}}},
+                "16": {"name": "NewColor", "visibility": "public", "inner": {"variant": {}}},
+                "17": {
+                    "name": "BitDepth",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [18, 19, 20]}},
+                },
+                "18": {"name": "One", "visibility": "public", "inner": {"variant": {}}},
+                "19": {"name": "Eight", "visibility": "public", "inner": {"variant": {}}},
+                "20": {"name": "ThirtyTwo", "visibility": "public", "inner": {"variant": {}}},
+            },
+        }
+
+    monkeypatch.setattr(scan_upstream_surface, "load_rustdoc_json", fake_load)
 
     surface = scan_upstream_surface.parse_upstream_surface(upstream)
     report = scan_upstream_surface.compare_surface(surface, manifest)

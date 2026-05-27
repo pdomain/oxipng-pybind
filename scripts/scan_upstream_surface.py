@@ -50,7 +50,6 @@ def rustdoc_json_command(crate_dir: Path) -> list[str]:
         "cargo",
         "rustdoc",
         "--lib",
-        "--no-deps",
         "--manifest-path",
         str(crate_dir / "Cargo.toml"),
         "--",
@@ -74,8 +73,8 @@ def _index(document: Mapping[str, object]) -> Mapping[str, object]:
     return cast("Mapping[str, object]", index)
 
 
-def _item_mapping(index: Mapping[str, object], item_id: str) -> Mapping[str, object] | None:
-    item = index.get(item_id)
+def _item_mapping(index: Mapping[str, object], item_id: object) -> Mapping[str, object] | None:
+    item = index.get(str(item_id))
     return cast("Mapping[str, object]", item) if isinstance(item, Mapping) else None
 
 
@@ -94,7 +93,9 @@ def _is_public(item: Mapping[str, object]) -> bool:
 
 
 def _item_id_list(value: object) -> list[str]:
-    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str | int)]
 
 
 def _public_struct_fields(
@@ -104,7 +105,15 @@ def _public_struct_fields(
     if not isinstance(struct, Mapping):
         return []
     struct = cast("Mapping[str, object]", struct)
-    fields = _item_id_list(struct.get("fields"))
+    kind = struct.get("kind")
+    if not isinstance(kind, Mapping):
+        return []
+    kind = cast("Mapping[str, object]", kind)
+    plain = kind.get("plain")
+    if not isinstance(plain, Mapping):
+        return []
+    plain = cast("Mapping[str, object]", plain)
+    fields = _item_id_list(plain.get("fields"))
     names: list[str] = []
     for field_id in fields:
         field_item = _item_mapping(index, field_id)

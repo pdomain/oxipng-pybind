@@ -24,91 +24,91 @@ from scripts.scan_upstream_surface import (
 
 def rustdoc_fixture() -> dict[str, object]:
     return {
-        "root": "0:0",
+        "root": 0,
         "index": {
-            "0:0": {
+            "0": {
                 "name": "oxipng",
                 "visibility": "public",
-                "inner": {"module": {"items": ["0:1", "0:2", "0:3", "0:4", "0:5", "0:6", "0:18"]}},
+                "inner": {"module": {"items": [1, 2, 3, 4, 5, 6, 18]}},
             },
-            "0:1": {
+            "1": {
                 "name": "optimize",
                 "visibility": "public",
                 "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
             },
-            "0:2": {
+            "2": {
                 "name": "default_options",
                 "visibility": "public",
                 "inner": {"function": {"header": {"is_const": True, "is_async": False}}},
             },
-            "0:3": {
+            "3": {
                 "name": "optimize_async",
                 "visibility": "public",
                 "inner": {"function": {"header": {"is_const": False, "is_async": True}}},
             },
-            "0:4": {
+            "4": {
                 "name": "private_fn",
                 "visibility": "default",
                 "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
             },
-            "0:5": {
+            "5": {
                 "name": "crate_fn",
-                "visibility": {"restricted": {"parent": "0:0", "path": "crate"}},
+                "visibility": {"restricted": {"parent": 0, "path": "crate"}},
                 "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
             },
-            "0:6": {
+            "6": {
                 "name": "Options",
                 "visibility": "public",
-                "inner": {"struct": {"kind": "plain", "fields": ["0:7", "0:8"]}},
+                "inner": {"struct": {"kind": {"plain": {"fields": [7, 8]}}}},
             },
-            "0:7": {"name": "fix_errors", "visibility": "public", "inner": {"struct_field": []}},
-            "0:8": {
+            "7": {"name": "fix_errors", "visibility": "public", "inner": {"struct_field": []}},
+            "8": {
                 "name": "private_field",
                 "visibility": "default",
                 "inner": {"struct_field": []},
             },
-            "0:9": {
+            "9": {
                 "name": "FilterStrategy",
                 "visibility": "public",
-                "inner": {"enum": {"variants": ["0:10", "0:11"]}},
+                "inner": {"enum": {"variants": [10, 11]}},
             },
-            "0:10": {
+            "10": {
                 "name": "Basic",
                 "visibility": "public",
                 "inner": {"variant": {"kind": "plain"}},
             },
-            "0:11": {
+            "11": {
                 "name": "Predefined",
                 "visibility": "public",
                 "inner": {"variant": {"kind": "tuple"}},
             },
-            "0:12": {
+            "12": {
                 "name": "ColorType",
                 "visibility": "public",
-                "inner": {"enum": {"variants": ["0:13"]}},
+                "inner": {"enum": {"variants": [13]}},
             },
-            "0:13": {
+            "13": {
                 "name": "RGB",
                 "visibility": "public",
                 "inner": {"variant": {"kind": "plain"}},
             },
-            "0:14": {
+            "14": {
                 "name": "MAX_IDAT_SIZE",
                 "visibility": "public",
                 "inner": {"constant": {"type": "usize"}},
             },
-            "0:15": {
+            "15": {
                 "name": "VERSION",
                 "visibility": "public",
                 "inner": {"static": {"type": "&'static str"}},
             },
-            "0:16": {
+            "16": {
                 "name": "Optimizer",
                 "visibility": "public",
                 "inner": {"type_alias": {"type": "Options"}},
             },
-            "0:17": {"name": "RowLike", "visibility": "public", "inner": {"trait": {}}},
-            "0:18": {
+            "17": {"name": "RowLike", "visibility": "public", "inner": {"trait": {}}},
+            "18": {
                 "name": "optimize_from_memory",
                 "visibility": "public",
                 "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
@@ -139,7 +139,8 @@ def test_rustdoc_json_command_uses_nightly_rustdoc_json_flags(tmp_path: Path) ->
     command = rustdoc_json_command(tmp_path)
 
     assert command[:4] == ["rustup", "run", "nightly", "cargo"]
-    assert command[4:7] == ["rustdoc", "--lib", "--no-deps"]
+    assert command[4:6] == ["rustdoc", "--lib"]
+    assert "--no-deps" not in command
     assert command[-4:] == ["--", "-Z", "unstable-options", "--output-format=json"]
     assert command[command.index("--manifest-path") + 1] == str(tmp_path / "Cargo.toml")
 
@@ -192,7 +193,7 @@ def test_parse_upstream_surface_requires_checkout_and_public_api(
     def fake_load(_crate_dir: Path) -> dict[str, object]:
         fixture = rustdoc_fixture()
         index = cast("dict[str, object]", fixture["index"])
-        del index["0:1"]
+        del index["1"]
         return fixture
 
     monkeypatch.setattr("scripts.scan_upstream_surface.load_rustdoc_json", fake_load)

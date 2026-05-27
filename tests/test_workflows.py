@@ -61,3 +61,14 @@ def test_dependency_refresh_docs_describe_ci_gated_auto_merge() -> None:
     assert "auto-merge" in text
     assert "audits and ci pass" in text
     assert "review lockfile diffs before merge" not in text
+
+
+def test_wheel_tag_checker_uses_only_stdlib_dependencies() -> None:
+    """Wheel workflow runs the tag checker before installing project dependencies."""
+    workflow = (ROOT / ".github/workflows/wheels.yml").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/check_wheel_tags.py").read_text(encoding="utf-8")
+
+    assert "python scripts/check_wheel_tags.py" in workflow
+    assert "import tomlkit" not in script
+    assert "from packaging" not in script
+    assert "import packaging" not in script

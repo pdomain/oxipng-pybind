@@ -64,9 +64,13 @@ Completed workflow pieces:
 - `upstream-bump.yml` covers version updates, manifest preparation, upstream
   surface scans, PR creation, triage issue upsert, wheel workflow waiting, and
   auto-merge.
+- Release publishing downloads verified wheel and sdist artifacts, verifies
+  them again, and publishes them to PyPI through Trusted Publishing.
 - Wheel smoke checks verify imports, typing files, file optimization, memory
   optimization, `memoryview`, `RawImage`, custom PNG chunks, and Pillow-readable
   output.
+- Source distribution checks verify required source files and build a wheel
+  from the sdist before publishing.
 
 Open CI and release work:
 
@@ -78,16 +82,8 @@ Open CI and release work:
 - Confirm repository settings outside the workspace: `UPSTREAM_BUMP_TOKEN`,
   `DEPENDENCY_REFRESH_TOKEN`, Actions PR permissions, branch protection,
   required checks, and repository auto-merge.
-- Replace mutable GitHub Action references with pinned full commit SHAs before
-  release hardening.
-- Confirm PyPI publishing credentials, Trusted Publishing, and release
-  permissions.
-- Before PyPI upload, add a release aggregation job that downloads every wheel
-  artifact, verifies the complete expected wheel set is present exactly once,
-  rejects unexpected wheels, and then runs the existing smoke checks against the
-  final artifacts.
-- Decide whether to add an sdist. Current docs defer sdist support because
-  source installs require Rust and a compatible build environment.
+- Confirm PyPI Trusted Publishing and release environment permissions in the
+  GitHub and PyPI project settings before the first public release.
 - Add release notes for first public artifacts after the wheel workflow
   produces verified artifacts.
 - Verify local and hosted wheel metadata, especially `oxipng/__init__.pyi`,
@@ -167,7 +163,7 @@ Preserve the current stable API. Add pyoxipng-compatible aliases only where
 they do not create unsafe defaults.
 
 1. Packaging parity:
-   - Decide whether to publish an sdist.
+   - Publish verified wheels and the tested sdist from the release workflow.
    - Add or reject musllinux and 32-bit Windows wheel targets.
 
 2. Naming and enum parity:

@@ -7,7 +7,7 @@ from typing import overload
 
 StrOrBytesPath = str | bytes | PathLike[str] | PathLike[bytes]
 BytesLike = bytes | bytearray | memoryview
-PaletteEntry = Sequence[int]
+PaletteEntry = tuple[int, int, int] | tuple[int, int, int, int] | list[int]
 Palette = Sequence[PaletteEntry]
 
 class Interlacing(Enum):

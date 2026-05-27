@@ -12,6 +12,7 @@ Workflow = dict[Any, Any]
 Step = dict[str, Any]
 FULL_SHA = "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b"
 PYPI_PUBLISH_SHA = "cef221092ed1bacb1cc03d23a2d87d1d172e277b"
+DOWNLOAD_ARTIFACT_SHA = "d3f86a106a0bac45b974a628896c90dbdf5c8093"
 WRITE_TOKEN_WORKFLOWS = (
     ".github/workflows/upstream-bump.yml",
     ".github/workflows/dependency-health.yml",
@@ -279,9 +280,18 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
 
     assert step_by_name(build_steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(sdist_steps, "Build sdist")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert step_by_name(publish_steps, "Download release artifacts")["uses"] == (
+        f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
+    )
     assert step_by_name(publish_steps, "Publish to PyPI")["uses"] == (
         f"pypa/gh-action-pypi-publish@{PYPI_PUBLISH_SHA}"
     )
+    for step in publish_steps:
+        uses = step.get("uses")
+        if isinstance(uses, str):
+            _, ref = uses.rsplit("@", 1)
+            assert len(ref) == 40
+            assert all(char in "0123456789abcdef" for char in ref)
 
 
 def test_api_matrix_uses_locked_dev_dependencies() -> None:

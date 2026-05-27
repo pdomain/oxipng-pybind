@@ -1,9 +1,9 @@
-# Optimize PNG Data in Memory
+# Optimize PNG data in memory
 
-Use [`optimize_from_memory`](../../oxipng/__init__.pyi#L238) when PNG data is
+Use [`optimize_from_memory`](../../oxipng/__init__.pyi#L260) when PNG data is
 already loaded in Python.
 
-## Basic Use
+## Basic use
 
 Read PNG bytes, optimize them, and write the result:
 
@@ -22,11 +22,12 @@ The return value is always
 
 ## Inputs
 
-The input may be:
+`data` may be:
 
 - `bytes`
 - [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray)
-- [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview)
+- byte-oriented
+  [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview)
 
 ```python
 from pathlib import Path
@@ -42,17 +43,15 @@ optimized_from_view = optimize_from_memory(data=memoryview(png_bytes))
 
 `level` must be an integer from `0` through `6`.
 
-Most optimization options map to Rust
-[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
 See [Options Surface](../architecture/options-surface.md) for the Python names
 and value types.
 
-Enum-like options accept enum members or string aliases.
+Enum-like options accept enum members or documented aliases.
 
 `backup` and `preserve_attrs` are file-only options. `optimize_from_memory`
 rejects them.
 
-## Untrusted Input
+## Untrusted input
 
 For bytes from untrusted users, see
 [Handle Untrusted Input](untrusted-input.md).

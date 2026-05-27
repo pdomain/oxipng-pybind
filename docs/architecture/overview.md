@@ -15,17 +15,14 @@ name is `oxipng-pybind`. The import name is `oxipng`.
 
 ## Rust and Python Split
 
-The Python facade owns user-facing names:
+The Python facade owns public names, stable call signatures, and compatibility
+warnings for old pyoxipng shapes. See
+[API Compatibility](api-compatibility.md) for the stable API and migration
+paths.
 
-- `Interlacing`
-- `StripChunks`
-- `Deflater`
-- `Deflaters`
-- `FilterStrategy`
-- `ColorType`
-- `BitDepth`
-
-The facade also owns compatibility warnings for old pyoxipng shapes.
+`RowFilter` is available only for old pyoxipng-style code. It emits
+compatibility warnings. New code should use `FilterStrategy` or
+`FilterStrategy.predefined(...)`.
 
 The Rust extension owns:
 
@@ -108,10 +105,11 @@ The wrapper keeps caller mistakes separate from image failures.
 ## Wheel Strategy
 
 PyO3 uses `abi3-py311`. Each release wheel supports Python 3.11 and newer for
-one platform. The wheel workflow uploads wheel artifacts.
+one platform. The wheel workflow builds Linux, macOS, and Windows wheels and
+uploads wheel artifacts.
 
-On release tags, the workflow verifies the complete wheel set before PyPI
-publishing.
+On release tags, the workflow verifies source checks and the complete wheel set
+before PyPI publishing.
 
 ## Rust oxipng Surface
 

@@ -41,10 +41,13 @@ when they clarify shared behavior.
 
 | Rule | Location | Justification |
 | --- | --- | --- |
-| `S310` | reviewed `urllib.request.urlopen` calls in `scripts/*.py` | Release automation uses fixed HTTPS API endpoints with explicit timeouts. |
-| `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Release automation resolves executable paths explicitly and does not use `shell=True`. |
+| `E402` | `scripts/verify_release_artifacts.py` | The script adds the repository root to `sys.path` before importing sibling script helpers so it also works as a direct workflow entry point. |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
+| `PLR0913` | public API wrappers in `oxipng/__init__.py` | The wrapper keeps the upstream option surface as keyword parameters for pyoxipng compatibility. |
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
+| `S310` | `scripts/bump_upstream.py` | Release automation uses a fixed HTTPS GitHub API endpoint with an explicit timeout. |
+| `S603` | reviewed `subprocess.run` calls in `scripts/*.py` and `tests/test_release_artifacts.py` | Automation and CLI tests pass argument lists directly and do not use `shell=True`. |
+| `S607` | `scripts/classify_dependency_refresh.py` | The dependency classifier calls the expected `cargo` executable to inspect the local locked dependency graph. |
 
 ## Basedpyright Suppressions
 

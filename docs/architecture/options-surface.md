@@ -22,7 +22,7 @@ Pass these options as keyword arguments to `optimize`,
 | `interlace` | enum values or aliases: `keep`, `off`, `on`, `0`, `1` |
 | `strip` | enum values, `StripChunks` factories, or aliases: `none`, `safe`, `all` |
 | `deflate` | enum values, `Deflaters` factories, or aliases: `libdeflater`, `zopfli` |
-| `filter` | one filter, or a non-empty list, tuple, or set of filters |
+| `filter` | `FilterStrategy` value or alias; non-empty list, tuple, or set |
 | `fix_errors` | `bool` |
 | `force` | `bool` |
 | `backup` | `bool`, file API only |
@@ -57,7 +57,8 @@ accepts a non-empty sequence of basic row filters:
 
 ## Stable Factories
 
-These factories create Python option objects:
+These factories create Python option objects for explicit chunk or DEFLATE
+settings:
 
 - `StripChunks.strip(names)`
 - `StripChunks.keep(names)`
@@ -70,7 +71,7 @@ Rust maps those objects to Rust `oxipng` options.
 
 ## Dry Run
 
-[`analyze`](../../oxipng/__init__.pyi#L211) maps to Rust `OutFile::None`. It
+[`analyze`](../../oxipng/__init__.pyi#L234) maps to Rust `OutFile::None`. It
 uses the same parser as memory mode and rejects file-only options.
 
 For return values, see

@@ -12,16 +12,24 @@ Pass explicit limits for untrusted input:
 ```python
 from oxipng import optimize_from_memory
 
-optimized = optimize_from_memory(data=data, timeout=2.0, max_decompressed_size=50_000_000)
+optimized = optimize_from_memory(
+    data=data,
+    timeout=2.0,
+    max_decompressed_size=50_000_000,
+)
 ```
 
-`timeout` limits optimization time.
+`timeout` sets an optimization timeout. Upstream `oxipng` skips further
+optimization work after the timeout expires.
 
-`max_decompressed_size` rejects inputs whose inflated image data would exceed
-the configured byte count.
+`max_decompressed_size` rejects inputs whose decompressed IDAT data would
+exceed the configured byte count.
+
+Set a separate upload or read limit before loading untrusted bytes. The memory
+API receives bytes after Python has already read them.
 
 Default options follow Rust
-[`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html)
+[`oxipng::Options`](https://docs.rs/oxipng/10.1.1/oxipng/struct.Options.html)
 behavior. They do not set a decompression size limit.
 
 ## File Uploads
@@ -52,7 +60,15 @@ import sys
 
 from oxipng import optimize_from_memory
 
-data = sys.stdin.buffer.read()
-optimized = optimize_from_memory(data=data, timeout=2.0, max_decompressed_size=50_000_000)
+limit = 50_000_000
+data = sys.stdin.buffer.read(limit + 1)
+if len(data) > limit:
+    raise ValueError("input is too large")
+
+optimized = optimize_from_memory(
+    data=data,
+    timeout=2.0,
+    max_decompressed_size=limit,
+)
 sys.stdout.buffer.write(optimized)
 ```

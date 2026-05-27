@@ -6,7 +6,7 @@ warnings.
 
 ## Stable API
 
-These names are the public contract:
+These top-level names are the public contract:
 
 - `optimize`
 - `optimize_from_memory`
@@ -22,17 +22,29 @@ These names are the public contract:
 - `BitDepth`
 - `RawImage`
 
+The stable method and factory surface includes:
+
+- `RawImage.add_png_chunk`
+- `RawImage.add_icc_profile`
+- `RawImage.create_optimized_png`
+- `StripChunks.strip`
+- `StripChunks.keep`
+- `Deflaters.libdeflater`
+- `Deflaters.zopfli`
+- `FilterStrategy.predefined`
+
 ## pyoxipng Compatibility
 
 `pyoxipng` exposed older Python shapes. Some of those shapes do not match Rust
 `oxipng` option contracts. This package keeps selected old shapes as migration
 paths. They emit `DeprecationWarning` and are not stable API.
 
-Warning-emitting paths include:
+Common warning-emitting paths include:
 
 - `ColorType` descriptor calls
-- `RawImage(data, width, height, color_type=...)`
-- pyoxipng enum aliases such as `Interlacing.Off`
+- `RawImage(data, width, height, ...)`
+- `StripChunks.none()`, `StripChunks.safe()`, and `StripChunks.all()`
+- `Interlacing.Off`
 - `Interlacing.Adam7`
 - `RowFilter`
 
@@ -45,6 +57,7 @@ Examples:
 - `FilterStrategy.none`
 - `ColorType.rgba`
 - `BitDepth.eight`
+- `FilterStrategy.predefined(...)`
 - `StripChunks.strip`
 - `StripChunks.keep`
 - `Deflaters.libdeflater`

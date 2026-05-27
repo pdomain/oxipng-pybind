@@ -8,8 +8,8 @@ on the local Rustup installer branch.
 
 ## Setup
 
-`make setup` installs Rust `1.85.1` through `rustup`. It installs `cargo-deny`
-with `cargo install --locked` if needed.
+`make setup` installs Rust `1.85.1` through `rustup`. It also installs
+`cargo-deny` with `cargo install --locked` if needed.
 
 It also:
 
@@ -18,15 +18,7 @@ It also:
 - builds the editable native extension
 - installs pre-commit hooks
 
-After Rust bootstrap, `make setup` runs:
-
-```bash
-uv lock --check
-uv sync --locked --group dev --reinstall
-make develop
-uv run --group dev pre-commit install --install-hooks
-uv run --group dev pre-commit install --hook-type commit-msg
-```
+See the [`setup` target](../../Makefile) for the exact command list.
 
 ## Editable Extension
 
@@ -40,7 +32,7 @@ make develop
 Run focused Python tests with `--no-sync` after that rebuild:
 
 ```bash
-uv run --no-sync --group dev pytest
+uv run --no-sync --group dev pytest tests/test_api.py -q
 ```
 
 Without `--no-sync`, `uv run --group dev` can resync the environment. That can

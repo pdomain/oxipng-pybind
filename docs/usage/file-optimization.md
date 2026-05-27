@@ -24,7 +24,7 @@ For files from untrusted users, see
 
 ## Analyze Without Writing
 
-Use [`analyze`](../../oxipng/__init__.pyi#L211) to check sizes without writing a
+Use [`analyze`](../../oxipng/__init__.pyi#L234) to check sizes without writing a
 file:
 
 ```python
@@ -35,7 +35,7 @@ print(result.original_size, result.optimized_size)
 ```
 
 `analyze` returns an
-[`OptimizationResult`](../../oxipng/__init__.pyi#L118).
+[`OptimizationResult`](../../oxipng/__init__.pyi#L140).
 
 The result has `original_size` and `optimized_size` values in bytes.
 
@@ -43,10 +43,10 @@ The result has `original_size` and `optimized_size` values in bytes.
 
 `level` must be an integer from `0` through `6`.
 
-Use `backup=True` when an in-place write should keep the original file. The
-backup path is the input path plus `.bak`. If that backup file already exists,
-`optimize` raises `FileExistsError`. It does not replace the existing backup
-file.
+Use `backup=True` when an in-place write should keep the original file. This
+requires `output` to be omitted. The backup path is the input path plus `.bak`.
+If that backup file already exists, `optimize` raises `FileExistsError`. It does
+not replace the existing backup file.
 
 ```python
 from oxipng import optimize
@@ -54,8 +54,8 @@ from oxipng import optimize
 optimize(input="cover.png", backup=True, force=True)
 ```
 
-Use `preserve_attrs=True` to copy output permissions and modification time from
-the input file. This depends on operating system support.
+Use `preserve_attrs=True` to copy the input file permissions and modification
+time to the output file. This depends on operating system support.
 
 ```python
 from oxipng import optimize

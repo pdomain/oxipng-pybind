@@ -7,6 +7,11 @@ Compatibility behavior is checked against
 [`pyoxipng` 9.1.1](https://github.com/nfrasser/pyoxipng/tree/v9.1.1),
 commit `357ea12453f352685acaf1b7a9c4573866b5bbf6`.
 
+`pyoxipng` exposed Python shapes over Rust `oxipng`, but it was not this
+project's stable API contract. Do not treat every old pyoxipng method shape as
+a stable mirror of the Rust API. The stable contract here is the
+`oxipng-pybind` Python API documented in this repository.
+
 Stable API means the supported `oxipng-pybind` names. A compatibility path is
 an old pyoxipng shape that still works for now. Compatibility paths emit
 `DeprecationWarning` and will be removed in a future release.
@@ -129,7 +134,8 @@ height = 1
 raw = RawImage(data, width, height, color_type=ColorType.rgba())
 ```
 
-That path emits `DeprecationWarning`. Do not mix the two shapes.
+That path emits `DeprecationWarning`. The callable `ColorType` value also
+warns. Do not mix the two shapes.
 
 If `color_type` and `bit_depth` are omitted, the pyoxipng defaults are used:
 
@@ -198,7 +204,7 @@ entry lengths, boolean channels, and channel values outside `0..255`.
 
 ## Other Options
 
-Most practical options are stable now.
+The common optimization options are stable.
 
 Underlying option behavior comes from Rust
 [`oxipng::Options`](https://docs.rs/oxipng/latest/oxipng/struct.Options.html).
@@ -231,7 +237,7 @@ strip = StripChunks.strip(["tEXt"])
 deflater = Deflaters.libdeflater(11)
 ```
 
-These old factories are deprecated and emit `DeprecationWarning`:
+These callable enum members are deprecated and emit `DeprecationWarning`:
 
 ```python
 from oxipng import StripChunks
@@ -266,5 +272,6 @@ This keeps process stream handling in caller code.
 4. Replace `Interlacing.Off` and `Interlacing.Adam7`.
 5. Replace callable `ColorType` values in new `RawImage` code.
 6. Use the stable `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)` order.
-7. Run tests with `DeprecationWarning` visible.
-8. Remove all compatibility paths before a future release removes them.
+7. Replace `StripChunks.none()`, `StripChunks.safe()`, and `StripChunks.all()` with enum values.
+8. Run tests with `DeprecationWarning` visible.
+9. Remove all compatibility paths before a future release removes them.

@@ -1,6 +1,6 @@
 # Create PNGs From Raw Pixels
 
-Use [`RawImage`](../../oxipng/__init__.pyi#L126) when you have packed pixel bytes
+Use [`RawImage`](../../oxipng/__init__.pyi) when you have packed pixel bytes
 but no PNG file yet.
 
 It wraps Rust
@@ -46,11 +46,32 @@ See Rust
 [`BitDepth`](https://docs.rs/oxipng/latest/oxipng/enum.BitDepth.html)
 for the underlying bit depth model.
 
+Supported string color types are:
+
+- `grayscale`
+- `rgb`
+- `indexed`
+- `grayscale_alpha`
+- `rgba`
+
+Supported bit depths are `1`, `2`, `4`, `8`, and `16`.
+
 Pixel data may be:
 
 - [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)
 - [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray)
 - [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview)
+
+## Optimization Options
+
+`create_optimized_png()` returns `bytes`. It accepts the same in-memory
+optimization options as `optimize_from_memory`.
+
+Common options include `level`, `interlace`, `strip`, `deflate`, `filter`,
+`fix_errors`, and `force`. `interlace` accepts `keep`, `off`, or `on`.
+
+See [Options Surface](../architecture/options-surface.md) for the full option
+list and value types.
 
 ## Indexed Images
 

@@ -5,7 +5,7 @@ use pyo3::exceptions::{
     PyAttributeError, PyDeprecationWarning, PyException, PyFileExistsError, PyFileNotFoundError,
     PyOSError, PyTypeError, PyValueError,
 };
-use pyo3::ffi::c_str;
+use pyo3::ffi::{self, c_str};
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDict, PyList, PyMemoryView, PySet, PyString, PyTuple,
@@ -50,8 +50,12 @@ fn value_as_string(value: &Bound<'_, PyAny>, option: &str) -> PyResult<String> {
     )))
 }
 
+fn is_bool(value: &Bound<'_, PyAny>) -> bool {
+    value.is_instance_of::<PyBool>() || unsafe { ffi::PyBool_Check(value.as_ptr()) != 0 }
+}
+
 fn reject_bool(value: &Bound<'_, PyAny>, context: &str) -> PyResult<()> {
-    if value.is_instance_of::<PyBool>() {
+    if is_bool(value) {
         return Err(PyTypeError::new_err(format!(
             "{context} must be an integer"
         )));
@@ -96,7 +100,7 @@ fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
 }
 
 fn parse_bool(value: &Bound<'_, PyAny>, option: &str) -> PyResult<bool> {
-    if !value.is_instance_of::<PyBool>() {
+    if !is_bool(value) {
         return Err(PyTypeError::new_err(format!("{option} must be a bool")));
     }
     value.extract()
@@ -114,7 +118,7 @@ fn parse_timeout(value: &Bound<'_, PyAny>) -> PyResult<Option<Duration>> {
         return Ok(None);
     }
 
-    if value.is_instance_of::<PyBool>() {
+    if is_bool(value) {
         return Err(PyTypeError::new_err(
             "timeout must be a non-negative number of seconds or None",
         ));
@@ -139,7 +143,7 @@ fn parse_max_decompressed_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usiz
         return Ok(None);
     }
 
-    if value.is_instance_of::<PyBool>() {
+    if is_bool(value) {
         return Err(PyTypeError::new_err(
             "max_decompressed_size must be a non-negative integer or None",
         ));
@@ -158,7 +162,6 @@ fn parse_max_decompressed_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usiz
         PyValueError::new_err("max_decompressed_size must be a non-negative integer or None")
     })
 }
-
 fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
     PyErr::warn(
         py,
@@ -196,6 +199,7 @@ fn py_int_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<i64>> {
 }
 
 fn parse_level(value: &Bound<'_, PyAny>) -> PyResult<u8> {
+    reject_bool(value, "level")?;
     let parsed: i64 = value
         .extract()
         .map_err(|_| PyValueError::new_err("level must be an integer from 0 to 6"))?;

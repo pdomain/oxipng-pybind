@@ -546,6 +546,40 @@ def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
     assert_readable_png_bytes(optimize_from_memory(png_bytes, deflate=zopfli))
 
 
+@pytest.mark.parametrize("value", [True, False])
+def test_deflater_libdeflater_bool_is_compatibility_path(value: bool) -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        Deflaters.libdeflater(value)
+
+    matches = [
+        warning
+        for warning in caught
+        if issubclass(warning.category, DeprecationWarning)
+        and PYOXIPNG_WARNING in str(warning.message)
+    ]
+    assert len(matches) == 1
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_deflater_zopfli_bool_is_compatibility_path(value: bool) -> None:
+    if value:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Deflaters.zopfli(value)
+
+        matches = [
+            warning
+            for warning in caught
+            if issubclass(warning.category, DeprecationWarning)
+            and PYOXIPNG_WARNING in str(warning.message)
+        ]
+        assert len(matches) == 1
+    else:
+        with pytest.raises(TypeError, match="must be an integer"):
+            Deflaters.zopfli(value)
+
+
 @pytest.mark.parametrize(
     "option",
     [
@@ -833,6 +867,24 @@ def test_pyoxipng_deflaters_reject_invalid_values(
 def test_invalid_level_raises_value_error(png_path: Path, level: int) -> None:
     with pytest.raises(ValueError, match="level must be between 0 and 6"):
         optimize(png_path, level=level)
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_optimize_level_rejects_bool(png_path: Path, value: bool) -> None:
+    with pytest.raises(TypeError, match="level must be an integer"):
+        optimize(png_path, level=value)
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_analyze_level_rejects_bool(png_path: Path, value: bool) -> None:
+    with pytest.raises(TypeError, match="level must be an integer"):
+        analyze(png_path, level=value)
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_optimize_from_memory_level_rejects_bool(png_bytes: bytes, value: bool) -> None:
+    with pytest.raises(TypeError, match="level must be an integer"):
+        optimize_from_memory(png_bytes, level=value)
 
 
 def test_unsupported_keyword_raises_type_error(png_path: Path) -> None:

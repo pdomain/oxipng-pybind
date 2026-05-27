@@ -1,7 +1,9 @@
 """Tests for upstream surface scanning."""
 
 import json
+import subprocess
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -10,170 +12,192 @@ from scripts.scan_upstream_surface import (
     append_generated_docs,
     compare_surface,
     current_manifest_path,
-    extract_block,
     has_new_unexposed,
-    parse_enum_variants,
-    parse_public_functions,
-    parse_struct_fields,
+    load_rustdoc_json,
     parse_upstream_surface,
     pr_body,
+    public_items_from_rustdoc_json,
+    rustdoc_json_command,
     write_outputs,
 )
 
 
-def test_parse_struct_fields() -> None:
-    source = """
-pub struct Options {
-    pub fix_errors: bool,
-    pub force: bool,
-}
-"""
+def rustdoc_fixture() -> dict[str, object]:
+    return {
+        "root": "0:0",
+        "index": {
+            "0:0": {
+                "name": "oxipng",
+                "visibility": "public",
+                "inner": {"module": {"items": ["0:1", "0:2", "0:3", "0:4", "0:5", "0:6", "0:18"]}},
+            },
+            "0:1": {
+                "name": "optimize",
+                "visibility": "public",
+                "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
+            },
+            "0:2": {
+                "name": "default_options",
+                "visibility": "public",
+                "inner": {"function": {"header": {"is_const": True, "is_async": False}}},
+            },
+            "0:3": {
+                "name": "optimize_async",
+                "visibility": "public",
+                "inner": {"function": {"header": {"is_const": False, "is_async": True}}},
+            },
+            "0:4": {
+                "name": "private_fn",
+                "visibility": "default",
+                "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
+            },
+            "0:5": {
+                "name": "crate_fn",
+                "visibility": {"restricted": {"parent": "0:0", "path": "crate"}},
+                "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
+            },
+            "0:6": {
+                "name": "Options",
+                "visibility": "public",
+                "inner": {"struct": {"kind": "plain", "fields": ["0:7", "0:8"]}},
+            },
+            "0:7": {"name": "fix_errors", "visibility": "public", "inner": {"struct_field": []}},
+            "0:8": {
+                "name": "private_field",
+                "visibility": "default",
+                "inner": {"struct_field": []},
+            },
+            "0:9": {
+                "name": "FilterStrategy",
+                "visibility": "public",
+                "inner": {"enum": {"variants": ["0:10", "0:11"]}},
+            },
+            "0:10": {
+                "name": "Basic",
+                "visibility": "public",
+                "inner": {"variant": {"kind": "plain"}},
+            },
+            "0:11": {
+                "name": "Predefined",
+                "visibility": "public",
+                "inner": {"variant": {"kind": "tuple"}},
+            },
+            "0:12": {
+                "name": "ColorType",
+                "visibility": "public",
+                "inner": {"enum": {"variants": ["0:13"]}},
+            },
+            "0:13": {
+                "name": "RGB",
+                "visibility": "public",
+                "inner": {"variant": {"kind": "plain"}},
+            },
+            "0:14": {
+                "name": "MAX_IDAT_SIZE",
+                "visibility": "public",
+                "inner": {"constant": {"type": "usize"}},
+            },
+            "0:15": {
+                "name": "VERSION",
+                "visibility": "public",
+                "inner": {"static": {"type": "&'static str"}},
+            },
+            "0:16": {
+                "name": "Optimizer",
+                "visibility": "public",
+                "inner": {"type_alias": {"type": "Options"}},
+            },
+            "0:17": {"name": "RowLike", "visibility": "public", "inner": {"trait": {}}},
+            "0:18": {
+                "name": "optimize_from_memory",
+                "visibility": "public",
+                "inner": {"function": {"header": {"is_const": False, "is_async": False}}},
+            },
+        },
+    }
 
-    assert parse_struct_fields(source, "Options") == ["fix_errors", "force"]
 
+def test_public_items_from_rustdoc_json_classifies_public_surface() -> None:
+    surface = public_items_from_rustdoc_json(rustdoc_fixture())
 
-def test_parse_struct_fields_finds_multiple_fields_on_one_line() -> None:
-    source = "pub struct Options { pub fix_errors: bool, pub force: bool, }"
-
-    assert parse_struct_fields(source, "Options") == ["fix_errors", "force"]
-
-
-def test_parse_struct_fields_requires_public_fields() -> None:
-    source = "pub struct Options { force: bool }"
-
-    with pytest.raises(ValueError, match="no public fields found for Options"):
-        parse_struct_fields(source, "Options")
-
-
-def test_extract_block_reports_missing_and_unterminated_declarations() -> None:
-    with pytest.raises(ValueError, match=r"required declaration not found"):
-        extract_block("pub struct Other {}", r"pub\s+struct\s+Options")
-
-    with pytest.raises(ValueError, match=r"unterminated declaration"):
-        extract_block("pub struct Options { pub force: bool", r"pub\s+struct\s+Options")
-
-
-def test_parse_multiline_enum_variants() -> None:
-    source = """
-pub enum FilterStrategy {
-    Basic(RowFilter),
-    Brute {
-        num_lines: usize,
-        level: u8,
-    },
-    Predefined(Vec<RowFilter>),
-}
-"""
-
-    assert parse_enum_variants(source, "FilterStrategy") == [
-        "Basic",
-        "Brute",
-        "Predefined",
+    assert surface.options_fields == ["fix_errors"]
+    assert surface.enums["FilterStrategy"] == ["Basic", "Predefined"]
+    assert surface.enums["ColorType"] == ["RGB"]
+    assert surface.functions == [
+        "default_options",
+        "optimize",
+        "optimize_async",
+        "optimize_from_memory",
     ]
+    assert surface.types == ["ColorType", "FilterStrategy", "Optimizer", "Options", "RowLike"]
+    assert surface.constants == ["MAX_IDAT_SIZE", "VERSION"]
+    assert "private_fn" not in surface.functions
+    assert "crate_fn" not in surface.functions
 
 
-def test_parse_enum_with_attributes() -> None:
-    source = """
-#[cfg(feature = "zopfli")]
-pub enum Deflater {
-    Libdeflater { compression: u8 },
-    #[cfg(feature = "zopfli")]
-    Zopfli(ZopfliOptions),
-}
-"""
+def test_rustdoc_json_command_uses_nightly_rustdoc_json_flags(tmp_path: Path) -> None:
+    command = rustdoc_json_command(tmp_path)
 
-    assert parse_enum_variants(source, "Deflater") == ["Libdeflater", "Zopfli"]
+    assert command[:4] == ["rustup", "run", "nightly", "cargo"]
+    assert command[4:7] == ["rustdoc", "--lib", "--no-deps"]
+    assert command[-4:] == ["--", "-Z", "unstable-options", "--output-format=json"]
+    assert command[command.index("--manifest-path") + 1] == str(tmp_path / "Cargo.toml")
 
 
-def test_parse_enum_variants_requires_variants() -> None:
-    source = "pub enum Deflater { value, another_value }"
+def test_load_rustdoc_json_runs_command_and_loads_crate_json(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / "Cargo.toml").write_text('[package]\nname = "oxipng"\n', encoding="utf-8")
+    doc_dir = tmp_path / "target" / "doc"
+    doc_dir.mkdir(parents=True)
+    expected: dict[str, object] = {"index": {}}
+    (doc_dir / "oxipng.json").write_text(json.dumps(expected), encoding="utf-8")
+    calls: list[list[str]] = []
 
-    with pytest.raises(ValueError, match="no variants found for Deflater"):
-        parse_enum_variants(source, "Deflater")
+    def fake_run(command: list[str], *, cwd: Path, check: bool) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        assert cwd == tmp_path
+        assert check is True
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert load_rustdoc_json(tmp_path) == expected
+    assert calls == [rustdoc_json_command(tmp_path)]
 
 
-def test_parse_public_functions() -> None:
-    source = """
-pub fn optimize_from_memory(data: &[u8], opts: &Options) -> PngResult<Vec<u8>> {
-    todo!()
-}
-"""
+def test_parse_upstream_surface_uses_rustdoc_json(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def fake_load(crate_dir: Path) -> dict[str, object]:
+        assert crate_dir == tmp_path
+        return rustdoc_fixture()
 
-    assert parse_public_functions(source) == ["optimize_from_memory"]
-
-
-def test_parse_upstream_surface_from_fixture_tree(tmp_path: Path) -> None:
-    src = tmp_path / "src"
-    (src / "deflate").mkdir(parents=True)
-    (src / "options.rs").write_text(
-        "pub struct Options { pub fix_errors: bool, pub force: bool, }",
-        encoding="utf-8",
-    )
-    (src / "filters.rs").write_text(
-        "\n".join(
-            [
-                "pub enum FilterStrategy { Basic(RowFilter), Predefined(Vec<RowFilter>), }",
-                "pub enum RowFilter { None, Sub, }",
-            ]
-        ),
-        encoding="utf-8",
-    )
-    (src / "headers.rs").write_text(
-        "pub enum StripChunks { None, Strip(IndexSet<[u8; 4]>), Safe, Keep(IndexSet<[u8; 4]>), All, }",
-        encoding="utf-8",
-    )
-    (src / "colors.rs").write_text(
-        "\n".join(
-            [
-                "pub enum ColorType { Grayscale, RGB, Indexed, GrayscaleAlpha, RGBA }",
-                "pub enum BitDepth { One = 1, Two = 2, Four = 4, Eight = 8, Sixteen = 16 }",
-            ]
-        ),
-        encoding="utf-8",
-    )
-    (src / "deflate/mod.rs").write_text(
-        "pub enum Deflater { Libdeflater { compression: u8 }, Zopfli(ZopfliOptions), }",
-        encoding="utf-8",
-    )
-    (src / "lib.rs").write_text(
-        """
-pub fn optimize() {}
-
-pub fn optimize_from_memory(data: &[u8], opts: &Options) -> PngResult<Vec<u8>> {
-    todo!()
-}
-""".lstrip(),
-        encoding="utf-8",
-    )
+    monkeypatch.setattr("scripts.scan_upstream_surface.load_rustdoc_json", fake_load)
 
     surface = parse_upstream_surface(tmp_path)
 
-    assert surface.options_fields == ["fix_errors", "force"]
-    assert surface.enums["ColorType"] == ["Grayscale", "RGB", "Indexed", "GrayscaleAlpha", "RGBA"]
-    assert surface.enums["BitDepth"] == ["One", "Two", "Four", "Eight", "Sixteen"]
-    assert "optimize_from_memory" in surface.functions
+    assert surface.options_fields == ["fix_errors"]
+    assert "optimize" in surface.functions
 
 
-def test_parse_upstream_surface_requires_checkout_and_public_api(tmp_path: Path) -> None:
+def test_parse_upstream_surface_requires_checkout_and_public_api(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     with pytest.raises(FileNotFoundError, match="upstream checkout not found"):
         parse_upstream_surface(tmp_path / "missing")
 
-    src = tmp_path / "src"
-    (src / "deflate").mkdir(parents=True)
-    (src / "options.rs").write_text("pub struct Options { pub force: bool }", encoding="utf-8")
-    (src / "filters.rs").write_text(
-        "pub enum FilterStrategy { MinSum }\npub enum RowFilter { None }\n",
-        encoding="utf-8",
-    )
-    (src / "headers.rs").write_text("pub enum StripChunks { None }\n", encoding="utf-8")
-    (src / "colors.rs").write_text(
-        "pub enum ColorType { RGB }\npub enum BitDepth { Eight = 8 }\n",
-        encoding="utf-8",
-    )
-    (src / "deflate/mod.rs").write_text("pub enum Deflater { Libdeflater }\n", encoding="utf-8")
-    (src / "lib.rs").write_text("pub fn optimize() {}\n", encoding="utf-8")
+    tmp_path.mkdir(exist_ok=True)
 
-    with pytest.raises(ValueError, match="required function not found: optimize_from_memory"):
+    def fake_load(_crate_dir: Path) -> dict[str, object]:
+        fixture = rustdoc_fixture()
+        index = cast("dict[str, object]", fixture["index"])
+        del index["0:1"]
+        return fixture
+
+    monkeypatch.setattr("scripts.scan_upstream_surface.load_rustdoc_json", fake_load)
+
+    with pytest.raises(ValueError, match="required function not found: optimize"):
         parse_upstream_surface(tmp_path)
 
 

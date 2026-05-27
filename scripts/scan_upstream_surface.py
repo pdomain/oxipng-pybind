@@ -7,7 +7,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import dataclass
+import subprocess
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
 
@@ -25,107 +27,159 @@ class UpstreamSurface:
     options_fields: list[str]
     enums: dict[str, list[str]]
     functions: list[str]
+    types: list[str] = field(default_factory=list)
+    constants: list[str] = field(default_factory=list)
 
 
-def _strip_attributes(lines: list[str]) -> list[str]:
-    return [line for line in lines if not line.strip().startswith("#[")]
-
-
-def extract_block(source: str, declaration: str) -> str:
-    """Extract a braced Rust declaration body."""
-    match = re.search(declaration + r"\s*\{", source)
-    if match is None:
-        raise ValueError(f"required declaration not found: {declaration}")
-    start = match.end()
-    depth = 1
-    index = start
-    while index < len(source) and depth:
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-        index += 1
-    if depth:
-        raise ValueError(f"unterminated declaration: {declaration}")
-    return source[start : index - 1]
-
-
-def parse_struct_fields(source: str, name: str) -> list[str]:
-    """Parse public field names from a Rust struct."""
-    block = extract_block(source, rf"pub\s+struct\s+{name}")
-    fields: list[str] = []
-    for line in _strip_attributes(block.splitlines()):
-        fields.extend(re.findall(r"\bpub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", line))
-    if not fields:
-        raise ValueError(f"no public fields found for {name}")
-    return fields
-
-
-def parse_enum_variants(source: str, name: str) -> list[str]:
-    """Parse public enum variant names from a Rust enum."""
-    block = extract_block(source, rf"pub\s+enum\s+{name}")
-    text = "\n".join(
-        line.split("//", 1)[0].strip()
-        for line in _strip_attributes(block.splitlines())
-        if line.split("//", 1)[0].strip() and not line.split("//", 1)[0].strip().startswith("///")
+def _crate_name(crate_dir: Path) -> str:
+    cargo = cast(
+        "dict[str, Any]", tomlkit.parse((crate_dir / "Cargo.toml").read_text(encoding="utf-8"))
     )
-    chunks: list[str] = []
-    start = 0
-    depth = 0
-    for index, char in enumerate(text):
-        if char in "{(<[":
-            depth += 1
-        elif char in "})>]":
-            depth -= 1
-        elif char == "," and depth == 0:
-            chunks.append(text[start:index])
-            start = index + 1
-    chunks.append(text[start:])
-
-    variants: list[str] = []
-    for chunk in chunks:
-        match = re.match(r"\s*([A-Z][A-Za-z0-9_]*)", chunk)
-        if match:
-            variants.append(match.group(1))
-    if not variants:
-        raise ValueError(f"no variants found for {name}")
-    return variants
+    package = cargo.get("package", {})
+    if not isinstance(package, dict):
+        raise TypeError(f"package metadata not found: {crate_dir / 'Cargo.toml'}")
+    return str(package["name"]).replace("-", "_")
 
 
-def parse_public_functions(source: str) -> list[str]:
-    """Parse public function names."""
-    return re.findall(r"(?m)^\s*pub\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)
+def rustdoc_json_command(crate_dir: Path) -> list[str]:
+    """Build the rustdoc JSON command for an upstream crate."""
+    return [
+        "rustup",
+        "run",
+        "nightly",
+        "cargo",
+        "rustdoc",
+        "--lib",
+        "--no-deps",
+        "--manifest-path",
+        str(crate_dir / "Cargo.toml"),
+        "--",
+        "-Z",
+        "unstable-options",
+        "--output-format=json",
+    ]
+
+
+def load_rustdoc_json(crate_dir: Path) -> dict[str, object]:
+    """Generate and load upstream rustdoc JSON."""
+    subprocess.run(rustdoc_json_command(crate_dir), cwd=crate_dir, check=True)  # noqa: S603 - fixed rustdoc command with crate path argument.
+    path = crate_dir / "target" / "doc" / f"{_crate_name(crate_dir)}.json"
+    return cast("dict[str, object]", json.loads(path.read_text(encoding="utf-8")))
+
+
+def _index(document: Mapping[str, object]) -> Mapping[str, object]:
+    index = document.get("index")
+    if not isinstance(index, Mapping):
+        raise TypeError("rustdoc JSON index not found")
+    return cast("Mapping[str, object]", index)
+
+
+def _item_mapping(index: Mapping[str, object], item_id: str) -> Mapping[str, object] | None:
+    item = index.get(item_id)
+    return cast("Mapping[str, object]", item) if isinstance(item, Mapping) else None
+
+
+def _inner(item: Mapping[str, object]) -> Mapping[str, object]:
+    inner = item.get("inner")
+    return cast("Mapping[str, object]", inner) if isinstance(inner, Mapping) else {}
+
+
+def _name(item: Mapping[str, object]) -> str | None:
+    name = item.get("name")
+    return name if isinstance(name, str) else None
+
+
+def _is_public(item: Mapping[str, object]) -> bool:
+    return item.get("visibility") == "public"
+
+
+def _item_id_list(value: object) -> list[str]:
+    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+
+
+def _public_struct_fields(
+    index: Mapping[str, object], struct_item: Mapping[str, object]
+) -> list[str]:
+    struct = _inner(struct_item).get("struct")
+    if not isinstance(struct, Mapping):
+        return []
+    struct = cast("Mapping[str, object]", struct)
+    fields = _item_id_list(struct.get("fields"))
+    names: list[str] = []
+    for field_id in fields:
+        field_item = _item_mapping(index, field_id)
+        if field_item is None or not _is_public(field_item):
+            continue
+        name = _name(field_item)
+        if name is not None:
+            names.append(name)
+    return sorted(names)
+
+
+def _enum_variants(index: Mapping[str, object], enum_item: Mapping[str, object]) -> list[str]:
+    enum = _inner(enum_item).get("enum")
+    if not isinstance(enum, Mapping):
+        return []
+    enum = cast("Mapping[str, object]", enum)
+    names: list[str] = []
+    for variant_id in _item_id_list(enum.get("variants")):
+        variant_item = _item_mapping(index, variant_id)
+        if variant_item is None:
+            continue
+        name = _name(variant_item)
+        if name is not None:
+            names.append(name)
+    return names
+
+
+def public_items_from_rustdoc_json(document: Mapping[str, object]) -> UpstreamSurface:
+    """Extract public surface from rustdoc JSON metadata."""
+    index = _index(document)
+    functions: list[str] = []
+    types: list[str] = []
+    constants: list[str] = []
+    enums: dict[str, list[str]] = {}
+    options_fields: list[str] = []
+
+    for item in index.values():
+        if not isinstance(item, Mapping) or not _is_public(item):
+            continue
+        name = _name(item)
+        if name is None:
+            continue
+        inner = _inner(item)
+        if "function" in inner:
+            functions.append(name)
+        elif "struct" in inner:
+            types.append(name)
+            if name == "Options":
+                options_fields = _public_struct_fields(index, item)
+        elif "enum" in inner:
+            types.append(name)
+            enums[name] = _enum_variants(index, item)
+        elif "union" in inner or "trait" in inner or "type_alias" in inner:
+            types.append(name)
+        elif "constant" in inner or "static" in inner:
+            constants.append(name)
+
+    return UpstreamSurface(
+        options_fields=sorted(options_fields),
+        enums={name: enums[name] for name in sorted(enums)},
+        functions=sorted(functions),
+        types=sorted(types),
+        constants=sorted(constants),
+    )
 
 
 def parse_upstream_surface(upstream: Path) -> UpstreamSurface:
-    """Parse relevant upstream files."""
+    """Load relevant upstream surface from rustdoc JSON."""
     if not upstream.exists():
         raise FileNotFoundError(f"upstream checkout not found: {upstream}")
-    src = upstream / "src"
-    options_rs = (src / "options.rs").read_text(encoding="utf-8")
-    filters_rs = (src / "filters.rs").read_text(encoding="utf-8")
-    headers_rs = (src / "headers.rs").read_text(encoding="utf-8")
-    colors_rs = (src / "colors.rs").read_text(encoding="utf-8")
-    deflater_rs = (src / "deflate/mod.rs").read_text(encoding="utf-8")
-    lib_rs = (src / "lib.rs").read_text(encoding="utf-8")
-
-    functions = parse_public_functions(lib_rs)
+    surface = public_items_from_rustdoc_json(load_rustdoc_json(upstream))
     for required in ("optimize", "optimize_from_memory"):
-        if required not in functions:
+        if required not in surface.functions:
             raise ValueError(f"required function not found: {required}")
-
-    return UpstreamSurface(
-        options_fields=parse_struct_fields(options_rs, "Options"),
-        enums={
-            "FilterStrategy": parse_enum_variants(filters_rs, "FilterStrategy"),
-            "RowFilter": parse_enum_variants(filters_rs, "RowFilter"),
-            "StripChunks": parse_enum_variants(headers_rs, "StripChunks"),
-            "Deflater": parse_enum_variants(deflater_rs, "Deflater"),
-            "ColorType": parse_enum_variants(colors_rs, "ColorType"),
-            "BitDepth": parse_enum_variants(colors_rs, "BitDepth"),
-        },
-        functions=functions,
-    )
+    return surface
 
 
 def _table_keys(table: object) -> set[str]:

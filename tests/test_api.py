@@ -1048,6 +1048,59 @@ def test_stable_raw_image_constructor_accepts_keyword_arguments_without_warning(
     assert_readable_png_bytes(raw.create_optimized_png())
 
 
+@pytest.mark.parametrize(
+    ("color_type", "bit_depth"),
+    [
+        (ColorType.rgba, BitDepth.eight),
+        (ColorType.rgb, BitDepth.eight),
+        (ColorType.grayscale_alpha, BitDepth.sixteen),
+        (ColorType.indexed, BitDepth.sixteen),
+    ],
+)
+def test_raw_image_rejects_huge_dimensions_without_panic(
+    color_type: ColorType, bit_depth: BitDepth
+) -> None:
+    if color_type is ColorType.indexed:
+        with pytest.raises(ValueError, match=r"raw image data length|image dimensions|too large"):
+            RawImage(
+                2**32 - 1,
+                2**32 - 1,
+                color_type,
+                bit_depth,
+                b"",
+                palette=[(0, 0, 0), (255, 255, 255)],
+            )
+    else:
+        with pytest.raises(ValueError, match=r"raw image data length|image dimensions|too large"):
+            RawImage(2**32 - 1, 2**32 - 1, color_type, bit_depth, b"")
+
+
+@pytest.mark.parametrize(
+    ("color_type", "bit_depth"),
+    [
+        (ColorType.rgba, BitDepth.eight),
+        (ColorType.rgb, BitDepth.eight),
+        (ColorType.indexed, BitDepth.sixteen),
+    ],
+)
+def test_raw_image_rejects_non_bytes_data_before_overflow_validation(
+    color_type: ColorType, bit_depth: BitDepth
+) -> None:
+    if color_type is ColorType.indexed:
+        with pytest.raises(TypeError, match=r"data must be bytes, bytearray, or memoryview"):
+            RawImage(
+                2**32 - 1,
+                2**32 - 1,
+                color_type,
+                bit_depth,
+                cast("Any", 123),
+                palette=[(0, 0, 0), (255, 255, 255)],
+            )
+    else:
+        with pytest.raises(TypeError, match=r"data must be bytes, bytearray, or memoryview"):
+            RawImage(2**32 - 1, 2**32 - 1, color_type, bit_depth, cast("Any", 123))
+
+
 def test_raw_image_rgba_create_optimized_png_returns_readable_bytes() -> None:
     raw = RawImage(
         2,

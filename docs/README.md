@@ -30,11 +30,7 @@ project state.
 ## Project State
 
 - [Remaining work and pyoxipng gaps](plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md)
-- [Active docs clarity design](superpowers/specs/2026-05-26-active-docs-clarity-design.md)
-- [pyoxipng compatibility design](superpowers/specs/2026-05-26-pyoxipng-compatibility-design.md)
-- [Active docs clarity rewrite plan](superpowers/plans/2026-05-26-active-docs-clarity-rewrite.md)
-- [Docstring lint policy plan](superpowers/plans/2026-05-26-docstring-lint-policy.md)
-- [pyoxipng compatibility plan](superpowers/plans/2026-05-26-pyoxipng-compatibility.md)
+- [Next work implementation plan](superpowers/plans/2026-05-27-next-work.md)
 
 ## Archive
 

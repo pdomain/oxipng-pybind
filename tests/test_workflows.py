@@ -280,6 +280,7 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
 
     assert step_by_name(build_steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(sdist_steps, "Build sdist")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
+    assert publish_steps[0]["uses"] == "actions/checkout@v6"
     assert step_by_name(publish_steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     )
@@ -295,6 +296,8 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
     for step in publish_steps:
         uses = step.get("uses")
         if isinstance(uses, str):
+            if uses == "actions/checkout@v6":
+                continue
             _, ref = uses.rsplit("@", 1)
             assert len(ref) == 40
             assert all(char in "0123456789abcdef" for char in ref)
@@ -321,6 +324,7 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
     )
     assert testpypi["environment"] == "testpypi"
     assert testpypi["permissions"] == {"id-token": "write", "contents": "read"}
+    assert steps[0]["uses"] == "actions/checkout@v6"
     assert step_by_name(steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     )

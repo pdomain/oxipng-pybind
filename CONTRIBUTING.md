@@ -18,10 +18,7 @@ Read these files first:
 When writing docs or user-facing text, also read
 `docs/process/writing-style.md`.
 
-Check the active plan before large changes:
-
-- `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`
-- `docs/superpowers/plans/2026-05-27-next-work.md`
+Check `docs/plans/unfinished-work.md` before large changes.
 
 ## Setup
 

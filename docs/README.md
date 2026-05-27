@@ -1,7 +1,18 @@
-# oxipng-pybind Docs
+# docs/
 
-Start here for supported usage, design notes, release process, and current
-project state.
+How documentation is organized in this repo.
+
+| Folder | Purpose | Use when |
+| --- | --- | --- |
+| `architecture/` | Durable reference: how the system works today. | Capturing current shape, contracts, and current-state diagrams. |
+| `api-surface/` | Package-specific upstream API manifests. | Tracking Rust `oxipng` API surface snapshots. |
+| `plans/` | Active execution: what order to make a spec real. | Sequencing unfinished work. |
+| `process/` | Workflow conventions and release process. | Capturing how the team works. |
+| `usage/` | Downstream reference. | A user or integrator needs to know how to use it. |
+
+This repo keeps only docs folders that contain current files. It follows the
+workspace folder meanings when those folders exist. `api-surface/` is
+package-specific. Use Git history for old plans, specs, and reports.
 
 ## Usage
 
@@ -26,13 +37,8 @@ project state.
 - [Release artifacts](process/release-artifacts.md)
 - [Rust oxipng updates](process/upstream-bumps.md)
 - [Writing style](process/writing-style.md)
-- [Lint deviations](conventions/lint-deviations.md)
+- [Lint deviations](process/lint-deviations.md)
 
 ## Project State
 
-- [Remaining work and pyoxipng gaps](plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md)
-- [Next work implementation plan](superpowers/plans/2026-05-27-next-work.md)
-
-## Archive
-
-- [Archived planning docs](archive/README.md)
+- [Unfinished work](plans/unfinished-work.md)

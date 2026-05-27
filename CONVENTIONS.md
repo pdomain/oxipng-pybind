@@ -55,7 +55,7 @@ that still point to the old spec path.
 
 Prefer fixing the lint issue. If a suppression is correct, make it narrow, add
 a short reason next to it, and record it in
-`docs/conventions/lint-deviations.md`.
+`docs/process/lint-deviations.md`.
 
 This applies to:
 

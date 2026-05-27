@@ -61,10 +61,8 @@ should run together.
 ## Project State
 
 Core API, compatibility, CI, wheel, dependency health, and release artifact
-work are mostly in place. Check the active roadmap before planning new work:
-
-- `docs/plans/2026-05-26-remaining-work-and-pyoxipng-gaps.md`
-- `docs/superpowers/plans/2026-05-27-next-work.md`
+work are mostly in place. Check `docs/plans/unfinished-work.md` before
+planning new work.
 
 ## Key Docs
 
@@ -78,8 +76,23 @@ work are mostly in place. Check the active roadmap before planning new work:
 - `docs/process/upstream-bumps.md` - upstream `oxipng` bump automation.
 - `docs/process/release-artifacts.md` - wheel policy and PyPI Trusted
   Publishing setup.
-- `docs/conventions/lint-deviations.md` - documented lint exceptions.
-- `docs/archive/` - completed plans and historical notes.
+- `docs/process/lint-deviations.md` - documented lint exceptions.
+
+## docs/ folder
+
+This repo follows the workspace docs folder meanings when those folders exist.
+See `docs/README.md`. Current folders are `architecture/`, `plans/`,
+`process/`, and `usage/`.
+
+`docs/api-surface/` is package-specific. It stores tracked upstream `oxipng`
+API surface manifests. This repo does not keep `docs/archive/`; use Git history
+for old plans, specs, and reports.
+
+**Superpowers redirect.** When a Superpowers skill says to save to
+`docs/superpowers/specs/<file>.md`, `docs/superpowers/plans/<file>.md`,
+`docs/specs/<file>.md`, or `docs/plans/<file>.md`, save to
+`docs/plans/<file>.md` instead. This repo keeps all current Superpowers specs
+and plans in `docs/plans/`.
 
 ## GitHub Workflow
 

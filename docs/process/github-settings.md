@@ -2,6 +2,9 @@
 
 Repository automation assumes these GitHub settings are enabled.
 
+Maintainers can audit the API-visible settings with:
+`uv run --group dev python scripts/audit_github_settings.py`.
+
 - Protect `main`.
 - Allow rebase merges and disable merge commits and squash merges.
 - Enable repository auto-merge.

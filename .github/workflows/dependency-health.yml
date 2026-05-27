@@ -21,15 +21,15 @@ jobs:
     env:
       UV_PYTHON: "3.13"
     steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           version: 0.11.12
       - uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy
       - name: Install cargo-deny
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@60ae4ce63c7aeb6e96d7f572c1ec7fafbb17ca80
         with:
           tool: cargo-deny@0.19.7
       - name: Refresh lockfiles
@@ -40,6 +40,8 @@ jobs:
         run: uv sync --locked --group dev
       - name: Refresh pre-commit hooks
         run: uv run --locked --group dev pre-commit autoupdate
+      - name: Refresh GitHub Actions
+        run: uv run --locked --group dev python scripts/update_github_actions.py
       - name: Apply lint and generated-file fixes
         run: make lint-fix
       - name: Generate third-party notices
@@ -86,7 +88,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -114,6 +116,7 @@ jobs:
             Verification run in the prepare job:
 
             - `uv run --locked --group dev pre-commit autoupdate`
+            - `uv run --locked --group dev python scripts/update_github_actions.py`
             - `make lint-fix`
             - `make dependency-audit`
             - `make ci`

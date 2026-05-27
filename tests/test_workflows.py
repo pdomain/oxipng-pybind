@@ -12,6 +12,8 @@ Workflow = dict[Any, Any]
 Step = dict[str, Any]
 FULL_SHA = "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b"
 PYPI_PUBLISH_SHA = "cef221092ed1bacb1cc03d23a2d87d1d172e277b"
+CHECKOUT_SHA = "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+SETUP_PYTHON_SHA = "a309ff8b426b58ec0e2a45f0f869d46889d02405"
 UPLOAD_ARTIFACT_SHA = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 DOWNLOAD_ARTIFACT_SHA = "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
 CREATE_PULL_REQUEST_SHA = "5f6978faf089d4d20b00c7766989d076bb2fc7f1"
@@ -45,7 +47,7 @@ def assert_ordered_steps(steps: list[Step], names: list[str]) -> None:
 
 
 def assert_release_tag_checkout_uses_ephemeral_credentials(step: Step) -> None:
-    assert step["uses"] == "actions/checkout@v6"
+    assert step["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
     assert step["with"] == {
         "fetch-depth": 0,
         "persist-credentials": False,
@@ -92,7 +94,7 @@ def test_write_token_workflows_pin_create_pull_request_to_sha() -> None:
                 "pull-requests": "write",
             },
         )
-        assert steps[0]["uses"] == "actions/checkout@v6"
+        assert steps[0]["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
         assert steps[0]["with"]["persist-credentials"] is False
 
         create_pr = step_by_name(steps, "Create pull request")
@@ -118,6 +120,20 @@ def test_workflows_use_current_rust_toolchain() -> None:
                 uses = step.get("uses")
                 if isinstance(uses, str) and uses.startswith("dtolnay/rust-toolchain@"):
                     assert uses == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
+
+
+def test_workflow_actions_are_pinned_to_commit_shas() -> None:
+    """Workflow actions use immutable refs except the Rust toolchain selector."""
+    for path in (ROOT / ".github/workflows").glob("*.yml"):
+        workflow = load_workflow(str(path.relative_to(ROOT)))
+        for job in workflow["jobs"].values():
+            for step in job["steps"]:
+                uses = step.get("uses")
+                if not isinstance(uses, str) or uses.startswith("dtolnay/rust-toolchain@"):
+                    continue
+                _, ref = uses.rsplit("@", 1)
+                assert len(ref) == 40, uses
+                assert all(char in "0123456789abcdef" for char in ref), uses
 
 
 def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
@@ -279,6 +295,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
             "Refresh lockfiles",
             "Sync refreshed dependencies",
             "Refresh pre-commit hooks",
+            "Refresh GitHub Actions",
             "Apply lint and generated-file fixes",
             "Generate third-party notices",
             "Run dependency audits",
@@ -296,6 +313,9 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     )
     assert step_by_name(prepare_steps, "Refresh pre-commit hooks")["run"] == (
         "uv run --locked --group dev pre-commit autoupdate"
+    )
+    assert step_by_name(prepare_steps, "Refresh GitHub Actions")["run"] == (
+        "uv run --locked --group dev python scripts/update_github_actions.py"
     )
     assert step_by_name(prepare_steps, "Apply lint and generated-file fixes")["run"] == (
         "make lint-fix"
@@ -333,6 +353,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert publish_steps[1]["uses"] == f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     create_pr = step_by_name(publish_steps, "Create pull request")
     assert create_pr["with"]["add-paths"] == "${{ needs.prepare.outputs.changed-paths }}"
+    assert "scripts/update_github_actions.py" in create_pr["with"]["body"]
     assert "Release classification:" in create_pr["with"]["body"]
     assert "${{ needs.prepare.outputs.release-label }}" in create_pr["with"]["body"]
     assert create_pr["with"]["labels"] == (
@@ -380,8 +401,8 @@ def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
 
     assert workflow["permissions"] == {"contents": "read"}
     assert build["strategy"]["fail-fast"] is False
-    assert steps[0]["uses"] == "actions/checkout@v6"
-    assert steps[1]["uses"] == "actions/setup-python@v6"
+    assert steps[0]["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
+    assert steps[1]["uses"] == f"actions/setup-python@{SETUP_PYTHON_SHA}"
     assert steps[2]["uses"] == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
     assert step_index(steps, "Set TestPyPI version") < step_index(steps, "Build wheel")
     assert step_by_name(steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
@@ -411,7 +432,7 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
     assert step_by_name(sdist_steps, "Upload sdist")["uses"] == (
         f"actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}"
     )
-    assert publish_steps[0]["uses"] == "actions/checkout@v6"
+    assert publish_steps[0]["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
     assert step_by_name(publish_steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     )
@@ -427,7 +448,7 @@ def test_release_actions_are_pinned_to_reviewed_shas() -> None:
     for step in publish_steps:
         uses = step.get("uses")
         if isinstance(uses, str):
-            if uses == "actions/checkout@v6":
+            if uses == f"actions/checkout@{CHECKOUT_SHA}":
                 continue
             _, ref = uses.rsplit("@", 1)
             assert len(ref) == 40
@@ -469,7 +490,7 @@ def test_wheel_workflow_can_publish_to_testpypi_manually() -> None:
     assert step_index(sdist_steps, "Set TestPyPI version") < step_index(sdist_steps, "Build sdist")
     assert testpypi["environment"] == "testpypi"
     assert testpypi["permissions"] == {"id-token": "write", "contents": "read"}
-    assert steps[0]["uses"] == "actions/checkout@v6"
+    assert steps[0]["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
     assert step_by_name(steps, "Download release artifacts")["uses"] == (
         f"actions/download-artifact@{DOWNLOAD_ARTIFACT_SHA}"
     )
@@ -506,7 +527,7 @@ def test_pypi_publish_requires_strict_release_tag_validation() -> None:
         "release-version": "${{ steps.validate.outputs.release-version }}"
     }
     checkout = validate_steps[0]
-    assert checkout["uses"] == "actions/checkout@v6"
+    assert checkout["uses"] == f"actions/checkout@{CHECKOUT_SHA}"
     assert checkout["with"]["fetch-depth"] == 0
 
     validate_step = step_by_name(validate_steps, "Validate release tag")

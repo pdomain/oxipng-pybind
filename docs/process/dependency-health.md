@@ -48,8 +48,9 @@ Do not ignore advisories in `deny.toml` without a dated comment and an issue.
 `.github/workflows/dependency-health.yml` runs weekly and on demand.
 
 The prepare job has read-only repository permissions. It refreshes `uv.lock` and
-`Cargo.lock`, refreshes pre-commit hook revisions, applies lint fixes, then
-runs dependency audits and full CI.
+`Cargo.lock`, refreshes pre-commit hook revisions, runs
+`scripts/update_github_actions.py`, applies lint fixes, then runs dependency
+audits and full CI.
 
 A separate write-scoped publish job opens or updates the dependency refresh PR
 only if dependency refresh, hook refresh, or generated-file fix steps changed
@@ -60,8 +61,8 @@ after it detects changed files. The publish job adds the classifier label and
 reason to the PR.
 
 The publish job commits the changed files detected by the prepare job. This
-keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, and lint-generated
-fixes together when refresh automation changes them.
+keeps `Cargo.lock`, `uv.lock`, `.pre-commit-config.yaml`, workflow action pins,
+and lint-generated fixes together when refresh automation changes them.
 
 `no-release-needed` PRs may auto-merge after required checks pass.
 `release-needed` PRs are opened but not auto-merged; they stay open for wrapper
@@ -112,6 +113,11 @@ Failed checks leave the PR open for repair.
 
 Third-party GitHub Actions in write-scoped dependency refresh jobs must be
 pinned to reviewed full commit SHAs.
+
+`scripts/update_github_actions.py` updates only the reviewed allowlist of
+workflow actions and writes those actions as immutable commit SHA refs. It also
+updates the `dtolnay/rust-toolchain` toolchain selector from the latest stable
+Rust release tag.
 
 ## Third-Party Notices
 

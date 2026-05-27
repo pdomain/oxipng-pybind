@@ -16,6 +16,7 @@ def test_write_token_workflows_pin_create_pull_request_to_sha() -> None:
     for relative in WRITE_TOKEN_WORKFLOWS:
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "peter-evans/create-pull-request@" in text
+        assert "persist-credentials: false" in text
         for line in text.splitlines():
             if "peter-evans/create-pull-request@" in line:
                 ref = line.rsplit("@", 1)[1].strip()

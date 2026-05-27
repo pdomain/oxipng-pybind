@@ -89,6 +89,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: upstream-bump-workspace

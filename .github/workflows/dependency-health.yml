@@ -78,8 +78,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    env:
-      DEPENDENCY_REFRESH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -89,6 +87,8 @@ jobs:
           name: dependency-refresh
           path: .
       - name: Require dependency refresh token
+        env:
+          DEPENDENCY_REFRESH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
         run: |
           if [ -z "$DEPENDENCY_REFRESH_TOKEN" ]; then
             echo "DEPENDENCY_REFRESH_TOKEN is required so refresh PRs trigger normal CI." >&2
@@ -98,7 +98,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
         with:
-          token: ${{ env.DEPENDENCY_REFRESH_TOKEN }}
+          token: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
           commit-message: "chore: refresh dependency lockfiles"
           title: "chore: refresh dependency lockfiles"
           body: |
@@ -121,6 +121,6 @@ jobs:
           steps.cpr.outputs.pull-request-number != '' &&
           contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
         env:
-          GH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
+          DEPENDENCY_REFRESH_TOKEN: ${{ secrets.DEPENDENCY_REFRESH_TOKEN }}
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --rebase --delete-branch
+          GH_TOKEN="$DEPENDENCY_REFRESH_TOKEN" gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --rebase --delete-branch

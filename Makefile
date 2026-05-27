@@ -122,7 +122,7 @@ pre-commit-check: ## Run all pre-commit hooks
 build: wheel ## Build release artifacts
 
 wheel: ## Build optimized Python wheel
-	uv run --group dev maturin build --release
+	uv run --group dev maturin build --release --locked
 
 clean: ## Remove generated files and build artifacts
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

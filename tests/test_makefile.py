@@ -66,3 +66,10 @@ def test_dependency_audit_includes_lockfile_python_audit() -> None:
     assert "uv audit --locked" in makefile
     assert "pip-audit" not in makefile
     assert "uv export --locked" not in makefile
+
+
+def test_wheel_build_uses_locked_cargo_dependencies() -> None:
+    """Wheel build commands use locked Cargo dependencies."""
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+
+    assert "maturin build --release --locked" in makefile

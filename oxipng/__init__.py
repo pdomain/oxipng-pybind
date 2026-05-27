@@ -62,9 +62,9 @@ class Deflaters:
     def zopfli(iterations: int = 15) -> _compat.CompatDeflater:
         """Create a zopfli option with an explicit iteration count."""
         if isinstance(iterations, bool):
+            _compat.warn_pyoxipng_compat()
             if iterations is False:
                 raise TypeError("deflate zopfli iterations must be an integer")
-            _compat.warn_pyoxipng_compat()
         return _compat.CompatDeflater("zopfli", iterations)
 
 

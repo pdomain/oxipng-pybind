@@ -446,7 +446,15 @@ def test_predefined_filter_accepts_ordered_generator() -> None:
     assert predefined.filters == ("none", "sub", "up")
 
 
-@pytest.mark.parametrize("value", [{"none", "sub"}, frozenset({"none", "sub"})])
+@pytest.mark.parametrize(
+    "value",
+    [
+        cast("object", {"none", "sub"}),
+        cast("object", frozenset({"none", "sub"})),
+        cast("object", set()),
+        cast("object", frozenset()),
+    ],
+)
 def test_predefined_filter_rejects_unordered_collections(value: object) -> None:
     with pytest.raises(TypeError, match="ordered"):
         FilterStrategy.predefined(cast("Any", value))
@@ -460,6 +468,12 @@ def test_stable_predefined_filters_reject_unordered_collections(png_bytes: bytes
         cast("Any", optimize_from_memory)(
             png_bytes, filter={FilterStrategy.none, FilterStrategy.sub}
         )
+
+
+@pytest.mark.parametrize("value", [cast("object", set()), cast("object", frozenset())])
+def test_filter_set_rejects_empty_unordered_collections(png_bytes: bytes, value: object) -> None:
+    with pytest.raises(TypeError, match="ordered"):
+        cast("Any", optimize_from_memory)(png_bytes, filter=value)
 
 
 @pytest.mark.parametrize("value", ["minsum", FilterStrategy.entropy, "unknown"])
@@ -1090,6 +1104,27 @@ def test_fake_compat_color_type_without_marker_is_rejected() -> None:
             "bit_depth": 8,
             "palette": None,
             "transparent": None,
+        },
+    )
+
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(TypeError, match="color_type"),
+    ):
+        cast("Any", RawImage)(bytes([255, 0, 0]), 1, 1, color_type=fake_compat_color_type())
+
+
+def test_fake_compat_color_type_with_truthy_marker_is_rejected() -> None:
+    fake_compat_color_type = type(
+        "CompatColorType",
+        (),
+        {
+            "__module__": "oxipng._pyoxipng_compat",
+            "kind": "rgb",
+            "bit_depth": 8,
+            "palette": None,
+            "transparent": None,
+            "_oxipng_pybind_compat_marker": True,
         },
     )
 

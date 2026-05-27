@@ -183,17 +183,16 @@ fn warn_unordered_filter_compat(py: Python<'_>) -> PyResult<()> {
 
 fn is_oxipng_compat_type(value: &Bound<'_, PyAny>, qualname: &str) -> PyResult<bool> {
     let value_type = value.get_type();
-    let module = value_type.module()?.to_str()?.to_owned();
-    let actual_qualname = value_type.qualname()?.to_str()?.to_owned();
     let helper_qualname = qualname.trim_start_matches('_');
-    let has_marker = match value.getattr("_oxipng_pybind_compat_marker") {
-        Ok(marker) => marker.is_truthy()?,
+    let compat_module = value.py().import("oxipng._pyoxipng_compat")?;
+    let expected_type = compat_module.getattr(helper_qualname)?;
+    let expected_marker = compat_module.getattr("_COMPAT_MARKER")?;
+    let has_real_marker = match value.getattr("_oxipng_pybind_compat_marker") {
+        Ok(marker) => marker.is(&expected_marker),
         Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => false,
         Err(error) => return Err(error),
     };
-    Ok(has_marker
-        && ((module == "oxipng" && actual_qualname == qualname)
-            || (module == "oxipng._pyoxipng_compat" && actual_qualname == helper_qualname)))
+    Ok(has_real_marker && value_type.is(&expected_type))
 }
 
 fn py_string_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<String>> {
@@ -450,7 +449,9 @@ fn parse_unordered_filter_set(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi
         filters.insert(parse_filter_strategy(&item)?);
     }
     if filters.is_empty() {
-        return Err(PyValueError::new_err("filter must not be empty"));
+        return Err(PyTypeError::new_err(
+            "filter must be an ordered sequence; pass sorted(values) explicitly",
+        ));
     }
     warn_unordered_filter_compat(value.py())?;
     Ok(filters)

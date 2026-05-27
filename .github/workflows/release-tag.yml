@@ -1,0 +1,134 @@
+name: release-tag
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["ci"]
+    types: ["completed"]
+    branches: ["main"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  create-release-tag:
+    name: create release tag
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check automated release eligibility
+        id: eligibility
+        shell: bash
+        run: |
+          git fetch --quiet origin main --tags
+          git checkout --quiet origin/main
+          main_sha="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "workflow_run" ] &&
+            [ "$main_sha" != "${{ github.event.workflow_run.head_sha }}" ]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "latest main commit $main_sha differs from ci head ${{ github.event.workflow_run.head_sha }}"
+            exit 0
+          fi
+          subject="$(git log -1 --pretty=%s)"
+          if [ "$subject" != "chore: bump upstream oxipng" ]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "latest main commit is not an automated upstream bump: $subject"
+            exit 0
+          fi
+          before_version="$(
+            git show HEAD^:pyproject.toml |
+              python -c 'import sys,tomllib; print(tomllib.loads(sys.stdin.read())["project"]["version"])'
+          )"
+          version="$(
+            python -c 'import pathlib,tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])'
+          )"
+          if [ "$before_version" = "$version" ]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "project.version did not change"
+            exit 0
+          fi
+          tag="v$version"
+          python scripts/validate_release_tag.py --tag "$tag" --skip-main-check --skip-pypi-check
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "tag already exists: $tag"
+            exit 0
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Wait for CI on main commit
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          for attempt in $(seq 1 60); do
+            conclusion="$(
+              gh run list --workflow ci.yml --commit "$sha" \
+                --json status,conclusion \
+                --jq '.[0] | "\(.status) \(.conclusion)"'
+            )"
+            case "$conclusion" in
+              "completed success") exit 0 ;;
+              "completed failure"|"completed cancelled"|"completed timed_out")
+                echo "ci failed: $conclusion"
+                exit 1
+                ;;
+            esac
+            sleep 30
+          done
+          echo "timed out waiting for ci"
+          exit 1
+      - name: Wait for API matrix on main commit
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          for attempt in $(seq 1 60); do
+            conclusion="$(
+              gh run list --workflow api-matrix.yml --commit "$sha" \
+                --json status,conclusion \
+                --jq '.[0] | "\(.status) \(.conclusion)"'
+            )"
+            case "$conclusion" in
+              "completed success") exit 0 ;;
+              "completed failure"|"completed cancelled"|"completed timed_out")
+                echo "api-matrix failed: $conclusion"
+                exit 1
+                ;;
+            esac
+            sleep 30
+          done
+          echo "timed out waiting for api-matrix"
+          exit 1
+      - name: Check PyPI version does not exist
+        if: steps.eligibility.outputs.eligible == 'true'
+        run: |
+          python scripts/validate_release_tag.py \
+            --tag "${{ steps.eligibility.outputs.tag }}" \
+            --project "oxipng-pybind" \
+            --pypi-url "https://pypi.org" \
+            --skip-main-check
+      - name: Create and push release tag
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          RELEASE_TAG_TOKEN: ${{ secrets.RELEASE_TAG_TOKEN }}
+        run: |
+          tag="${{ steps.eligibility.outputs.tag }}"
+          version="${{ steps.eligibility.outputs.version }}"
+          git config user.name "oxipng-pybind release automation"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release oxipng-pybind $version"
+          git push "https://x-access-token:${RELEASE_TAG_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$tag"

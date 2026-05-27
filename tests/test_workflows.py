@@ -41,6 +41,24 @@ def assert_ordered_steps(steps: list[Step], names: list[str]) -> None:
     assert indexes == sorted(indexes)
 
 
+def assert_release_tag_checkout_uses_ephemeral_credentials(step: Step) -> None:
+    assert step["uses"] == "actions/checkout@v6"
+    assert step["with"] == {
+        "fetch-depth": 0,
+        "persist-credentials": False,
+    }
+    assert "token" not in step["with"]
+    assert "RELEASE_TAG_TOKEN" not in str(step)
+
+
+def assert_release_tag_wait_step(step: Step, workflow: str) -> None:
+    assert step["if"] == "steps.eligibility.outputs.eligible == 'true'"
+    assert step["env"] == {"GH_TOKEN": "${{ github.token }}"}
+    assert f"gh run list --workflow {workflow}" in step["run"]
+    assert '--commit "$sha"' in step["run"]
+    assert '"completed success") exit 0' in step["run"]
+
+
 def workflow_trigger(workflow: Workflow) -> Workflow:
     trigger = workflow.get("on", workflow[True])
     assert isinstance(trigger, dict)
@@ -439,3 +457,75 @@ def test_failed_check_retry_is_single_attempt_and_delayed() -> None:
         "REPOSITORY": "${{ github.event.repository.full_name }}",
     }
     assert rerun["run"] == 'gh run rerun "$RUN_ID" --repo "$REPOSITORY" --failed\n'
+
+
+def test_release_tag_workflow_creates_tags_only_after_main_checks() -> None:
+    """Automated release tags are created only for eligible upstream bump commits."""
+    workflow = load_workflow(".github/workflows/release-tag.yml")
+    trigger = workflow_trigger(workflow)
+    job = workflow["jobs"]["create-release-tag"]
+    steps = job["steps"]
+
+    assert trigger["workflow_run"] == {
+        "workflows": ["ci"],
+        "types": ["completed"],
+        "branches": ["main"],
+    }
+    assert "workflow_dispatch" in trigger
+    assert workflow["permissions"] == {"contents": "read", "actions": "read"}
+    assert job["if"] == (
+        "github.event_name == 'workflow_dispatch' || "
+        "github.event.workflow_run.conclusion == 'success'"
+    )
+    assert job["permissions"] == {"contents": "write", "actions": "read"}
+
+    assert not any(step.get("name") == "Check release tag token" for step in steps)
+    assert_release_tag_checkout_uses_ephemeral_credentials(steps[0])
+
+    eligibility = step_by_name(steps, "Check automated release eligibility")
+    assert "git fetch --quiet origin main --tags" in eligibility["run"]
+    assert "git checkout --quiet origin/main" in eligibility["run"]
+    assert 'main_sha="$(git rev-parse HEAD)"' in eligibility["run"]
+    assert "${{ github.event.workflow_run.head_sha }}" in eligibility["run"]
+    assert (
+        'if [ "${{ github.event_name }}" = "workflow_run" ] &&\n'
+        '  [ "$main_sha" != "${{ github.event.workflow_run.head_sha }}" ]; then'
+    ) in eligibility["run"]
+    assert 'echo "eligible=false" >> "$GITHUB_OUTPUT"' in eligibility["run"]
+    assert 'if [ "$subject" != "chore: bump upstream oxipng" ]; then' in eligibility["run"]
+    assert "git show HEAD^:pyproject.toml" in eligibility["run"]
+    assert 'if [ "$before_version" = "$version" ]; then' in eligibility["run"]
+    assert (
+        'python scripts/validate_release_tag.py --tag "$tag" --skip-main-check --skip-pypi-check'
+    ) in eligibility["run"]
+    assert 'git rev-parse "$tag"' in eligibility["run"]
+    assert 'echo "eligible=true" >> "$GITHUB_OUTPUT"' in eligibility["run"]
+    assert 'echo "version=$version" >> "$GITHUB_OUTPUT"' in eligibility["run"]
+    assert 'echo "tag=$tag" >> "$GITHUB_OUTPUT"' in eligibility["run"]
+
+    assert_release_tag_wait_step(step_by_name(steps, "Wait for CI on main commit"), "ci.yml")
+    assert_release_tag_wait_step(
+        step_by_name(steps, "Wait for API matrix on main commit"),
+        "api-matrix.yml",
+    )
+
+    pypi = step_by_name(steps, "Check PyPI version does not exist")
+    assert "python scripts/validate_release_tag.py" in pypi["run"]
+    assert '--pypi-url "https://pypi.org"' in pypi["run"]
+    assert "oxipng-pybind" in pypi["run"]
+
+    create = step_by_name(steps, "Create and push release tag")
+    assert create["env"] == {"RELEASE_TAG_TOKEN": "${{ secrets.RELEASE_TAG_TOKEN }}"}
+    assert "git tag -a" in create["run"]
+    assert "x-access-token:${RELEASE_TAG_TOKEN}" in create["run"]
+    assert "git push" in create["run"]
+    token_steps = [step for step in steps if "RELEASE_TAG_TOKEN" in str(step)]
+    assert token_steps == [create]
+    assert_ordered_steps(
+        steps,
+        [
+            "Wait for CI on main commit",
+            "Wait for API matrix on main commit",
+            "Create and push release tag",
+        ],
+    )

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import tomllib
 from dataclasses import dataclass
@@ -54,10 +55,19 @@ CargoRuntimePackage = CargoPackageKey | str
 
 def run_stdout(command: list[str], *, cwd: Path = ROOT, check: bool = True) -> str:
     """Run a command and return stdout."""
+    resolved_command = [resolve_executable(command[0]), *command[1:]]
     result = subprocess.run(  # noqa: S603
-        command, cwd=cwd, check=check, capture_output=True, text=True
+        resolved_command, cwd=cwd, check=check, capture_output=True, text=True
     )
-    return result.stdout
+    return result.stdout.strip()
+
+
+def resolve_executable(name: str) -> str:
+    """Resolve an executable path for subprocess calls."""
+    executable = shutil.which(name)
+    if executable is None:
+        raise RuntimeError(f"unable to find executable: {name}")
+    return executable
 
 
 def changed_files(base_ref: str) -> set[str]:
@@ -142,8 +152,8 @@ def changed_workspace_cargo_lock_packages(base_ref: str) -> set[CargoPackageKey]
 def cargo_package_reaches_shipped_graph(package: CargoPackageKey) -> bool:
     """Return whether a Cargo package reaches this crate's normal/build graph."""
     result = subprocess.run(  # noqa: S603
-        [  # noqa: S607
-            "cargo",
+        [
+            resolve_executable("cargo"),
             "tree",
             "--locked",
             "--edges",
@@ -244,15 +254,24 @@ def classify_workspace(base_ref: str) -> Classification:
     )
 
 
-def emit_github_output(name: str, value: str) -> None:
+def emit_github_output(
+    path_or_name: os.PathLike[str] | str, name_or_value: str, value: str | None = None
+) -> None:
     """Append a GitHub Actions output when running in Actions."""
-    if "\n" in name or "\n" in value:
+    if value is None:
+        name = str(path_or_name)
+        output_value = name_or_value
+        output_path = os.environ.get("GITHUB_OUTPUT")
+    else:
+        name = name_or_value
+        output_value = value
+        output_path = os.fspath(path_or_name)
+    if "\n" in name or "\r" in name or "\n" in output_value or "\r" in output_value:
         raise ValueError("GitHub output names and values must not contain newlines")
-    output_path = os.environ.get("GITHUB_OUTPUT")
     if output_path is None:
         return
     with Path(output_path).open("a", encoding="utf-8") as output:
-        print(f"{name}={value}", file=output)
+        print(f"{name}={output_value}", file=output)
 
 
 def main() -> int:

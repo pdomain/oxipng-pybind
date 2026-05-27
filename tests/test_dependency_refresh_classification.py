@@ -1,5 +1,6 @@
 """Tests for dependency refresh release classification."""
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -167,12 +168,16 @@ def test_inverse_cargo_tree_uses_precise_package_spec(
         assert text is True
         return Result()
 
+    def fake_which(name: str) -> str:
+        return f"/fake/bin/{name}"
+
+    monkeypatch.setattr(shutil, "which", fake_which)
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     assert classify_dependency_refresh.cargo_package_reaches_shipped_graph(package) is True
     assert calls == [
         [
-            "cargo",
+            "/fake/bin/cargo",
             "tree",
             "--locked",
             "--edges",
@@ -203,3 +208,80 @@ def test_pre_commit_and_formatting_only_refreshes_are_no_release_needed(
     assert classification.release_needed is False
     assert classification.label == "no-release-needed"
     assert "No published runtime dependency changes" in classification.reason
+
+
+def test_run_stdout_uses_resolved_executable_and_strips_stdout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Command helpers resolve executable paths before invoking subprocesses."""
+
+    class Result:
+        stdout: str = "clean\n"
+
+    calls: list[list[str]] = []
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        check: bool,
+        capture_output: bool,
+        text: bool,
+    ) -> Result:
+        calls.append(command)
+        assert cwd == classify_dependency_refresh.ROOT
+        assert check is True
+        assert capture_output is True
+        assert text is True
+        return Result()
+
+    def fake_which(name: str) -> str:
+        return f"/fake/bin/{name}"
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert classify_dependency_refresh.run_stdout(["git", "status"]) == "clean"
+    assert calls == [["/fake/bin/git", "status"]]
+
+
+def test_run_stdout_raises_when_executable_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing subprocess executables fail with a clear classifier error."""
+
+    def fake_which(_name: str) -> None:
+        return None
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+
+    with pytest.raises(RuntimeError, match="unable to find executable"):
+        classify_dependency_refresh.run_stdout(["git", "status"])
+
+
+@pytest.mark.parametrize("bad_name", ["bad\nname", "bad\rname"])
+def test_emit_github_output_rejects_newline_names(
+    tmp_path: Path,
+    bad_name: str,
+) -> None:
+    """GitHub output names must not be able to inject additional output lines."""
+    output_path = tmp_path / "github-output.txt"
+
+    with pytest.raises(ValueError, match="must not contain newlines"):
+        classify_dependency_refresh.emit_github_output(output_path, bad_name, "value")
+
+    assert not output_path.exists()
+
+
+@pytest.mark.parametrize("bad_value", ["bad\nvalue", "bad\rvalue"])
+def test_emit_github_output_rejects_newline_values(
+    tmp_path: Path,
+    bad_value: str,
+) -> None:
+    """GitHub output values must not be able to inject additional output lines."""
+    output_path = tmp_path / "github-output.txt"
+
+    with pytest.raises(ValueError, match="must not contain newlines"):
+        classify_dependency_refresh.emit_github_output(output_path, "name", bad_value)
+
+    assert not output_path.exists()

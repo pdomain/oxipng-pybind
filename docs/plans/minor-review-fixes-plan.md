@@ -60,7 +60,7 @@ After all workers are merged into the isolated branch, run Task 6 as the final i
 - Test: `tests/test_api.py`
 - Test: `tests/typing_filter_options.py`
 
-- [ ] **Step 1: Create the API behavior tests**
+- [x] **Step 1: Create the API behavior tests**
 
 Add focused tests to `tests/test_api.py`. Reuse existing PNG fixtures and helper functions already present in that file.
 
@@ -186,7 +186,7 @@ def test_fake_compat_color_type_without_marker_is_rejected() -> None:
         )
 ```
 
-- [ ] **Step 2: Run the new API tests and confirm failure**
+- [x] **Step 2: Run the new API tests and confirm failure**
 
 Run:
 
@@ -196,7 +196,7 @@ uv run pytest tests/test_api.py -q
 
 Expected: the new tests fail on current behavior. Failures should correspond to validation order, error type mapping, set handling, warning coverage, immutable compatibility descriptors, or marker enforcement.
 
-- [ ] **Step 3: Implement Rust-side validation changes**
+- [x] **Step 3: Implement Rust-side validation changes**
 
 In `src/lib.rs`, change option parsing so `optimize_from_memory()` validates options before extracting the input buffer where practical. Keep stable API semantics unchanged except for earlier error detection.
 
@@ -265,7 +265,7 @@ let chunk_data = data.extract::<Vec<u8>>()?;
 self.inner.add_png_chunk(chunk_name, chunk_data);
 ```
 
-- [ ] **Step 4: Implement compatibility marker and immutable palette changes**
+- [x] **Step 4: Implement compatibility marker and immutable palette changes**
 
 In `oxipng/_pyoxipng_compat.py`, add a private marker field to compatibility dataclasses and convert palettes to tuple snapshots:
 
@@ -297,7 +297,7 @@ fn is_oxipng_compat_type(value: &Bound<'_, PyAny>) -> PyResult<bool> {
 
 Use the project’s existing attribute access and PyO3 style if the exact helper above needs adjustment.
 
-- [ ] **Step 5: Implement filter collection and warning behavior**
+- [x] **Step 5: Implement filter collection and warning behavior**
 
 Keep stable API filter inputs ordered. Accept `Sequence[RowFilter]` and tuples/lists where already supported. Reject unordered `set` and `frozenset` in stable paths with `TypeError` mentioning ordered input.
 
@@ -309,7 +309,7 @@ In `oxipng/__init__.pyi`, do not advertise `set` or `frozenset` for stable filte
 FilterInput: TypeAlias = RowFilter | FilterStrategy | Sequence[RowFilter]
 ```
 
-- [ ] **Step 6: Implement deprecated pyoxipng enum lookup warnings**
+- [x] **Step 6: Implement deprecated pyoxipng enum lookup warnings**
 
 In the compatibility enum layer, ensure these paths emit `DeprecationWarning` while stable enum access does not warn:
 
@@ -321,7 +321,7 @@ pyoxipng.RowFilter("none")
 
 If metaclass constraints make one lookup path impossible to intercept cleanly, document that limitation in the test with an explicit `pytest.xfail()` and a comment naming the CPython enum behavior that blocks it.
 
-- [ ] **Step 7: Add docs-only closure for direct backup and ICC profile limitations**
+- [x] **Step 7: Add docs-only closure for direct backup and ICC profile limitations**
 
 In `docs/usage/file-optimization.md`, add a concise note under backup behavior:
 
@@ -335,7 +335,7 @@ In `docs/usage/raw-image.md`, document ICC profile behavior only after confirmin
 `RawImage.add_icc_profile()` forwards the profile to oxipng. The upstream API does not return a separate success status for profile attachment, so callers should treat invalid profile rejection as an exception and successful calls as best-effort attachment.
 ```
 
-- [ ] **Step 8: Run API and typing verification**
+- [x] **Step 8: Run API and typing verification**
 
 Run:
 
@@ -346,7 +346,7 @@ uv run mypy tests/typing_filter_options.py
 
 Expected: both commands pass.
 
-- [ ] **Step 9: Commit Task 1**
+- [x] **Step 9: Commit Task 1**
 
 ```bash
 git add src/lib.rs oxipng/_pyoxipng_compat.py oxipng/__init__.py oxipng/__init__.pyi tests/test_api.py tests/typing_filter_options.py docs/usage/file-optimization.md docs/usage/raw-image.md
@@ -362,7 +362,7 @@ git commit -m "fix: harden API validation and compatibility warnings"
 - Modify: `scripts/classify_dependency_refresh.py`
 - Test: `tests/test_dependency_refresh_classification.py`
 
-- [ ] **Step 1: Add executable resolution and GitHub output tests**
+- [x] **Step 1: Add executable resolution and GitHub output tests**
 
 Add tests to `tests/test_dependency_refresh_classification.py`:
 
@@ -405,7 +405,7 @@ def test_emit_github_output_rejects_newline_in_value(tmp_path: Path, value: str)
     assert not output.exists()
 ```
 
-- [ ] **Step 2: Run classifier tests and confirm failure**
+- [x] **Step 2: Run classifier tests and confirm failure**
 
 Run:
 
@@ -415,7 +415,7 @@ uv run pytest tests/test_dependency_refresh_classification.py -q
 
 Expected: new tests fail because commands are not resolved through `shutil.which()` and newline guards are absent.
 
-- [ ] **Step 3: Implement executable resolution and output guards**
+- [x] **Step 3: Implement executable resolution and output guards**
 
 In `scripts/classify_dependency_refresh.py`, import `shutil` and add:
 
@@ -445,7 +445,7 @@ def emit_github_output(path: Path, name: str, value: str) -> None:
         handle.write(f"{name}={value}\n")
 ```
 
-- [ ] **Step 4: Run classifier verification**
+- [x] **Step 4: Run classifier verification**
 
 Run:
 
@@ -455,7 +455,7 @@ uv run pytest tests/test_dependency_refresh_classification.py -q
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit Task 2**
+- [x] **Step 5: Commit Task 2**
 
 ```bash
 git add scripts/classify_dependency_refresh.py tests/test_dependency_refresh_classification.py
@@ -472,7 +472,7 @@ git commit -m "fix: harden dependency refresh classifier"
 - Modify: `tests/test_scan_upstream_surface.py`
 - Modify if required by local toolchain: `.github/workflows/upstream-bump.yml`
 
-- [ ] **Step 1: Add rustdoc JSON fixture tests**
+- [x] **Step 1: Add rustdoc JSON fixture tests**
 
 Replace parser-edge tests that rely on Rust source brace scanning with rustdoc JSON fixture tests in `tests/test_scan_upstream_surface.py`:
 
@@ -536,7 +536,7 @@ def test_rustdoc_json_command_uses_rustdoc_json_flags(tmp_path: Path) -> None:
     assert "json" in command
 ```
 
-- [ ] **Step 2: Run scanner tests and confirm failure**
+- [x] **Step 2: Run scanner tests and confirm failure**
 
 Run:
 
@@ -546,7 +546,7 @@ uv run pytest tests/test_scan_upstream_surface.py -q
 
 Expected: tests fail because `public_items_from_rustdoc_json()` and `rustdoc_json_command()` do not exist.
 
-- [ ] **Step 3: Implement rustdoc JSON collection**
+- [x] **Step 3: Implement rustdoc JSON collection**
 
 In `scripts/scan_upstream_surface.py`, add a command builder and JSON runner:
 
@@ -580,7 +580,7 @@ def load_rustdoc_json(crate_dir: Path) -> dict[str, object]:
 
 If the upstream checkout path or crate name is already available elsewhere in the script, use that existing path source instead of `crate_dir.name`.
 
-- [ ] **Step 4: Replace source brace scanning with rustdoc JSON item extraction**
+- [x] **Step 4: Replace source brace scanning with rustdoc JSON item extraction**
 
 Add a rustdoc JSON extraction function that uses public item metadata, not source text:
 
@@ -619,7 +619,7 @@ def public_items_from_rustdoc_json(document: Mapping[str, object]) -> UpstreamSu
 
 Preserve the script’s existing manifest comparison and report output. Only replace how upstream public items are discovered.
 
-- [ ] **Step 5: Add workflow support only if the pinned toolchain lacks rustdoc JSON**
+- [x] **Step 5: Add workflow support only if the pinned toolchain lacks rustdoc JSON**
 
 Run:
 
@@ -636,7 +636,7 @@ If nightly is unavailable in CI setup, modify `.github/workflows/upstream-bump.y
 
 Do not add a Python parser dependency and do not expand a custom Rust parser.
 
-- [ ] **Step 6: Run scanner verification**
+- [x] **Step 6: Run scanner verification**
 
 Run:
 
@@ -647,7 +647,7 @@ uv run python scripts/scan_upstream_surface.py --help
 
 Expected: scanner tests pass and CLI help exits successfully.
 
-- [ ] **Step 7: Commit Task 3**
+- [x] **Step 7: Commit Task 3**
 
 ```bash
 git add scripts/scan_upstream_surface.py tests/test_scan_upstream_surface.py .github/workflows/upstream-bump.yml
@@ -665,7 +665,7 @@ If `.github/workflows/upstream-bump.yml` was not changed, omit it from `git add`
 - Modify: `scripts/ai_filter_log.py`
 - Test: `tests/test_scripts.py`
 
-- [ ] **Step 1: Add large-log bounded memory test**
+- [x] **Step 1: Add large-log bounded memory test**
 
 In `tests/test_scripts.py`, add:
 
@@ -689,7 +689,7 @@ def test_ai_filter_log_streams_large_log(tmp_path: Path) -> None:
     assert "info line 0" not in result.stdout
 ```
 
-- [ ] **Step 2: Run the AI log test and confirm failure or current over-read**
+- [x] **Step 2: Run the AI log test and confirm failure or current over-read**
 
 Run:
 
@@ -699,7 +699,7 @@ uv run pytest tests/test_scripts.py -q -k ai_filter_log
 
 Expected: either the new test fails because output contains too much context, or existing code inspection shows the script reads the entire file into memory.
 
-- [ ] **Step 3: Implement bounded streaming**
+- [x] **Step 3: Implement bounded streaming**
 
 In `scripts/ai_filter_log.py`, replace full-file reads with line streaming and a bounded deque:
 
@@ -724,7 +724,7 @@ def summarize_log(path: Path, *, context_lines: int = 200) -> str:
 
 Wire the CLI to call `summarize_log()` and keep current command-line arguments and exit behavior unchanged.
 
-- [ ] **Step 4: Run AI log verification**
+- [x] **Step 4: Run AI log verification**
 
 Run:
 
@@ -734,7 +734,7 @@ uv run pytest tests/test_scripts.py -q -k ai_filter_log
 
 Expected: all AI log tests pass.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 ```bash
 git add scripts/ai_filter_log.py tests/test_scripts.py
@@ -750,7 +750,7 @@ git commit -m "fix: stream AI log filtering"
 - Modify: `Makefile`
 - Test: `tests/test_makefile.py`
 
-- [ ] **Step 1: Add Makefile tests for pinned cargo-deny setup**
+- [x] **Step 1: Add Makefile tests for pinned cargo-deny setup**
 
 In `tests/test_makefile.py`, update the existing cargo-deny assertions:
 
@@ -763,7 +763,7 @@ def test_makefile_pins_cargo_deny_version(makefile_text: str) -> None:
 
 If the file uses direct `Path.read_text()` instead of a fixture, adapt the assertion body to the existing local style.
 
-- [ ] **Step 2: Run Makefile tests and confirm failure**
+- [x] **Step 2: Run Makefile tests and confirm failure**
 
 Run:
 
@@ -773,7 +773,7 @@ uv run pytest tests/test_makefile.py -q
 
 Expected: the new assertion fails because the Makefile installs unpinned `cargo-deny`.
 
-- [ ] **Step 3: Implement pinned cargo-deny bootstrap**
+- [x] **Step 3: Implement pinned cargo-deny bootstrap**
 
 In `Makefile`, add a version variable near the other tool version settings:
 
@@ -791,7 +791,7 @@ fi
 
 Do not add version checks to the normal audit target; keep the version enforcement in setup/bootstrap.
 
-- [ ] **Step 4: Run Makefile verification**
+- [x] **Step 4: Run Makefile verification**
 
 Run:
 
@@ -801,7 +801,7 @@ uv run pytest tests/test_makefile.py -q
 
 Expected: Makefile tests pass.
 
-- [ ] **Step 5: Commit Task 5**
+- [x] **Step 5: Commit Task 5**
 
 ```bash
 git add Makefile tests/test_makefile.py
@@ -848,12 +848,12 @@ make ci AI=1
 
 Expected: pass.
 
-- [ ] **Step 4: Update the full review report**
+- [x] **Step 4: Update the full review report**
 
 In `docs/plans/full-code-review-report.md`, move the minor findings out of the open list and record their disposition:
 
 ```markdown
-## Closed Minor Findings
+### Minor
 
 - Minor 1: Fixed by validating options before memory input extraction where practical.
 - Minor 2: Fixed by mapping missing backup inputs to `FileNotFoundError`.
@@ -861,7 +861,7 @@ In `docs/plans/full-code-review-report.md`, move the minor findings out of the o
 - Minor 4: Fixed by reporting `ValueError` for integer range failures and `TypeError` for non-integer values.
 - Minor 5: Fixed by rejecting bool values after enum `.value` extraction.
 - Minor 6: Fixed by validating PNG chunk names before payload extraction.
-- Minor 7: Closed with documented ICC profile behavior based on upstream status reporting.
+- Minor 7: Closed as a documented limitation because upstream does not expose a separate runtime success status.
 - Minor 8: Fixed with the chunk-name validation simplification from Minor 6.
 - Minor 9: Fixed by rejecting unordered stable filter collections while preserving pyoxipng set compatibility with warnings.
 - Minor 10: Fixed or explicitly documented for pyoxipng deprecated enum lookup warnings.
@@ -876,11 +876,11 @@ In `docs/plans/full-code-review-report.md`, move the minor findings out of the o
 - Minor 19: No code change. The bounded one-time CI retry remains acceptable because it does not checkout secrets or expand permissions.
 ```
 
-- [ ] **Step 5: Mark this plan complete**
+- [x] **Step 5: Mark this plan complete**
 
 Change this plan’s task checkboxes from incomplete to complete only after the corresponding commits and verification have happened. Leave any skipped optional workflow file unchanged and note why in the final execution summary.
 
-- [ ] **Step 6: Commit the integration docs**
+- [x] **Step 6: Commit the integration docs**
 
 ```bash
 git add docs/plans/full-code-review-report.md docs/plans/minor-review-fixes-plan.md
@@ -900,10 +900,11 @@ Expected: `main` fast-forwards. Do not squash; preserve the task commits for rev
 
 ## Self-Review Checklist
 
-- [ ] All 19 minor findings have a fix or explicit no-code disposition.
-- [ ] Stable API filter contracts remain ordered and do not advertise unordered collections.
-- [ ] pyoxipng compatibility preserves accepted set inputs where pyoxipng accepted them and emits an additional warning.
-- [ ] Direct backup file behavior preserves upstream Rust behavior.
-- [ ] The upstream scanner uses rustdoc JSON, not a custom Rust source parser.
-- [ ] Pre-commit runs before full CI so autoformatting is included before CI.
+- [x] All 19 minor findings have a fix or explicit no-code disposition.
+- [x] Stable API filter contracts remain ordered and do not advertise unordered collections.
+- [x] pyoxipng compatibility preserves accepted set inputs where pyoxipng accepted them and emits an additional warning.
+- [x] Direct backup file behavior preserves upstream Rust behavior.
+- [x] The upstream scanner uses rustdoc JSON, not a custom Rust source parser.
+- [ ] Full pre-commit and final CI remain pending for merge prep; focused
+  markdownlint verification ran for this docs commit.
 - [ ] `make ci AI=1` passes before merging back to `main`.

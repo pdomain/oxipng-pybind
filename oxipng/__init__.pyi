@@ -74,7 +74,7 @@ class RowFilter(Enum):
 class _CompatColorType:
     kind: str
     bit_depth: int
-    palette: list[PaletteEntry] | None
+    palette: tuple[tuple[int, ...], ...] | None
     transparent: int | tuple[int, int, int] | None
 
 class _CompatStripChunks:
@@ -162,7 +162,6 @@ class RawImage:
         filter: FilterOption
         | list[_ScalarFilterOption]
         | tuple[_ScalarFilterOption, ...]
-        | set[_ScalarFilterOption]
         | None = None,
         fix_errors: bool = False,
         force: bool = False,
@@ -190,7 +189,6 @@ def optimize(
     filter: FilterOption
     | list[_ScalarFilterOption]
     | tuple[_ScalarFilterOption, ...]
-    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
@@ -219,7 +217,6 @@ def analyze(
     filter: FilterOption
     | list[_ScalarFilterOption]
     | tuple[_ScalarFilterOption, ...]
-    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,
@@ -246,7 +243,6 @@ def optimize_from_memory(
     filter: FilterOption
     | list[_ScalarFilterOption]
     | tuple[_ScalarFilterOption, ...]
-    | set[_ScalarFilterOption]
     | None = None,
     fix_errors: bool = False,
     force: bool = False,

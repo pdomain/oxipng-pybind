@@ -142,21 +142,20 @@ fn parse_max_decompressed_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usiz
 
     if value.is_instance_of::<PyBool>() {
         return Err(PyTypeError::new_err(
-            "max_decompressed_size must be a non-negative integer or None",
+            "max_decompressed_size must be an integer, not bool",
         ));
     }
 
-    let parsed: i128 = value.extract().map_err(|_| {
-        PyTypeError::new_err("max_decompressed_size must be a non-negative integer or None")
+    let index_value = value
+        .call_method0("__index__")
+        .map_err(|_| PyTypeError::new_err("max_decompressed_size must be an integer"))?;
+
+    let parsed: u64 = index_value.extract().map_err(|_| {
+        PyValueError::new_err("max_decompressed_size must be between 0 and 18446744073709551615")
     })?;
-    if parsed < 0 {
-        return Err(PyValueError::new_err(
-            "max_decompressed_size must be a non-negative integer or None",
-        ));
-    }
 
     usize::try_from(parsed).map(Some).map_err(|_| {
-        PyValueError::new_err("max_decompressed_size must be a non-negative integer or None")
+        PyValueError::new_err("max_decompressed_size must be between 0 and 18446744073709551615")
     })
 }
 
@@ -171,13 +170,30 @@ fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {
     )
 }
 
+fn warn_unordered_filter_compat(py: Python<'_>) -> PyResult<()> {
+    PyErr::warn(
+        py,
+        &py.get_type::<PyDeprecationWarning>(),
+        c_str!(
+            "set and other unordered filter collections are accepted only for pyoxipng compatibility; use an ordered list or tuple with oxipng-pybind's stable API."
+        ),
+        2,
+    )
+}
+
 fn is_oxipng_compat_type(value: &Bound<'_, PyAny>, qualname: &str) -> PyResult<bool> {
     let value_type = value.get_type();
     let module = value_type.module()?.to_str()?.to_owned();
     let actual_qualname = value_type.qualname()?.to_str()?.to_owned();
     let helper_qualname = qualname.trim_start_matches('_');
-    Ok((module == "oxipng" && actual_qualname == qualname)
-        || (module == "oxipng._pyoxipng_compat" && actual_qualname == helper_qualname))
+    let has_marker = match value.getattr("_oxipng_pybind_compat_marker") {
+        Ok(marker) => marker.is_truthy()?,
+        Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => false,
+        Err(error) => return Err(error),
+    };
+    Ok(has_marker
+        && ((module == "oxipng" && actual_qualname == qualname)
+            || (module == "oxipng._pyoxipng_compat" && actual_qualname == helper_qualname)))
 }
 
 fn py_string_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<String>> {
@@ -197,6 +213,7 @@ fn py_int_attr(value: &Bound<'_, PyAny>, name: &str) -> PyResult<Option<i64>> {
 }
 
 fn parse_level(value: &Bound<'_, PyAny>) -> PyResult<u8> {
+    reject_bool(value, "level")?;
     let parsed: i64 = value
         .extract()
         .map_err(|_| PyValueError::new_err("level must be an integer from 0 to 6"))?;
@@ -402,18 +419,41 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
     }
 
     if let Ok(set) = value.downcast::<PySet>() {
-        if set.is_empty() {
-            return Err(PyValueError::new_err("filter must not be empty"));
-        }
-        for item in set.iter() {
-            filters.insert(parse_filter_strategy(&item)?);
-        }
-        return Ok(filters);
+        return parse_unordered_filter_set(set.as_any());
+    }
+
+    if let Ok(set) = value.downcast::<PyFrozenSet>() {
+        return parse_unordered_filter_set(set.as_any());
     }
 
     Err(PyValueError::new_err(
-        "filter must be a string, enum value, or non-empty sequence",
+        "filter must be a string, enum value, or non-empty ordered sequence",
     ))
+}
+
+fn is_pyoxipng_row_filter(value: &Bound<'_, PyAny>) -> PyResult<bool> {
+    let value_type = value.get_type();
+    let module = value_type.module()?.to_str()?.to_owned();
+    let qualname = value_type.qualname()?.to_str()?.to_owned();
+    Ok(module == "oxipng" && qualname == "RowFilter")
+}
+
+fn parse_unordered_filter_set(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrategy>> {
+    let mut filters = IndexSet::new();
+    for item in value.try_iter()? {
+        let item = item?;
+        if !is_pyoxipng_row_filter(&item)? {
+            return Err(PyTypeError::new_err(
+                "filter must be an ordered sequence; pass sorted(values) explicitly",
+            ));
+        }
+        filters.insert(parse_filter_strategy(&item)?);
+    }
+    if filters.is_empty() {
+        return Err(PyValueError::new_err("filter must not be empty"));
+    }
+    warn_unordered_filter_compat(value.py())?;
+    Ok(filters)
 }
 
 fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResult<ParsedOptions> {
@@ -641,6 +681,8 @@ fn optimize(
             .map_err(|error| {
                 if error.kind() == io::ErrorKind::AlreadyExists {
                     PyFileExistsError::new_err(backup_path_for(&input).display().to_string())
+                } else if error.kind() == io::ErrorKind::NotFound {
+                    PyFileNotFoundError::new_err(error.to_string())
                 } else {
                     PyOSError::new_err(error)
                 }
@@ -684,15 +726,18 @@ fn analyze(
 }
 
 fn parse_bit_depth(value: &Bound<'_, PyAny>) -> PyResult<oxi::BitDepth> {
-    let raw_value = match value.getattr("value") {
-        Ok(enum_value) => enum_value.extract::<u8>(),
+    let candidate = match value.getattr("value") {
+        Ok(enum_value) => enum_value,
         Err(error) if error.is_instance_of::<PyAttributeError>(value.py()) => {
             reject_bool(value, "bit_depth")?;
-            value.extract::<u8>()
+            value.clone()
         }
         Err(error) => return Err(error),
-    }
-    .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
+    };
+    reject_bool(&candidate, "bit_depth")?;
+    let raw_value = candidate
+        .extract::<u8>()
+        .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))?;
 
     oxi::BitDepth::try_from(raw_value)
         .map_err(|_| PyValueError::new_err("bit_depth must be one of: 1, 2, 4, 8, 16"))
@@ -1138,11 +1183,11 @@ impl PyRawImage {
     /// Add an auxiliary PNG chunk.
     fn add_png_chunk(&mut self, name: &Bound<'_, PyAny>, data: &Bound<'_, PyAny>) -> PyResult<()> {
         let name = bytes_like_to_vec(name)?;
-        let data = bytes_like_to_vec(data)?;
         let name: [u8; 4] = name
             .try_into()
             .map_err(|_| PyValueError::new_err("chunk name must be exactly 4 bytes"))?;
         let name = validate_png_chunk_name(name)?;
+        let data = bytes_like_to_vec(data)?;
         self.inner.add_png_chunk(name, data);
         Ok(())
     }
@@ -1181,8 +1226,8 @@ fn optimize_from_memory(
     data: &Bound<'_, PyAny>,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Vec<u8>> {
-    let data = bytes_like_to_vec(data)?;
     let parsed = parse_options(kwargs, ParseMode::Memory)?;
+    let data = bytes_like_to_vec(data)?;
 
     py.allow_threads(move || oxi::optimize_from_memory(&data, &parsed.options))
         .map_err(map_png_error)

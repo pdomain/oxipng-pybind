@@ -144,10 +144,11 @@ class ColorType(Enum):
             if transparent is None:
                 raise ValueError("indexed color_type requires a palette")
             palette = _compat.ordered_palette_sequence(transparent, "indexed palette")
+            palette_snapshot = tuple(tuple(cast("Sequence[int]", color)) for color in palette)
             return _compat.CompatColorType(
                 "indexed",
                 raw_bit_depth,
-                palette=cast("list[Sequence[int]]", list(palette)),
+                palette=palette_snapshot,
             )
         if self in {ColorType.rgba, ColorType.grayscale_alpha}:
             if transparent is not None:

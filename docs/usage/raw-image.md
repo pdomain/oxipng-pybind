@@ -104,6 +104,11 @@ raw.add_icc_profile(icc_profile_bytes)
 png_bytes = raw.create_optimized_png()
 ```
 
+`RawImage.add_icc_profile()` forwards the profile to oxipng. The upstream API
+does not return a separate success status for profile attachment, so callers
+should treat invalid profile rejection as an exception and successful calls as
+best-effort attachment.
+
 ## Errors
 
 Invalid bit depths, color types, palette values, transparency values, and chunk

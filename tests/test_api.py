@@ -62,6 +62,18 @@ class BytesMethodOnly:
         return self.data
 
 
+class RaisesOnBytes:
+    def __bytes__(self) -> bytes:
+        raise AssertionError("buffer conversion should not run before validation")
+
+
+class FakeEnumValue:
+    value: object
+
+    def __init__(self, value: object) -> None:
+        self.value = value
+
+
 def assert_readable_png_path(path: Path) -> None:
     """Assert that Pillow can read the optimized PNG."""
     with Image.open(path) as image:
@@ -440,6 +452,16 @@ def test_predefined_filter_rejects_unordered_collections(value: object) -> None:
         FilterStrategy.predefined(cast("Any", value))
 
 
+def test_stable_predefined_filters_reject_unordered_collections(png_bytes: bytes) -> None:
+    with pytest.raises(TypeError, match="ordered"):
+        FilterStrategy.predefined(cast("Any", {FilterStrategy.none, FilterStrategy.sub}))
+
+    with pytest.raises(TypeError, match="ordered"):
+        cast("Any", optimize_from_memory)(
+            png_bytes, filter={FilterStrategy.none, FilterStrategy.sub}
+        )
+
+
 @pytest.mark.parametrize("value", ["minsum", FilterStrategy.entropy, "unknown"])
 def test_predefined_filter_rejects_non_basic_filters(value: object) -> None:
     with pytest.raises(ValueError, match="predefined filter"):
@@ -459,7 +481,20 @@ def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         sub = RowFilter.sub
 
-    output = optimize_from_memory(png_bytes, filter={none, sub})
+    with pytest.warns(DeprecationWarning, match="unordered"):
+        output = cast("Any", optimize_from_memory)(png_bytes, filter={none, sub})
+
+    assert_readable_png_bytes(output)
+
+
+def test_pyoxipng_filter_set_is_accepted_with_compat_warning(png_bytes: bytes) -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        none = RowFilter.none
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        sub = RowFilter.sub
+
+    with pytest.warns(DeprecationWarning, match="unordered"):
+        output = cast("Any", optimize_from_memory)(png_bytes, filter={none, sub})
 
     assert_readable_png_bytes(output)
 
@@ -652,7 +687,7 @@ def test_raw_image_timeout_without_warning() -> None:
 
 @pytest.mark.parametrize(
     ("value", "error_type"),
-    [(True, TypeError), (-1, ValueError), ("bad", TypeError)],
+    [(True, TypeError), (1.5, TypeError), ("100", TypeError), (-1, ValueError)],
 )
 def test_max_decompressed_size_rejects_invalid_values(
     png_bytes: bytes,
@@ -661,6 +696,18 @@ def test_max_decompressed_size_rejects_invalid_values(
 ) -> None:
     with pytest.raises(error_type, match="max_decompressed_size"):
         cast("Any", optimize_from_memory)(png_bytes, max_decompressed_size=value)
+
+
+@pytest.mark.parametrize("value", [0, 10_000_000, 2**64 - 1])
+def test_max_decompressed_size_accepts_u64_range(value: int) -> None:
+    with pytest.raises(PngError):
+        optimize_from_memory(b"not a png", max_decompressed_size=value)
+
+
+@pytest.mark.parametrize("value", [2**64, 10**100])
+def test_max_decompressed_size_rejects_out_of_range_ints(value: int) -> None:
+    with pytest.raises(ValueError, match="max_decompressed_size"):
+        optimize_from_memory(b"not a png", max_decompressed_size=value)
 
 
 @pytest.mark.parametrize("value", [float("inf"), 1e300])
@@ -777,6 +824,11 @@ def test_backup_refuses_to_overwrite_existing_backup(png_path: Path) -> None:
         optimize(png_path, backup=True)
 
 
+def test_backup_missing_input_raises_file_not_found(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError):
+        optimize(tmp_path / "missing.png", backup=True)
+
+
 @pytest.mark.skipif(not hasattr(__import__("os"), "symlink"), reason="symlink unavailable")
 def test_backup_refuses_existing_symlink_backup(png_path: Path, tmp_path: Path) -> None:
     target = tmp_path / "target.txt"
@@ -854,6 +906,11 @@ def test_optimize_from_memory_rejects_generic_buffers(png_bytes: bytes) -> None:
 def test_optimize_from_memory_rejects_tobytes_only_objects(png_bytes: bytes) -> None:
     with pytest.raises(TypeError, match="bytes, bytearray, or memoryview"):
         cast("Any", optimize_from_memory)(BytesMethodOnly(png_bytes))
+
+
+def test_optimize_from_memory_validates_options_before_buffer_copy() -> None:
+    with pytest.raises(TypeError, match="level"):
+        cast("Any", optimize_from_memory)(RaisesOnBytes(), level=True)
 
 
 @pytest.mark.parametrize("option", ["backup", "preserve_attrs"])
@@ -1009,6 +1066,38 @@ def test_pyoxipng_indexed_palette_accepts_ordered_sequences() -> None:
         raw = RawImage(bytes([0, 1]), 2, 1, color_type=color_type)
 
     assert_readable_png_bytes(raw.create_optimized_png())
+
+
+def test_compat_color_type_palette_is_immutable_snapshot() -> None:
+    palette = [(255, 0, 0), [0, 0, 255, 128]]
+
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        color_type = ColorType.indexed(palette)
+
+    palette.append((0, 255, 0))
+    cast("Any", palette[1]).append(64)
+
+    assert color_type.palette == ((255, 0, 0), (0, 0, 255, 128))
+
+
+def test_fake_compat_color_type_without_marker_is_rejected() -> None:
+    fake_compat_color_type = type(
+        "CompatColorType",
+        (),
+        {
+            "__module__": "oxipng._pyoxipng_compat",
+            "kind": "rgb",
+            "bit_depth": 8,
+            "palette": None,
+            "transparent": None,
+        },
+    )
+
+    with (
+        pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING),
+        pytest.raises(TypeError, match="color_type"),
+    ):
+        cast("Any", RawImage)(bytes([255, 0, 0]), 1, 1, color_type=fake_compat_color_type())
 
 
 @pytest.mark.parametrize(
@@ -1193,6 +1282,11 @@ def test_raw_image_rejects_bool_numeric_shape_values(
         cast("Any", RawImage)(**arguments)
 
 
+def test_numeric_enum_value_rejects_bool_after_value_extraction() -> None:
+    with pytest.raises(TypeError, match="bit_depth"):
+        cast("Any", RawImage)(1, 1, ColorType.rgb, FakeEnumValue(True), bytes([255, 0, 0]))
+
+
 def test_raw_image_rejects_bool_palette_samples() -> None:
     palette = [(True, 0, 0)]
 
@@ -1285,3 +1379,21 @@ def test_enum_value_property_errors_are_propagated(png_bytes: bytes) -> None:
 def test_bit_depth_value_property_errors_are_propagated() -> None:
     with pytest.raises(RuntimeError, match="value property exploded"):
         cast("Any", RawImage)(1, 1, ColorType.rgb, ExplodingValue(), bytes([255, 0, 0]))
+
+
+def test_add_png_chunk_validates_name_before_data_copy() -> None:
+    raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+
+    with pytest.raises(ValueError, match="chunk name"):
+        cast("Any", raw.add_png_chunk)(b"bad", RaisesOnBytes())
+
+
+def test_deprecated_pyoxipng_row_filter_lookups_warn() -> None:
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        assert RowFilter.none.value == "none"
+
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        assert RowFilter["none"].value == "none"
+
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        assert RowFilter("none").value == "none"

@@ -46,6 +46,10 @@ Use `backup=True` for in-place optimization when the original file should be
 copied first. The backup path is the input path plus `.bak`. Existing backup
 files are never overwritten.
 
+Direct backup writes follow oxipng's file behavior. If the process is
+interrupted while a `.bak` file is being written, the partially written backup
+file may remain and should be removed before retrying.
+
 ```python
 from oxipng import optimize
 

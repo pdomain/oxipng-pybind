@@ -1,12 +1,13 @@
 # oxipng-pybind
 
-`oxipng-pybind` is a Python wrapper for the Rust `oxipng` PNG optimizer.
-It optimizes PNG files, PNG bytes, and raw pixel data through the `oxipng`
-Python module.
+`oxipng-pybind` optimizes PNG files and bytes from Python.
+
+It wraps Rust `oxipng` and imports as `oxipng`. It is built to replace
+`pyoxipng` while adding a stable API for new code.
 
 ## Install
 
-The distribution name is `oxipng-pybind`. The import module is `oxipng`.
+The package name is `oxipng-pybind`. The import module is `oxipng`.
 
 Install the supported PyPI wheel on Python 3.11 or newer:
 
@@ -20,67 +21,73 @@ For unsupported platforms, build a local wheel from source:
 make wheel
 ```
 
-## Basic API
+Published wheels use the `cp311-abi3` tag. One wheel per platform supports
+CPython 3.11 and newer, including 3.12, 3.13, and 3.14.
 
-The main entry points are `optimize`, `optimize_from_memory`, `RawImage`, and
-`analyze`.
+## Main API
 
-- `optimize` reads and writes PNG files.
-  See [File Optimization](docs/usage/file-optimization.md).
-- `optimize_from_memory` reads PNG data from memory and returns optimized bytes.
-  See [Memory Optimization](docs/usage/memory-optimization.md).
-- `RawImage` builds optimized PNG data from packed pixel bytes.
-  See [Raw Image Usage](docs/usage/raw-image.md).
-- `analyze` reports original and optimized sizes without writing output.
+The main entry points are:
 
-PNG decode and optimization failures raise `PngError`. Caller errors and file
-I/O failures raise standard Python exceptions such as `TypeError`,
-`ValueError`, `FileNotFoundError`, or `OSError`.
+- [`optimize`](docs/usage/file-optimization.md) reads and writes PNG files.
+- [`optimize_from_memory`](docs/usage/memory-optimization.md) reads PNG bytes
+  and returns optimized bytes.
+- [`RawImage`](docs/usage/raw-image.md) builds optimized PNG bytes from packed
+  pixel data.
+- `analyze` reports original and optimized sizes. It does not write output.
 
-## Untrusted Input
+PNG decode and optimization failures raise `PngError`.
+
+Caller mistakes raise normal Python exceptions. These include `TypeError`,
+`ValueError`, `FileNotFoundError`, and `OSError`.
+
+stdin and stdout are caller-owned. Use `optimize_from_memory` for byte streams.
 
 For attacker-controlled files or bytes, see
 [Untrusted Input](docs/usage/untrusted-input.md).
 
 ## pyoxipng Compatibility
 
-Most practical upstream options are stable API. Remaining `pyoxipng`
-compatibility paths emit `DeprecationWarning`. New code should use the stable
-`oxipng-pybind` API. See [Move from pyoxipng](docs/usage/pyoxipng-migration.md).
+This package can replace `pyoxipng` for most callers.
 
-The API maps supported Rust options to Python types. It does not expose Rust
-stdin or stdout stream arguments.
+Old `pyoxipng` names are compatibility paths. They still work for now, but some
+emit `DeprecationWarning`. Some old shapes also do not match Rust `oxipng`
+option contracts. [Migrate those names](docs/usage/pyoxipng-migration.md) to
+the stable `oxipng-pybind` API before a future release removes them.
 
-stdin and stdout optimization are not part of this API. Callers own reading
-from stdin and writing to stdout.
+In this project, "upstream" means the Rust `oxipng` optimizer that this package
+wraps. This API maps supported Rust `oxipng` options to Python types.
 
-## Development
+## Contributing
 
-Set up the pinned Rust toolchain, Python dependencies, editable extension, and
-pre-commit hooks:
+See [Contributing](CONTRIBUTING.md) for setup, checks, and release rules.
 
-```bash
-make setup
-```
+## Supported Platforms
 
-Common checks:
+Wheels use Python 3.11 ABI3. That means each platform wheel supports
+CPython 3.11 and newer.
 
-```bash
-make test
-make lint
-make typecheck
-make ci
-```
+Platform wheels cover:
 
-Python tests import the compiled `_oxipng` extension. Use `make test-py` or
-rebuild with `maturin develop` before running focused pytest commands. See
-`docs/process/local-development.md`.
+- Linux x86_64
+- Linux aarch64
+- macOS x86_64
+- macOS arm64
+- Windows x86_64
 
-## Upstream Tracking
+If your platform is not listed, see
+[Build from Source](docs/usage/build-from-source.md).
 
-Project versions track upstream `oxipng` versions when practical. A scheduled
-workflow checks for new upstream releases and opens a pull request when an
-update is available.
+## More Docs
+
+Start with [the docs index](docs/README.md).
+
+Useful pages:
+
+- [Untrusted input](docs/usage/untrusted-input.md)
+- [API compatibility](docs/architecture/api-compatibility.md)
+- [Dependency health](docs/process/dependency-health.md)
+- [Release artifacts](docs/process/release-artifacts.md)
+- [Upstream bumps](docs/process/upstream-bumps.md)
 
 ## License
 

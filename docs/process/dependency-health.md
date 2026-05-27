@@ -20,6 +20,14 @@ Run a full lockfile refresh before dependency update work:
 make dependency-refresh-check
 ```
 
+For audit-only checks, run `make dependency-audit`.
+
+For third-party notice drift only, run:
+
+```bash
+make third-party-notices-check
+```
+
 For CVE (Common Vulnerabilities and Exposures) updates, prefer the smallest
 lockfile change that clears the advisory.
 
@@ -92,3 +100,14 @@ Failed checks leave the PR open for repair.
 
 Third-party GitHub Actions in write-scoped dependency refresh jobs must be
 pinned to reviewed full commit SHAs.
+
+## Third-Party Notices
+
+`THIRD_PARTY_NOTICES.md` is generated from locked Cargo metadata. Regenerate it
+after shipped Rust dependencies change:
+
+```bash
+make third-party-notices
+```
+
+Python runtime notices stay empty while `[project.dependencies]` is empty.

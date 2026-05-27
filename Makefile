@@ -18,8 +18,8 @@ else
 
 .PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
-	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check build wheel clean clean-cache reset remove-venv \
-	upgrade-deps ci
+	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check \
+	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps ci
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -102,6 +102,12 @@ py-audit-lock: ## Audit locked Python dependency set for known vulnerabilities
 
 dependency-audit: rust-deny py-audit-lock ## Run Rust and Python dependency vulnerability checks
 
+third-party-notices: ## Regenerate third-party notices
+	uv run --group dev scripts/generate_third_party_notices.py --write
+
+third-party-notices-check: ## Check third-party notices for drift
+	uv run --group dev scripts/generate_third_party_notices.py --check
+
 dependency-refresh-check: ## Refresh lockfiles, then run audits and full CI
 	uv lock --upgrade
 	cargo update
@@ -146,6 +152,7 @@ ci: ## Run full CI
 	@$(MAKE) --no-print-directory lint
 	@$(MAKE) --no-print-directory rust-deny
 	@$(MAKE) --no-print-directory py-audit-lock
+	@$(MAKE) --no-print-directory third-party-notices-check
 	@$(MAKE) --no-print-directory typecheck
 	@$(MAKE) --no-print-directory test
 	@$(MAKE) --no-print-directory build

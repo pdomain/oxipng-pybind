@@ -50,6 +50,25 @@ def test_workflows_use_current_rust_toolchain() -> None:
                     assert uses == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
 
 
+def test_workflow_jobs_install_rust_before_make_ci() -> None:
+    """Jobs that invoke local CI install Rust first."""
+    for path in (ROOT / ".github/workflows").glob("*.yml"):
+        workflow = load_workflow(str(path.relative_to(ROOT)))
+        for job_name, job in workflow["jobs"].items():
+            steps = job.get("steps", [])
+            rust_indexes = [
+                index
+                for index, step in enumerate(steps)
+                if step.get("uses") == f"dtolnay/rust-toolchain@{RUST_TOOLCHAIN_VERSION}"
+            ]
+            for index, step in enumerate(steps):
+                if "make ci" in str(step.get("run", "")):
+                    assert rust_indexes, f"{path.name} {job_name} runs make ci without Rust setup"
+                    assert min(rust_indexes) < index, (
+                        f"{path.name} {job_name} installs Rust after make ci"
+                    )
+
+
 def test_upstream_bump_auto_merge_is_gated_by_ci_and_wheels() -> None:
     """Native dependency bump PRs auto-merge only after required automation gates."""
     workflow = load_workflow(".github/workflows/upstream-bump.yml")

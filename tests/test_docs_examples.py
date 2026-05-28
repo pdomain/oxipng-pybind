@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import warnings
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, cast
 
@@ -23,11 +22,20 @@ from oxipng import (
     optimize,
     optimize_from_memory,
 )
+from tests.helpers.png import (
+    assert_png_path,
+    assert_png_structure,
+    png_chunk_names,
+    png_text_chunks,
+)
+from tests.helpers.warnings import (
+    PYOXIPNG_WARNING,
+    assert_no_deprecation_warning,
+    assert_pyoxipng_warning,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-PYOXIPNG_WARNING = "pyoxipng compatibility path is unsupported"
 
 
 class _Stream:
@@ -44,7 +52,7 @@ def test_file_optimization_basic_use_example(tmp_path: Path, png_bytes: bytes) -
 
     optimize(input=input_path, output=output_path, strip="safe")
 
-    assert output_path.read_bytes()
+    assert_png_path(output_path)
 
 
 def test_file_optimization_analyze_example(tmp_path: Path, png_bytes: bytes) -> None:
@@ -73,7 +81,7 @@ def test_file_optimization_preserve_attrs_example(tmp_path: Path, png_bytes: byt
 
     optimize(input=input_path, output=output_path, preserve_attrs=True)
 
-    assert output_path.read_bytes()
+    assert_png_path(output_path)
 
 
 def test_file_optimization_error_example(tmp_path: Path) -> None:
@@ -98,15 +106,15 @@ def test_memory_optimization_basic_use_example(tmp_path: Path, png_bytes: bytes)
     optimized = optimize_from_memory(data=png_bytes, level=4, strip="safe")
     output_path.write_bytes(optimized)
 
-    assert output_path.read_bytes()
+    assert_png_path(output_path)
 
 
 def test_memory_optimization_inputs_example(png_bytes: bytes) -> None:
     optimized_from_bytearray = optimize_from_memory(data=bytearray(png_bytes))
     optimized_from_view = optimize_from_memory(data=memoryview(png_bytes))
 
-    assert optimized_from_bytearray
-    assert optimized_from_view
+    assert_png_structure(optimized_from_bytearray)
+    assert_png_structure(optimized_from_view)
 
 
 def test_memory_optimization_stdin_stdout_example(
@@ -121,7 +129,7 @@ def test_memory_optimization_stdin_stdout_example(
     optimized = optimize_from_memory(data=data)
     sys.stdout.buffer.write(optimized)
 
-    assert stdout.buffer.getvalue()
+    assert_png_structure(stdout.buffer.getvalue())
 
 
 def test_memory_optimization_error_example() -> None:
@@ -137,7 +145,7 @@ def test_memory_optimization_error_example() -> None:
 def test_untrusted_input_memory_limits_example(png_bytes: bytes) -> None:
     optimized = optimize_from_memory(data=png_bytes, timeout=2.0, max_decompressed_size=50_000_000)
 
-    assert optimized
+    assert_png_structure(optimized)
 
 
 def test_untrusted_input_file_limits_example(tmp_path: Path, png_bytes: bytes) -> None:
@@ -146,7 +154,7 @@ def test_untrusted_input_file_limits_example(tmp_path: Path, png_bytes: bytes) -
 
     optimize(input=input_path, timeout=2.0, max_decompressed_size=50_000_000)
 
-    assert input_path.read_bytes()
+    assert_png_path(input_path)
 
 
 def test_untrusted_input_byte_stream_example(
@@ -161,7 +169,7 @@ def test_untrusted_input_byte_stream_example(
     optimized = optimize_from_memory(data=data, timeout=2.0, max_decompressed_size=50_000_000)
     sys.stdout.buffer.write(optimized)
 
-    assert stdout.buffer.getvalue()
+    assert_png_structure(stdout.buffer.getvalue())
 
 
 def test_raw_image_basic_use_example() -> None:
@@ -174,7 +182,7 @@ def test_raw_image_basic_use_example() -> None:
     )
     png_bytes = raw.create_optimized_png(level=3)
 
-    assert png_bytes
+    assert_png_structure(png_bytes)
 
 
 def test_raw_image_indexed_example() -> None:
@@ -188,7 +196,7 @@ def test_raw_image_indexed_example() -> None:
     )
     png_bytes = raw.create_optimized_png()
 
-    assert png_bytes
+    assert_png_structure(png_bytes)
 
 
 def test_raw_image_transparency_example() -> None:
@@ -209,8 +217,8 @@ def test_raw_image_transparency_example() -> None:
         transparent=(255, 0, 0),
     )
 
-    assert gray.create_optimized_png()
-    assert rgb.create_optimized_png()
+    assert_png_structure(gray.create_optimized_png())
+    assert_png_structure(rgb.create_optimized_png())
 
 
 def test_raw_image_png_chunk_example() -> None:
@@ -224,7 +232,7 @@ def test_raw_image_png_chunk_example() -> None:
     raw.add_png_chunk(b"tEXt", b"Comment\x00created from raw pixels")
     png_bytes = raw.create_optimized_png()
 
-    assert b"tEXt" in png_bytes
+    assert png_text_chunks(png_bytes)["Comment"] == "created from raw pixels"
 
 
 def test_raw_image_icc_profile_example() -> None:
@@ -239,7 +247,7 @@ def test_raw_image_icc_profile_example() -> None:
     raw.add_icc_profile(icc_profile_bytes)
     png_bytes = raw.create_optimized_png()
 
-    assert b"iCCP" in png_bytes
+    assert b"iCCP" in png_chunk_names(png_bytes)
 
 
 def test_raw_image_error_example() -> None:
@@ -263,7 +271,7 @@ def test_migration_guide_filter_strategy_examples(png_bytes: bytes) -> None:
     filters = FilterStrategy.predefined(["none", "sub", "up"])
 
     assert filter_value.value == "none"
-    assert optimize_from_memory(data=png_bytes, filter=filters)
+    assert_png_structure(optimize_from_memory(data=png_bytes, filter=filters))
 
 
 @pytest.mark.parametrize(
@@ -292,8 +300,7 @@ def test_migration_guide_filter_strategy_examples(png_bytes: bytes) -> None:
     ],
 )
 def test_migration_guide_rowfilter_example_warns(name: str, value: str) -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        filter_value = getattr(RowFilter, name)
+    filter_value = assert_pyoxipng_warning(lambda: getattr(RowFilter, name))
 
     assert filter_value.value == value
 
@@ -302,10 +309,8 @@ def test_migration_guide_interlacing_examples() -> None:
     assert Interlacing.off.value == "off"
     assert Interlacing.on.value == "on"
 
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        assert Interlacing.Off.value == "off"
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        assert Interlacing.Adam7.value == "on"
+    assert assert_pyoxipng_warning(lambda: Interlacing.Off).value == "off"
+    assert assert_pyoxipng_warning(lambda: Interlacing.Adam7).value == "on"
 
 
 def test_migration_guide_stable_raw_image_example() -> None:
@@ -321,7 +326,7 @@ def test_migration_guide_stable_raw_image_example() -> None:
         data=data,
     )
 
-    assert raw.create_optimized_png()
+    assert_png_structure(raw.create_optimized_png())
 
 
 def test_migration_guide_pyoxipng_raw_image_order_warns() -> None:
@@ -332,7 +337,7 @@ def test_migration_guide_pyoxipng_raw_image_order_warns() -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         raw = RawImage(data, width, height, color_type=ColorType.rgba())
 
-    assert raw.create_optimized_png()
+    assert_png_structure(raw.create_optimized_png())
 
 
 def test_migration_guide_rejected_raw_image_shape() -> None:
@@ -348,12 +353,9 @@ def test_migration_guide_rejected_raw_image_shape() -> None:
 
 
 def test_migration_guide_color_type_factory_examples_warn() -> None:
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        ColorType.rgba()
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        ColorType.rgb(None)
-    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-        ColorType.indexed([(255, 0, 0)])
+    assert_pyoxipng_warning(ColorType.rgba)
+    assert_pyoxipng_warning(lambda: ColorType.rgb(None))
+    assert_pyoxipng_warning(lambda: ColorType.indexed([(255, 0, 0)]))
 
 
 def test_migration_guide_other_options_examples(png_bytes: bytes) -> None:
@@ -371,14 +373,13 @@ def test_migration_guide_other_options_examples(png_bytes: bytes) -> None:
         max_decompressed_size=256 * 1024 * 1024,
     )
 
-    assert optimized
+    assert_png_structure(optimized)
 
 
 def test_migration_guide_stable_factories_do_not_warn(png_bytes: bytes) -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", DeprecationWarning)
+    def run_example() -> bytes:
         strip = StripChunks.strip(["tEXt"])
         deflater = Deflaters.libdeflater(11)
-        optimized = optimize_from_memory(data=png_bytes, strip=strip, deflate=deflater)
+        return optimize_from_memory(data=png_bytes, strip=strip, deflate=deflater)
 
-    assert optimized
+    assert_png_structure(assert_no_deprecation_warning(run_example))

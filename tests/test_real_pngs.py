@@ -9,6 +9,7 @@ import pytest
 from PIL import Image, PngImagePlugin
 
 from oxipng import BitDepth, ColorType, RawImage, optimize, optimize_from_memory
+from tests.helpers.png import assert_same_pixels, decoded_rgba
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -34,6 +35,8 @@ def make_real_png(mode: str) -> bytes:  # noqa: PLR0912  # fixture needs explici
         for y in range(8):
             for x in range(8):
                 image.putpixel((x, y), x * 16 + y * 8)
+    elif mode == "LA":
+        image = Image.new("LA", (4, 4), (128, 192))
     elif mode == "P":
         image = Image.new("P", (8, 8))
         palette: list[int] = []
@@ -51,13 +54,6 @@ def make_real_png(mode: str) -> bytes:  # noqa: PLR0912  # fixture needs explici
     return buffer.getvalue()
 
 
-def decoded_rgba(data: bytes) -> tuple[tuple[int, int], bytes]:
-    """Decode PNG bytes to dimensions and RGBA pixels."""
-    with Image.open(BytesIO(data)) as image:
-        rgba = image.convert("RGBA")
-        return rgba.size, rgba.tobytes()
-
-
 @pytest.mark.parametrize("mode", ["RGB", "RGBA", "L", "P"])
 def test_optimize_real_png_file_preserves_pixels(tmp_path: Path, mode: str) -> None:
     original = make_real_png(mode)
@@ -67,7 +63,7 @@ def test_optimize_real_png_file_preserves_pixels(tmp_path: Path, mode: str) -> N
 
     optimize(input_path, output_path, level=4, strip="safe")
 
-    assert decoded_rgba(output_path.read_bytes()) == decoded_rgba(original)
+    assert_same_pixels(original, output_path.read_bytes())
 
 
 @pytest.mark.parametrize("mode", ["RGB", "RGBA", "L", "P"])
@@ -76,7 +72,15 @@ def test_optimize_real_png_memory_preserves_pixels(mode: str) -> None:
 
     optimized = optimize_from_memory(original, level=4, strip="safe")
 
-    assert decoded_rgba(optimized) == decoded_rgba(original)
+    assert_same_pixels(original, optimized)
+
+
+def test_optimize_real_png_memory_preserves_grayscale_alpha_pixels() -> None:
+    original = make_real_png("LA")
+
+    optimized = optimize_from_memory(original, level=1)
+
+    assert_same_pixels(original, optimized)
 
 
 def test_raw_image_rgba_preserves_pixels() -> None:

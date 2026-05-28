@@ -20,6 +20,10 @@ def png_chunk(name: bytes, data: bytes) -> bytes:
     )
 
 
+def _is_png_chunk_name(name: bytes) -> bool:
+    return len(name) == 4 and all(65 <= byte <= 90 or 97 <= byte <= 122 for byte in name)
+
+
 def make_png_bytes() -> bytes:
     try:
         from PIL import Image, PngImagePlugin  # noqa: PLC0415 - optional on Python 3.10 lane.
@@ -64,6 +68,8 @@ def assert_png_structure(data: bytes) -> None:
     while offset + 12 <= len(data):
         length = int.from_bytes(data[offset : offset + 4], "big")
         name = data[offset + 4 : offset + 8]
+        if not _is_png_chunk_name(name):
+            raise AssertionError(f"PNG output has invalid chunk name {name!r}")
         payload_start = offset + 8
         payload_end = payload_start + length
         crc_end = payload_end + 4
@@ -109,6 +115,8 @@ def png_text_chunks(data: bytes) -> dict[str, str]:
         name = data[offset + 4 : offset + 8]
         payload = data[offset + 8 : offset + 8 + length]
         if name == b"tEXt":
+            if b"\x00" not in payload or payload.startswith(b"\x00"):
+                raise AssertionError("PNG output has malformed tEXt chunk")
             key, _, value = payload.partition(b"\x00")
             chunks[key.decode("latin-1")] = value.decode("latin-1")
         offset += 12 + length

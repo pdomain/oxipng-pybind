@@ -44,7 +44,7 @@ def assert_pyoxipng_warning(callback: Callable[[], T]) -> T:
         warning
         for warning in caught
         if issubclass(warning.category, DeprecationWarning)
-        and PYOXIPNG_WARNING in str(warning.message)
+        and str(warning.message) == PYOXIPNG_WARNING
     ]
     unexpected = [warning for warning in caught if warning not in matches]
     if unexpected:

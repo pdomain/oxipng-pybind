@@ -30,3 +30,11 @@ def test_run_recorder_returns_for_check_false_failure() -> None:
     assert result.returncode == 2
     assert result.stdout == "failed\n"
     assert recorder.calls[0].check is False
+
+
+def test_run_recorder_rejects_unexpected_kwargs() -> None:
+    recorder = RunRecorder()
+    rejected_kwargs: dict[str, object] = {"shell": True}
+
+    with pytest.raises(AssertionError, match="unexpected subprocess kwargs"):
+        recorder(["tool"], check=False, **rejected_kwargs)

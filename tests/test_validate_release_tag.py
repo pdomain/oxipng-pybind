@@ -86,7 +86,7 @@ def test_read_project_version_rejects_missing_project_table(tmp_path: Path) -> N
     path = tmp_path / "pyproject.toml"
     path.write_text("[tool.example]\nname = 'x'\n", encoding="utf-8")
 
-    with pytest.raises(ReleaseTagError, match=r"project\.version"):
+    with pytest.raises(ReleaseTagError, match=r"missing \[project\]"):
         read_project_version(path)
 
 

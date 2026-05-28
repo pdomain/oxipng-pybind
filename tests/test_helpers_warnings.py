@@ -27,9 +27,26 @@ def test_assert_no_deprecation_warning_rejects_deprecation() -> None:
         assert_no_deprecation_warning(warn)
 
 
+def test_assert_no_deprecation_warning_rejects_unexpected_warning() -> None:
+    def warn() -> None:
+        warnings.warn("surprise", UserWarning, stacklevel=2)
+
+    with pytest.raises(AssertionError, match="unexpected warning"):
+        assert_no_deprecation_warning(warn)
+
+
 def test_assert_pyoxipng_warning_returns_value() -> None:
     def warn() -> str:
         warnings.warn(PYOXIPNG_WARNING, DeprecationWarning, stacklevel=2)
         return "compat"
 
     assert assert_pyoxipng_warning(warn) == "compat"
+
+
+def test_assert_pyoxipng_warning_rejects_extra_unexpected_warning() -> None:
+    def warn() -> None:
+        warnings.warn(PYOXIPNG_WARNING, DeprecationWarning, stacklevel=2)
+        warnings.warn("surprise", UserWarning, stacklevel=2)
+
+    with pytest.raises(AssertionError, match="unexpected warning"):
+        assert_pyoxipng_warning(warn)

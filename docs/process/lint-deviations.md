@@ -62,7 +62,7 @@ docstrings only when they clarify shared behavior.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `reportImplicitOverride` | `oxipng/_pyoxipng_compat.py` | The enum metaclass overrides `EnumType.__getattribute__` so deprecated pyoxipng names can warn on access. |
-| `reportArgumentType` | `tests/typing_filter_options.py` | Negative typing samples intentionally pass invalid palette values to exercise static checks. |
+| `reportArgumentType` | `tests/typecheck/typing_filter_options.py` | Negative typing samples intentionally pass invalid palette values to exercise static checks. |
 | `reportUnknownArgumentType`, `reportUnknownVariableType` | `scripts/scan_upstream_surface.py` | `tomlkit` returns dynamic TOML objects. The scanner narrows only at the comparison boundary. |
 | `reportUnannotatedClassAttribute`, `reportUnknownArgumentType`, `reportUnknownLambdaType`, `reportUnusedParameter` | `tests/test_bump_upstream.py` | The tests use small fake response objects and monkeypatched callables to assert subprocess and network behavior. Full fake types would hide the behavior under test. |
 

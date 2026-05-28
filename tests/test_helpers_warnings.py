@@ -50,3 +50,11 @@ def test_assert_pyoxipng_warning_rejects_extra_unexpected_warning() -> None:
 
     with pytest.raises(AssertionError, match="unexpected warning"):
         assert_pyoxipng_warning(warn)
+
+
+def test_assert_pyoxipng_warning_rejects_extended_message() -> None:
+    def warn() -> None:
+        warnings.warn(f"{PYOXIPNG_WARNING} extra", DeprecationWarning, stacklevel=2)
+
+    with pytest.raises(AssertionError, match=r"unexpected warning|expected one pyoxipng"):
+        assert_pyoxipng_warning(warn)

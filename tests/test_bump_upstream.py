@@ -457,9 +457,16 @@ def test_write_target_version(tmp_path: Path) -> None:
         ("version", "10.2.0\rbad"),
     ],
 )
-def test_emit_github_output_rejects_newlines(name: str, value: str) -> None:
+def test_emit_github_output_rejects_newlines(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str, value: str
+) -> None:
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+
     with pytest.raises(ValueError, match="must not contain newlines"):
         bump_upstream.emit_github_output(name, value)
+
+    assert not output.exists()
 
 
 def test_find_surface_issue_returns_matching_version(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -515,6 +522,25 @@ def test_find_surface_issue_ignores_different_version(monkeypatch: pytest.Monkey
     monkeypatch.setattr(subprocess, "run", recorder)
 
     assert bump_upstream.find_surface_issue("10.2.0") is None
+    assert recorder.calls == [
+        RecordedRun(
+            [
+                "/usr/bin/gh",
+                "issue",
+                "list",
+                "--label",
+                "upstream-surface",
+                "--state",
+                "open",
+                "--json",
+                "number,title",
+            ],
+            cwd=bump_upstream.ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    ]
 
 
 def test_upsert_surface_issue_creates_when_missing(
@@ -530,9 +556,23 @@ def test_upsert_surface_issue_creates_when_missing(
 
     bump_upstream.upsert_surface_issue("10.2.0", report)
 
-    assert recorder.calls[0].command[:3] == ["/usr/bin/gh", "issue", "create"]
-    assert recorder.calls[0].cwd == bump_upstream.ROOT
-    assert recorder.calls[0].check is True
+    assert recorder.calls == [
+        RecordedRun(
+            [
+                "/usr/bin/gh",
+                "issue",
+                "create",
+                "--title",
+                "Evaluate upstream oxipng 10.2.0 surface changes",
+                "--label",
+                "upstream-surface",
+                "--body",
+                bump_upstream.issue_body("10.2.0", "report"),
+            ],
+            cwd=bump_upstream.ROOT,
+            check=True,
+        )
+    ]
 
 
 def test_upsert_surface_issue_updates_existing(
@@ -548,6 +588,17 @@ def test_upsert_surface_issue_updates_existing(
 
     bump_upstream.upsert_surface_issue("10.2.0", report)
 
-    assert recorder.calls[0].command[:4] == ["/usr/bin/gh", "issue", "edit", "12"]
-    assert recorder.calls[0].cwd == bump_upstream.ROOT
-    assert recorder.calls[0].check is True
+    assert recorder.calls == [
+        RecordedRun(
+            [
+                "/usr/bin/gh",
+                "issue",
+                "edit",
+                "12",
+                "--body",
+                bump_upstream.issue_body("10.2.0", "report"),
+            ],
+            cwd=bump_upstream.ROOT,
+            check=True,
+        )
+    ]

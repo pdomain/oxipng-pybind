@@ -42,9 +42,14 @@ class RecordedRun:
 class RunRecorder:
     stdout: str = ""
     returncode: int = 0
+    allowed_kwargs: tuple[str, ...] = ("cwd", "check", "capture_output", "text")
     calls: list[RecordedRun] = field(default_factory=list)
 
     def __call__(self, command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        unexpected = sorted(set(kwargs) - set(self.allowed_kwargs))
+        if unexpected:
+            joined = ", ".join(unexpected)
+            raise AssertionError(f"unexpected subprocess kwargs: {joined}")
         cwd = kwargs.get("cwd")
         check = _optional_bool(kwargs.get("check"))
         self.calls.append(

@@ -53,7 +53,7 @@ def read_project_version(pyproject: Path) -> str:
         data = load(handle)
     project_raw = data.get("project")
     if not isinstance(project_raw, dict):
-        raise ReleaseTagError("pyproject.toml is missing project.version")
+        raise ReleaseTagError("pyproject.toml is missing [project]")
     project = cast("dict[str, Any]", project_raw)
     version = project.get("version")
     if not isinstance(version, str) or not version:

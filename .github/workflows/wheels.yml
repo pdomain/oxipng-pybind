@@ -36,6 +36,9 @@ jobs:
   wait-for-release-checks:
     name: wait for release checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Wait for required checks on tag commit
         env:

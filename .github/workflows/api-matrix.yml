@@ -43,4 +43,4 @@ jobs:
       - name: Build editable extension
         run: uv run --locked --group dev maturin develop --no-default-features --features ${{ matrix.cargo-features }}
       - name: Run public API tests
-        run: uv run --locked --group dev pytest tests/test_api.py -v -ra
+        run: uv run --locked --group dev pytest tests/test_api_surface.py tests/test_optimize_file_api.py tests/test_optimize_memory_api.py tests/test_option_validation.py tests/test_pyoxipng_compat.py tests/test_raw_image_api.py -v -ra

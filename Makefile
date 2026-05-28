@@ -64,7 +64,7 @@ api-matrix: ## Run focused public API tests on all supported Python versions
 		case "{}" in 3.10) features=abi3-py310 ;; *) features=abi3-py311 ;; esac; \
 		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} uv sync --locked --group dev && \
 		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} CARGO_TARGET_DIR=target/api-matrix-{} uv run --locked --group dev maturin develop --no-default-features --features "$$features" && \
-		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} uv run --locked --group dev pytest tests/test_api.py -v -ra \
+		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} uv run --locked --group dev pytest tests/test_api_surface.py tests/test_optimize_file_api.py tests/test_optimize_memory_api.py tests/test_option_validation.py tests/test_pyoxipng_compat.py tests/test_raw_image_api.py -v -ra \
 	'
 
 lint: rust-lint py-lint md-lint ## Run all lint checks

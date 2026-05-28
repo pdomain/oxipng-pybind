@@ -1,6 +1,5 @@
 """Cross-entry-point option validation tests."""
 
-import warnings
 from typing import Any, cast
 
 import pytest
@@ -16,7 +15,7 @@ from oxipng import (
     optimize_from_memory,
 )
 from tests.helpers.png import assert_png_structure
-from tests.helpers.warnings import PYOXIPNG_WARNING
+from tests.helpers.warnings import PYOXIPNG_WARNING, assert_no_deprecation_warning
 
 
 class ExplodingValue:
@@ -26,13 +25,12 @@ class ExplodingValue:
 
 
 def test_predefined_filter_factory_uses_basic_filters_without_warning() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
-            row_filter = RowFilter.none
-        predefined = FilterStrategy.predefined([row_filter, "sub", FilterStrategy.up])
+    with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
+        row_filter = RowFilter.none
 
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    predefined = assert_no_deprecation_warning(
+        lambda: FilterStrategy.predefined([row_filter, "sub", FilterStrategy.up])
+    )
     assert predefined.filters == ("none", "sub", "up")
 
 

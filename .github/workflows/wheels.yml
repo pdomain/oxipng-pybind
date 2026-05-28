@@ -61,7 +61,7 @@ jobs:
             local label="$2"
             for attempt in $(seq 1 80); do
               conclusion="$({
-                gh run list --workflow "$workflow" --commit "$sha" \
+                gh run list --repo "${{ github.repository }}" --workflow "$workflow" --commit "$sha" \
                   --json status,conclusion \
                   --jq '.[0] | "\(.status) \(.conclusion)"'
               })"

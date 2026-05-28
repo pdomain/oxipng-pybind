@@ -1,7 +1,6 @@
 """Tests for upstream surface scanning."""
 
 import json
-import subprocess
 from pathlib import Path
 from typing import cast
 
@@ -20,6 +19,7 @@ from scripts.scan_upstream_surface import (
     rustdoc_json_command,
     write_outputs,
 )
+from tests.helpers.automation import RecordedRun, RunRecorder
 
 
 def rustdoc_fixture() -> dict[str, object]:
@@ -153,18 +153,12 @@ def test_load_rustdoc_json_runs_command_and_loads_crate_json(
     doc_dir.mkdir(parents=True)
     expected: dict[str, object] = {"index": {}}
     (doc_dir / "oxipng.json").write_text(json.dumps(expected), encoding="utf-8")
-    calls: list[list[str]] = []
+    recorder = RunRecorder()
 
-    def fake_run(command: list[str], *, cwd: Path, check: bool) -> subprocess.CompletedProcess[str]:
-        calls.append(command)
-        assert cwd == tmp_path
-        assert check is True
-        return subprocess.CompletedProcess(command, 0)
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr("scripts.scan_upstream_surface.subprocess.run", recorder)
 
     assert load_rustdoc_json(tmp_path) == expected
-    assert calls == [rustdoc_json_command(tmp_path)]
+    assert recorder.calls == [RecordedRun(rustdoc_json_command(tmp_path), cwd=tmp_path, check=True)]
 
 
 def test_parse_upstream_surface_uses_rustdoc_json(

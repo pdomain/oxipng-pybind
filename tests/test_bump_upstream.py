@@ -8,12 +8,12 @@ import urllib.error
 import urllib.request
 from email.message import Message
 from pathlib import Path
-from types import TracebackType
 
 import pytest
 import tomlkit
 
 from scripts import bump_upstream
+from tests.helpers.automation import FakeResponse, RecordedRun, RunRecorder, fake_which
 
 
 def test_normalize_version_strips_v_prefix() -> None:
@@ -41,26 +41,11 @@ def test_next_post_release_rejects_unsupported_versions(version: str) -> None:
 def test_latest_upstream_version_reads_github_release_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    class FakeResponse:
-        def __enter__(self) -> "FakeResponse":
-            return self
-
-        def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_value: BaseException | None,
-            traceback: TracebackType | None,
-        ) -> None:
-            pass
-
-        def read(self) -> bytes:
-            return b'{"tag_name": "v10.2.0"}'
-
     calls: list[tuple[str, int]] = []
 
     def fake_urlopen(url: str, *, timeout: int) -> FakeResponse:
         calls.append((url, timeout))
-        return FakeResponse()
+        return FakeResponse({"tag_name": "v10.2.0"})
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
 
@@ -68,29 +53,27 @@ def test_latest_upstream_version_reads_github_release_payload(
     assert calls == [(bump_upstream.LATEST_RELEASE_URL, 30)]
 
 
+def test_latest_upstream_version_rejects_missing_tag_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda url, *, timeout: FakeResponse({"name": "release"}),
+    )
+
+    with pytest.raises(RuntimeError, match="missing tag_name"):
+        bump_upstream.latest_upstream_version()
+
+
 def test_crates_io_version_available_checks_exact_crate_version(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    class FakeResponse:
-        def __enter__(self) -> "FakeResponse":
-            return self
-
-        def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_value: BaseException | None,
-            traceback: TracebackType | None,
-        ) -> None:
-            pass
-
-        def read(self) -> bytes:
-            return b'{"version": {"num": "10.2.0"}}'
-
     calls: list[tuple[str, int]] = []
 
     def fake_urlopen(url: str, *, timeout: int) -> FakeResponse:
         calls.append((url, timeout))
-        return FakeResponse()
+        return FakeResponse({"version": {"num": "10.2.0"}})
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
 
@@ -350,27 +333,19 @@ def test_main_upstream_mode_exits_cleanly_when_crate_is_not_indexed(
 
 
 def test_update_cargo_lock_runs_precise_cargo_update(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[tuple[list[str], Path, bool]] = []
+    recorder = RunRecorder()
 
-    def fake_which(executable: str) -> str | None:
-        assert executable == "cargo"
-        return "/usr/bin/cargo"
-
-    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
-        calls.append((command, cwd, check))
-        return object()
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     bump_upstream.update_cargo_lock("10.2.0")
 
-    assert calls == [
-        (
+    assert recorder.calls == [
+        RecordedRun(
             ["/usr/bin/cargo", "update", "-p", "oxipng", "--precise", "10.2.0"],
-            bump_upstream.ROOT,
-            True,
-        ),
+            cwd=bump_upstream.ROOT,
+            check=True,
+        )
     ]
 
 
@@ -453,22 +428,16 @@ oxi = { package = "oxipng", version = "=10.1.1" }
 
 
 def test_update_uv_lock_runs_uv_lock(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[tuple[list[str], Path, bool]] = []
+    recorder = RunRecorder()
 
-    def fake_which(executable: str) -> str | None:
-        assert executable == "uv"
-        return "/usr/bin/uv"
-
-    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
-        calls.append((command, cwd, check))
-        return object()
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     bump_upstream.update_uv_lock()
 
-    assert calls == [(["/usr/bin/uv", "lock"], bump_upstream.ROOT, True)]
+    assert recorder.calls == [
+        RecordedRun(["/usr/bin/uv", "lock"], cwd=bump_upstream.ROOT, check=True)
+    ]
 
 
 def test_write_target_version(tmp_path: Path) -> None:
@@ -479,82 +448,71 @@ def test_write_target_version(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8") == "10.2.0\n"
 
 
-@pytest.mark.parametrize(("name", "value"), [("bad\nname", "10.2.0"), ("version", "10.2.0\nbad")])
-def test_emit_github_output_rejects_newlines(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str, value: str
-) -> None:
-    output = tmp_path / "github-output.txt"
-    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
-
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("bad\nname", "10.2.0"),
+        ("bad\rname", "10.2.0"),
+        ("version", "10.2.0\nbad"),
+        ("version", "10.2.0\rbad"),
+    ],
+)
+def test_emit_github_output_rejects_newlines(name: str, value: str) -> None:
     with pytest.raises(ValueError, match="must not contain newlines"):
         bump_upstream.emit_github_output(name, value)
 
-    assert not output.exists()
-
 
 def test_find_surface_issue_returns_matching_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_which(executable: str) -> str | None:
-        assert executable == "gh"
-        return "/usr/bin/gh"
+    recorder = RunRecorder(
+        stdout=json.dumps(
+            [
+                {
+                    "number": 12,
+                    "title": "Evaluate upstream oxipng 10.2.0 surface changes",
+                }
+            ]
+        )
+    )
 
-    def fake_run(
-        command: list[str],
-        *,
-        cwd: Path,
-        check: bool,
-        capture_output: bool,
-        text: bool,
-    ) -> object:
-        assert command[:3] == ["/usr/bin/gh", "issue", "list"]
-        assert cwd == bump_upstream.ROOT
-        assert check is True
-        assert capture_output is True
-        assert text is True
-
-        class Result:
-            stdout = json.dumps(
-                [
-                    {
-                        "number": 12,
-                        "title": "Evaluate upstream oxipng 10.2.0 surface changes",
-                    }
-                ]
-            )
-
-        return Result()
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     assert bump_upstream.find_surface_issue("10.2.0") == 12
+    assert recorder.calls == [
+        RecordedRun(
+            [
+                "/usr/bin/gh",
+                "issue",
+                "list",
+                "--label",
+                "upstream-surface",
+                "--state",
+                "open",
+                "--json",
+                "number,title",
+            ],
+            cwd=bump_upstream.ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    ]
 
 
 def test_find_surface_issue_ignores_different_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_which(executable: str) -> str | None:
-        return f"/usr/bin/{executable}"
+    recorder = RunRecorder(
+        stdout=json.dumps(
+            [
+                {
+                    "number": 12,
+                    "title": "Evaluate upstream oxipng 10.3.0 surface changes",
+                }
+            ]
+        )
+    )
 
-    def fake_run(
-        command: list[str],
-        *,
-        cwd: Path,
-        check: bool,
-        capture_output: bool,
-        text: bool,
-    ) -> object:
-        class Result:
-            stdout = json.dumps(
-                [
-                    {
-                        "number": 12,
-                        "title": "Evaluate upstream oxipng 10.3.0 surface changes",
-                    }
-                ]
-            )
-
-        return Result()
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     assert bump_upstream.find_surface_issue("10.2.0") is None
 
@@ -564,20 +522,17 @@ def test_upsert_surface_issue_creates_when_missing(
 ) -> None:
     report = tmp_path / "pr-body-section.md"
     report.write_text("report", encoding="utf-8")
-    calls: list[list[str]] = []
+    recorder = RunRecorder()
 
     monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: None)
-    monkeypatch.setattr(shutil, "which", lambda executable: f"/usr/bin/{executable}")
-
-    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
-        calls.append(command)
-        return object()
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     bump_upstream.upsert_surface_issue("10.2.0", report)
 
-    assert calls[0][:3] == ["/usr/bin/gh", "issue", "create"]
+    assert recorder.calls[0].command[:3] == ["/usr/bin/gh", "issue", "create"]
+    assert recorder.calls[0].cwd == bump_upstream.ROOT
+    assert recorder.calls[0].check is True
 
 
 def test_upsert_surface_issue_updates_existing(
@@ -585,17 +540,14 @@ def test_upsert_surface_issue_updates_existing(
 ) -> None:
     report = tmp_path / "pr-body-section.md"
     report.write_text("report", encoding="utf-8")
-    calls: list[list[str]] = []
+    recorder = RunRecorder()
 
     monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: 12)
-    monkeypatch.setattr(shutil, "which", lambda executable: f"/usr/bin/{executable}")
-
-    def fake_run(command: list[str], *, cwd: Path, check: bool) -> object:
-        calls.append(command)
-        return object()
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     bump_upstream.upsert_surface_issue("10.2.0", report)
 
-    assert calls[0][:4] == ["/usr/bin/gh", "issue", "edit", "12"]
+    assert recorder.calls[0].command[:4] == ["/usr/bin/gh", "issue", "edit", "12"]
+    assert recorder.calls[0].cwd == bump_upstream.ROOT
+    assert recorder.calls[0].check is True

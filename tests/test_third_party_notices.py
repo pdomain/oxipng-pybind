@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from scripts import generate_third_party_notices
+from tests.helpers.automation import RunRecorder, fake_which
 
 if TYPE_CHECKING:
     import pytest
@@ -151,17 +152,16 @@ def test_notice_generator_cli_write_updates_file(
 def test_notice_generator_runs_cargo_metadata_with_locked_flag(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[list[str]] = []
+    recorder = RunRecorder(stdout='{"ok": true}')
 
-    def fake_run(args: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
-        calls.append(list(args))
-        return subprocess.CompletedProcess(args=args, returncode=0, stdout='{"ok": true}')
-
-    def fake_resolve(name: str) -> str:
-        return name
-
-    monkeypatch.setattr(generate_third_party_notices, "resolve_executable", fake_resolve)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(generate_third_party_notices, "resolve_executable", fake_which())
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     assert generate_third_party_notices.load_cargo_metadata() == {"ok": True}
-    assert calls == [["cargo", "metadata", "--locked", "--format-version", "1"]]
+    assert len(recorder.calls) == 1
+    call = recorder.calls[0]
+    assert call.command == ["/fake/bin/cargo", "metadata", "--locked", "--format-version", "1"]
+    assert call.cwd == generate_third_party_notices.ROOT
+    assert call.check is True
+    assert call.capture_output is True
+    assert call.text is True

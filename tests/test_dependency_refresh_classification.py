@@ -8,6 +8,7 @@ import pytest
 
 from scripts import classify_dependency_refresh
 from scripts.classify_dependency_refresh import CargoPackageKey, classify_refresh
+from tests.helpers.automation import RunRecorder, fake_which
 
 
 def test_uv_lock_only_change_is_no_release_needed() -> None:
@@ -142,50 +143,32 @@ def test_inverse_cargo_tree_uses_precise_package_spec(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Inverse cargo tree calls include source, name, and version."""
-    calls: list[list[str]] = []
     package = CargoPackageKey(
         name="windows-sys",
         version="0.59.0",
         source="registry+https://github.com/rust-lang/crates.io-index",
     )
+    recorder = RunRecorder(stdout="oxipng-pybind v10.1.1\n")
 
-    class Result:
-        returncode: int = 0
-        stdout: str = "oxipng-pybind v10.1.1\n"
-
-    def fake_run(
-        command: list[str],
-        *,
-        cwd: Path,
-        check: bool,
-        capture_output: bool,
-        text: bool,
-    ) -> Result:
-        calls.append(command)
-        assert cwd == classify_dependency_refresh.ROOT
-        assert check is False
-        assert capture_output is True
-        assert text is True
-        return Result()
-
-    def fake_which(name: str) -> str:
-        return f"/fake/bin/{name}"
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which())
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     assert classify_dependency_refresh.cargo_package_reaches_shipped_graph(package) is True
-    assert calls == [
-        [
-            "/fake/bin/cargo",
-            "tree",
-            "--locked",
-            "--edges",
-            "normal,build",
-            "-i",
-            "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.59.0",
-        ]
+    assert len(recorder.calls) == 1
+    call = recorder.calls[0]
+    assert call.command == [
+        "/fake/bin/cargo",
+        "tree",
+        "--locked",
+        "--edges",
+        "normal,build",
+        "-i",
+        "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.59.0",
     ]
+    assert call.cwd == classify_dependency_refresh.ROOT
+    assert call.check is False
+    assert call.capture_output is True
+    assert call.text is True
 
 
 @pytest.mark.parametrize(
@@ -214,35 +197,19 @@ def test_run_stdout_uses_resolved_executable_and_preserves_stdout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Command helpers resolve executable paths before invoking subprocesses."""
+    recorder = RunRecorder(stdout="clean\n")
 
-    class Result:
-        stdout: str = "clean\n"
-
-    calls: list[list[str]] = []
-
-    def fake_run(
-        command: list[str],
-        *,
-        cwd: Path,
-        check: bool,
-        capture_output: bool,
-        text: bool,
-    ) -> Result:
-        calls.append(command)
-        assert cwd == classify_dependency_refresh.ROOT
-        assert check is True
-        assert capture_output is True
-        assert text is True
-        return Result()
-
-    def fake_which(name: str) -> str:
-        return f"/fake/bin/{name}"
-
-    monkeypatch.setattr(shutil, "which", fake_which)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", fake_which())
+    monkeypatch.setattr(subprocess, "run", recorder)
 
     assert classify_dependency_refresh.run_stdout(["git", "status"]) == "clean\n"
-    assert calls == [["/fake/bin/git", "status"]]
+    assert len(recorder.calls) == 1
+    call = recorder.calls[0]
+    assert call.command == ["/fake/bin/git", "status"]
+    assert call.cwd == classify_dependency_refresh.ROOT
+    assert call.check is True
+    assert call.capture_output is True
+    assert call.text is True
 
 
 def test_run_stdout_raises_when_executable_is_missing(

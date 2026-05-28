@@ -46,16 +46,24 @@ class RunRecorder:
 
     def __call__(self, command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         cwd = kwargs.get("cwd")
+        check = _optional_bool(kwargs.get("check"))
         self.calls.append(
             RecordedRun(
                 command=command,
                 cwd=cwd if isinstance(cwd, (Path, str)) else None,
-                check=_optional_bool(kwargs.get("check")),
+                check=check,
                 capture_output=_optional_bool(kwargs.get("capture_output")),
                 text=_optional_bool(kwargs.get("text")),
             )
         )
-        return subprocess.CompletedProcess(command, self.returncode, stdout=self.stdout)
+        completed = subprocess.CompletedProcess(command, self.returncode, stdout=self.stdout)
+        if check is True and self.returncode != 0:
+            raise subprocess.CalledProcessError(
+                self.returncode,
+                command,
+                output=self.stdout,
+            )
+        return completed
 
 
 def _optional_bool(value: object) -> bool | None:

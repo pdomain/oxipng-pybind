@@ -33,7 +33,7 @@ make develop
 Run focused Python tests with `--no-sync` after that rebuild:
 
 ```bash
-uv run --no-sync --group dev pytest tests/test_api.py -q
+uv run --no-sync --group dev pytest tests/test_optimize_memory_api.py -q
 ```
 
 Keep `--no-sync` on focused pytest commands. Without it, `uv run --group dev`

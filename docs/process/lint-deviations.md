@@ -47,7 +47,7 @@ docstrings only when they clarify shared behavior.
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
 | `S310` | reviewed URL calls in `scripts/bump_upstream.py` and `scripts/validate_release_tag.py` | Release automation uses validated HTTPS URLs with explicit timeouts. |
 | `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Automation passes argument lists directly and does not use `shell=True`. |
-| `S603` | `tests/test_scripts.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
+| `S603` | `tests/test_wheel_tags.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
 
 ## Basedpyright Suppressions
 

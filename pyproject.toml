@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "oxipng-pybind"
 version = "10.1.1"
 description = "Focused Python wrapper for oxipng."
-readme = "README.md"
+readme = "PYPI-DESCRIPTION.md"
 requires-python = ">=3.11"
 license = "Unlicense"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import io
-import tarfile
-import zipfile
 from typing import TYPE_CHECKING
 
 from scripts import verify_release_artifacts
+from tests.helpers.artifacts import write_targz, write_zip
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -56,10 +54,7 @@ def write_wheel(
     omitted = omit or set()
     entries = {name: value for name, value in BASE_WHEEL_ENTRIES.items() if name not in omitted}
     entries.update(extra or {})
-    with zipfile.ZipFile(wheel, "w") as archive:
-        for name, value in entries.items():
-            archive.writestr(name, value)
-    return wheel
+    return write_zip(wheel, entries)
 
 
 def write_sdist(
@@ -69,15 +64,8 @@ def write_sdist(
 ) -> Path:
     sdist = directory / SDIST_NAME
     omitted = omit or set()
-    with tarfile.open(sdist, "w:gz") as archive:
-        for name, value in BASE_SDIST_ENTRIES.items():
-            if name in omitted:
-                continue
-            payload = value.encode()
-            info = tarfile.TarInfo(f"{SDIST_ROOT}/{name}")
-            info.size = len(payload)
-            archive.addfile(info, fileobj=io.BytesIO(payload))
-    return sdist
+    entries = {name: value for name, value in BASE_SDIST_ENTRIES.items() if name not in omitted}
+    return write_targz(sdist, SDIST_ROOT, entries)
 
 
 def test_accepts_valid_wheel_and_sdist(tmp_path: Path) -> None:
@@ -85,6 +73,32 @@ def test_accepts_valid_wheel_and_sdist(tmp_path: Path) -> None:
     sdist = write_sdist(tmp_path)
 
     assert verify_release_artifacts.check_artifacts([wheel, sdist]) == []
+
+
+def test_rejects_missing_artifact_path(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.whl"
+
+    errors = verify_release_artifacts.check_artifacts([missing])
+
+    assert errors == [f"{missing} does not exist"]
+
+
+def test_rejects_unsupported_artifact_suffix(tmp_path: Path) -> None:
+    artifact = tmp_path / "artifact.txt"
+    artifact.write_text("not a release artifact", encoding="utf-8")
+
+    errors = verify_release_artifacts.check_artifacts([artifact])
+
+    assert errors == [f"{artifact.name} is not a supported release artifact"]
+
+
+def test_rejects_invalid_sdist_tarball(tmp_path: Path) -> None:
+    sdist = tmp_path / SDIST_NAME
+    sdist.write_text("not a tarball", encoding="utf-8")
+
+    errors = verify_release_artifacts.check_artifacts([sdist])
+
+    assert errors == [f"{sdist.name} is not a valid sdist tarball"]
 
 
 def test_rejects_invalid_wheel_zip(tmp_path: Path) -> None:

@@ -176,6 +176,94 @@ def test_parse_upstream_surface_uses_rustdoc_json(
     assert "optimize" in surface.functions
 
 
+def test_scan_upstream_surface_tracks_color_type_and_bit_depth(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    upstream = tmp_path / "upstream"
+    upstream.mkdir()
+    manifest = {
+        "upstream_version": "test",
+        "options": {"exposed": {"force": "Options.force"}},
+        "functions": {"exposed": ["optimize", "optimize_from_memory"]},
+        "enums": {
+            "FilterStrategy": {"unexposed": {"MinSum": "known"}},
+            "RowFilter": {"unexposed": {"None": "known"}},
+            "StripChunks": {"unexposed": {"None": "known"}},
+            "Deflater": {"unexposed": {"Libdeflater": "known"}},
+            "ColorType": {"unexposed": {"Grayscale": "known", "RGB": "known"}},
+            "BitDepth": {"unexposed": {"One": "known", "Eight": "known"}},
+        },
+    }
+
+    def fake_load(crate_dir: Path) -> dict[str, object]:
+        assert crate_dir == upstream
+        return {
+            "root": 0,
+            "index": {
+                "1": {"name": "optimize", "visibility": "public", "inner": {"function": {}}},
+                "2": {
+                    "name": "optimize_from_memory",
+                    "visibility": "public",
+                    "inner": {"function": {}},
+                },
+                "3": {
+                    "name": "Options",
+                    "visibility": "public",
+                    "inner": {"struct": {"kind": {"plain": {"fields": [4]}}}},
+                },
+                "4": {"name": "force", "visibility": "public", "inner": {"struct_field": []}},
+                "5": {
+                    "name": "FilterStrategy",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [6]}},
+                },
+                "6": {"name": "MinSum", "visibility": "public", "inner": {"variant": {}}},
+                "7": {
+                    "name": "RowFilter",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [8]}},
+                },
+                "8": {"name": "None", "visibility": "public", "inner": {"variant": {}}},
+                "9": {
+                    "name": "StripChunks",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [10]}},
+                },
+                "10": {"name": "None", "visibility": "public", "inner": {"variant": {}}},
+                "11": {
+                    "name": "Deflater",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [12]}},
+                },
+                "12": {"name": "Libdeflater", "visibility": "public", "inner": {"variant": {}}},
+                "13": {
+                    "name": "ColorType",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [14, 15, 16]}},
+                },
+                "14": {"name": "Grayscale", "visibility": "public", "inner": {"variant": {}}},
+                "15": {"name": "RGB", "visibility": "public", "inner": {"variant": {}}},
+                "16": {"name": "NewColor", "visibility": "public", "inner": {"variant": {}}},
+                "17": {
+                    "name": "BitDepth",
+                    "visibility": "public",
+                    "inner": {"enum": {"variants": [18, 19, 20]}},
+                },
+                "18": {"name": "One", "visibility": "public", "inner": {"variant": {}}},
+                "19": {"name": "Eight", "visibility": "public", "inner": {"variant": {}}},
+                "20": {"name": "ThirtyTwo", "visibility": "public", "inner": {"variant": {}}},
+            },
+        }
+
+    monkeypatch.setattr("scripts.scan_upstream_surface.load_rustdoc_json", fake_load)
+
+    surface = parse_upstream_surface(upstream)
+    report = compare_surface(surface, manifest)
+
+    assert report["enums"]["ColorType"]["new_upstream_variants"] == ["NewColor"]
+    assert report["enums"]["BitDepth"]["new_upstream_variants"] == ["ThirtyTwo"]
+
+
 def test_parse_upstream_surface_requires_checkout_and_public_api(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

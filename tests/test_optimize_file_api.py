@@ -1,7 +1,6 @@
 """File optimize and analyze public API tests."""
 
 import os
-import warnings
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +17,7 @@ from oxipng import (
     optimize,
 )
 from tests.helpers.png import assert_png_path
+from tests.helpers.warnings import assert_no_deprecation_warning
 
 
 class CustomPathLike:
@@ -64,17 +64,15 @@ def test_analyze_returns_optimization_result_without_writing(png_path: Path) -> 
 
 
 def test_analyze_accepts_stable_options_without_warning(png_path: Path) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        result = analyze(
+    result = assert_no_deprecation_warning(
+        lambda: analyze(
             png_path,
             level=1,
             strip=StripChunks.safe,
             filter=FilterStrategy.predefined(["none", "sub"]),
             max_decompressed_size=10_000_000,
         )
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    )
     assert result.original_size > 0
     assert result.optimized_size > 0
 
@@ -139,11 +137,7 @@ def test_enum_and_string_aliases_for_file_options(
 
 
 def test_max_decompressed_size_optimizes_file_without_warning(png_path: Path) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        optimize(png_path, max_decompressed_size=10_000_000)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    assert_no_deprecation_warning(lambda: optimize(png_path, max_decompressed_size=10_000_000))
     assert_png_path(png_path)
 
 
@@ -271,21 +265,15 @@ def test_corrupt_input_raises_png_error(corrupt_png_path: Path) -> None:
     ],
 )
 def test_analyze_advanced_bool_options_without_warning(png_path: Path, option: str) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        result = cast("Any", analyze)(png_path, **{option: False})
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    result = assert_no_deprecation_warning(
+        lambda: cast("Any", analyze)(png_path, **{option: False})
+    )
     assert result.original_size > 0
     assert result.optimized_size > 0
 
 
 def test_analyze_timeout_without_warning(png_path: Path) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        result = analyze(png_path, timeout=1.0)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    result = assert_no_deprecation_warning(lambda: analyze(png_path, timeout=1.0))
     assert result.original_size > 0
     assert result.optimized_size > 0
 

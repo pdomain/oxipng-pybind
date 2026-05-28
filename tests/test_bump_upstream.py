@@ -21,6 +21,10 @@ def test_normalize_version_strips_v_prefix() -> None:
     assert bump_upstream.normalize_version("10.1.1") == "10.1.1"
 
 
+def test_normalize_version_removes_leading_v() -> None:
+    assert bump_upstream.normalize_version("v10.1.2") == "10.1.2"
+
+
 @pytest.mark.parametrize("version", ["release-10.1.1", "v10.1", "10.1.1\nbad", "10.1.1.post1"])
 def test_normalize_version_rejects_unexpected_upstream_tags(version: str) -> None:
     with pytest.raises(ValueError, match="unsupported upstream version"):
@@ -573,6 +577,15 @@ def test_upsert_surface_issue_creates_when_missing(
             check=True,
         )
     ]
+
+
+def test_issue_body_mentions_manual_surface_triage() -> None:
+    body = bump_upstream.issue_body("10.1.2", "## report")
+
+    assert "Upstream version: 10.1.2" in body
+    assert "- [ ] expose now" in body
+    assert "- [ ] defer and document" in body
+    assert "- [ ] reject as intentionally unsupported" in body
 
 
 def test_upsert_surface_issue_updates_existing(

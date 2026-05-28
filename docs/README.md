@@ -34,6 +34,7 @@ specs, and reports.
 - [Dependency health](process/dependency-health.md)
 - [GitHub settings](process/github-settings.md)
 - [Local development](process/local-development.md)
+- [Manual release](process/manual-release.md)
 - [Release artifacts](process/release-artifacts.md)
 - [Rust oxipng updates](process/upstream-bumps.md)
 - [Writing style](process/writing-style.md)

@@ -23,7 +23,7 @@ They add a `.devNNN` suffix from `GITHUB_RUN_NUMBER` and
 Real PyPI publishing is tag-driven. Push a strict final release tag, or let
 [Upstream Bumps](upstream-bumps.md#release-tags) create one for an automated
 upstream bump. The wheels workflow builds fresh artifacts from that tag before
-publishing.
+publishing. For manual operator steps, see [Manual Release](manual-release.md).
 
 Valid PyPI release tags:
 

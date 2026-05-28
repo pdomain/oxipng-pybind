@@ -11,9 +11,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
-from scripts._toml_compat import load_file
-
 ROOT = Path(__file__).resolve().parents[1]
+sys_path = str(ROOT)
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from scripts._toml_compat import load_file  # noqa: E402 - direct script execution needs repo root.
+
 NOTICE_PATH = ROOT / "THIRD_PARTY_NOTICES.md"
 
 

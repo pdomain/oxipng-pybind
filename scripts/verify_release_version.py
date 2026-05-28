@@ -7,9 +7,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from scripts._toml_compat import load_file
-
 ROOT = Path(__file__).resolve().parents[1]
+sys_path = str(ROOT)
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from scripts._toml_compat import load_file  # noqa: E402 - direct script execution needs repo root.
 
 
 def read_pyproject_version(path: Path = ROOT / "pyproject.toml") -> str:

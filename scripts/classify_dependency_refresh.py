@@ -7,16 +7,20 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from scripts._toml_compat import loads
+ROOT = Path(__file__).resolve().parents[1]
+sys_path = os.fspath(ROOT)
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from scripts._toml_compat import loads  # noqa: E402 - direct script execution needs repo root.
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True, order=True)

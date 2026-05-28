@@ -39,6 +39,7 @@ docstrings only when they clarify shared behavior.
 
 | Rule | Location | Justification |
 | --- | --- | --- |
+| `E402` | `scripts/classify_dependency_refresh.py`, `scripts/generate_third_party_notices.py`, `scripts/validate_release_tag.py`, and `scripts/verify_release_version.py` | Direct script execution needs to add the repo root before importing local helpers. |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
 | `PLC0415` | `scripts/smoke_wheel.py` | Pillow is imported only for 3.11+ smoke lanes so 3.10 wheel smoke can run with stdlib PNG checks. |
 | `PLC0415` | `tests/conftest.py` | Pillow is optional in the Python 3.10 API matrix; fixtures fall back to stdlib PNG generation. |

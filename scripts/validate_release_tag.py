@@ -14,7 +14,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
-from scripts._toml_compat import load
+ROOT = Path(__file__).resolve().parents[1]
+sys_path = str(ROOT)
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from scripts._toml_compat import load  # noqa: E402 - direct script execution needs repo root.
 
 HTTP_NOT_FOUND = 404
 RELEASE_TAG_PATTERN = re.compile(r"^v(?P<version>\d+\.\d+\.\d+(?:\.post\d+)?)$")

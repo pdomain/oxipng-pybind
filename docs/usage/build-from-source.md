@@ -9,7 +9,7 @@ than a wheel install.
 
 Install these tools first:
 
-- [Python 3.11 or newer](https://www.python.org/downloads/)
+- [Python 3.10 or newer](https://www.python.org/downloads/)
 - [uv](https://docs.astral.sh/uv/)
 - [Rust and Cargo](https://www.rust-lang.org/tools/install)
 - `make`

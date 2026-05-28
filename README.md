@@ -9,7 +9,7 @@ and it provides a stable API for new code.
 
 The package name is `oxipng-pybind`. The import module is `oxipng`.
 
-Install the supported PyPI wheel on Python 3.11 or newer:
+Install the supported PyPI wheel on Python 3.10 or newer:
 
 ```bash
 python -m pip install oxipng-pybind
@@ -55,7 +55,8 @@ See [Contributing](CONTRIBUTING.md) for setup, checks, and release rules.
 
 ## Supported Platforms
 
-Published wheels use Python 3.11 ABI3 and support CPython 3.11 or newer on:
+Published wheels use Python 3.10 and 3.11 ABI3 lanes to support CPython 3.10
+or newer on:
 
 - Linux x86_64
 - Linux aarch64

@@ -59,9 +59,9 @@ The TestPyPI Trusted Publisher must be configured with:
 
 ## Wheel Tags
 
-Release wheels use `cp311-abi3` for Python 3.11 and newer. The wheel tag check
-validates the Python tag, application binary interface (ABI) tag, and platform
-tag before upload.
+Release wheels use `cp310-abi3` for Python 3.10 and `cp311-abi3` for Python
+3.11 and newer. The wheel tag check validates the Python tag, application
+binary interface (ABI) tag, and platform tag before upload.
 
 Expected platform tags are:
 
@@ -75,8 +75,10 @@ Expected platform tags are:
 
 Each wheel is installed into a clean virtual environment. Then
 [`scripts/smoke_wheel.py`](../../scripts/smoke_wheel.py) imports the package,
-checks common optimization paths, verifies PNG outputs with Pillow, and checks
-wheel typing files:
+checks common optimization paths, verifies PNG outputs, and checks wheel typing
+files. Python 3.11+ lanes use Pillow for PNG verification. The Python 3.10 lane
+uses the script's stdlib PNG checks so release smoke tests do not depend on
+third-party wheels that no longer publish CPython 3.10 artifacts:
 
 - `oxipng/__init__.pyi`
 - `oxipng/py.typed`

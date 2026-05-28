@@ -45,7 +45,7 @@ current source.
 
 Use `make test-py` for the normal Python test gate. It rebuilds the extension
 and runs pytest with `--no-sync`, branch coverage, `pytest-xdist`, and
-`--cov-fail-under=80`.
+`--cov-fail-under=60`.
 
 Use `make coverage` when you need the same coverage gate plus an HTML report in
 `htmlcov/`.

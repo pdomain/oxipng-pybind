@@ -97,32 +97,107 @@ jobs:
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             expected-platform: manylinux_2_28_x86_64
+            python: "3.10"
+            expected-python: cp310
+            cargo-features: abi3-py310
+            smoke-extra: ""
+            smoke-args: --stdlib-png
+            smoke: true
+          - artifact: wheels-linux-x86_64-py311
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            expected-platform: manylinux_2_28_x86_64
+            python: "3.11"
+            expected-python: cp311
+            cargo-features: abi3-py311
+            smoke-extra: "pillow==12.2.0"
+            smoke-args: ""
             smoke: true
           - artifact: wheels-linux-aarch64
             runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             expected-platform: manylinux_2_28_aarch64
+            python: "3.10"
+            expected-python: cp310
+            cargo-features: abi3-py310
+            smoke-extra: ""
+            smoke-args: --stdlib-png
+            smoke: true
+          - artifact: wheels-linux-aarch64-py311
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            expected-platform: manylinux_2_28_aarch64
+            python: "3.11"
+            expected-python: cp311
+            cargo-features: abi3-py311
+            smoke-extra: "pillow==12.2.0"
+            smoke-args: ""
             smoke: true
           - artifact: wheels-macos-x86_64
             runner: macos-15-intel
             target: x86_64-apple-darwin
             expected-platform: macosx_*_x86_64
+            python: "3.10"
+            expected-python: cp310
+            cargo-features: abi3-py310
+            smoke-extra: ""
+            smoke-args: --stdlib-png
+            smoke: true
+          - artifact: wheels-macos-x86_64-py311
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            expected-platform: macosx_*_x86_64
+            python: "3.11"
+            expected-python: cp311
+            cargo-features: abi3-py311
+            smoke-extra: "pillow==12.2.0"
+            smoke-args: ""
             smoke: true
           - artifact: wheels-macos-aarch64
             runner: macos-latest
             target: aarch64-apple-darwin
             expected-platform: macosx_*_arm64
+            python: "3.10"
+            expected-python: cp310
+            cargo-features: abi3-py310
+            smoke-extra: ""
+            smoke-args: --stdlib-png
+            smoke: true
+          - artifact: wheels-macos-aarch64-py311
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            expected-platform: macosx_*_arm64
+            python: "3.11"
+            expected-python: cp311
+            cargo-features: abi3-py311
+            smoke-extra: "pillow==12.2.0"
+            smoke-args: ""
             smoke: true
           - artifact: wheels-windows-x86_64
             runner: windows-latest
             target: x64
             expected-platform: win_amd64
+            python: "3.10"
+            expected-python: cp310
+            cargo-features: abi3-py310
+            smoke-extra: ""
+            smoke-args: --stdlib-png
+            smoke: true
+          - artifact: wheels-windows-x86_64-py311
+            runner: windows-latest
+            target: x64
+            expected-platform: win_amd64
+            python: "3.11"
+            expected-python: cp311
+            cargo-features: abi3-py311
+            smoke-extra: "pillow==12.2.0"
+            smoke-args: ""
             smoke: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python }}
       - uses: dtolnay/rust-toolchain@1.95.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
@@ -153,12 +228,12 @@ jobs:
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
         with:
           command: build
-          args: --release --locked --out dist --interpreter python3.11
+          args: --release --locked --out dist --interpreter python${{ matrix.python }} --no-default-features --features ${{ matrix.cargo-features }}
           manylinux: "2_28"
           target: ${{ matrix.target }}
       - name: Check wheel tags
         shell: bash
-        run: python scripts/check_wheel_tags.py --expected-python cp311 --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
+        run: python scripts/check_wheel_tags.py --expected-python "${{ matrix.expected-python }}" --expected-platform "${{ matrix.expected-platform }}" dist/*.whl
       - name: Verify wheel artifact contents
         shell: bash
         run: python scripts/verify_release_artifacts.py dist/*.whl
@@ -172,8 +247,8 @@ jobs:
           else
             smoke_python=.wheel-smoke/bin/python
           fi
-          "$smoke_python" -m pip install dist/*.whl "pillow==12.2.0"
-          "$smoke_python" scripts/smoke_wheel.py
+          "$smoke_python" -m pip install dist/*.whl ${{ matrix.smoke-extra }}
+          "$smoke_python" scripts/smoke_wheel.py ${{ matrix.smoke-args }}
       - name: Upload wheels
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -189,7 +264,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: "3.11"
+          python-version: "3.10"
       - uses: dtolnay/rust-toolchain@1.95.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'

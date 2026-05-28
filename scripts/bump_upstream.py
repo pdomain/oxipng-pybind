@@ -136,6 +136,28 @@ def write_target_version(version: str, path: Path) -> None:
     path.write_text(version + "\n", encoding="utf-8")
 
 
+def append_upstream_release_note(version: str, *, root: Path = ROOT) -> None:
+    """Append the upstream release note entry to CHANGELOG.md for automated bumps."""
+    changelog = root / "CHANGELOG.md"
+    if not changelog.exists():
+        return
+
+    text = changelog.read_text(encoding="utf-8")
+    marker = "## Release Notes\n"
+    entry = (
+        f"\n## {version} - Bump Version\n"
+        f"\n- Rebuilt `oxipng-pybind` to track upstream `oxipng` {version}.\n"
+    )
+    if entry in text:
+        return
+
+    if marker in text:
+        text = text.replace(marker, marker + entry + "\n", 1)
+    else:
+        text = text.rstrip() + "\n\n" + marker + entry + "\n"
+    changelog.write_text(text, encoding="utf-8")
+
+
 def emit_github_output(name: str, value: str) -> None:
     """Write a GitHub Actions output when running in Actions."""
     if "\n" in name or "\n" in value:
@@ -152,6 +174,7 @@ def bump_upstream_files(
     pyproject_path: Path = ROOT / "pyproject.toml",
     cargo_path: Path = ROOT / "Cargo.toml",
     target_version_path: Path = ROOT / ".cache/upstream-bump/target-version.txt",
+    changelog_root: Path | None = None,
 ) -> bool:
     """Update tracked files for a new upstream release."""
     current_upstream = read_pinned_upstream_version(cargo_path)
@@ -162,6 +185,8 @@ def bump_upstream_files(
     update_cargo_toml(cargo_path, version)
     update_cargo_lock(version)
     update_uv_lock()
+    appended_version = read_pyproject_version(pyproject_path)
+    append_upstream_release_note(appended_version, root=changelog_root or pyproject_path.parent)
     return True
 
 

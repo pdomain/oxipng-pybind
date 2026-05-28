@@ -6,16 +6,17 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import re
-import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
 EXPECTED_DISTRIBUTION = "oxipng-pybind"
 WHEEL_FILENAME_REGEX = (
     r"^(?P<distribution>.+)-(?P<version>[^-]+)(?:-[^-]+)?-"
     + r"(?P<python>[^-]+)-(?P<abi>[^-]+)-(?P<platform>[^-]+)\.whl$"
 )
 WHEEL_FILENAME_PATTERN = re.compile(WHEEL_FILENAME_REGEX)
+PROJECT_VERSION_REGEX = re.compile(r'^version\s*=\s*"(?P<version>[^"]+)"$', re.MULTILINE)
 
 
 def canonicalize_distribution(name: str) -> str:
@@ -25,12 +26,16 @@ def canonicalize_distribution(name: str) -> str:
 
 def expected_version() -> str:
     """Return the package version expected in wheel filenames."""
-    document = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    return str(document["project"]["version"])
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    match = PROJECT_VERSION_REGEX.search(pyproject)
+    if match is None:
+        msg = "project version not found in pyproject.toml"
+        raise RuntimeError(msg)
+    return match.group("version")
 
 
 def check_wheels(
-    wheels: list[Path], expected_platform: str, expected_python: str = "cp311"
+    wheels: list[Path], expected_platform: str, expected_python: str = "cp310"
 ) -> list[str]:
     """Return validation errors for wheel tags."""
     if not wheels:
@@ -84,7 +89,7 @@ def check_wheels(
 def main() -> int:
     """Run the wheel tag checker."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--expected-python", default="cp311")
+    parser.add_argument("--expected-python", default="cp310")
     parser.add_argument("--expected-platform", required=True)
     parser.add_argument("wheels", nargs="*")
     args = parser.parse_args()

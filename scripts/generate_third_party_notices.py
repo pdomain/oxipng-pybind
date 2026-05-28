@@ -7,10 +7,11 @@ import json
 import shutil
 import subprocess
 import sys
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
+
+from scripts._toml_compat import load_file
 
 ROOT = Path(__file__).resolve().parents[1]
 NOTICE_PATH = ROOT / "THIRD_PARTY_NOTICES.md"
@@ -94,7 +95,7 @@ def runtime_rust_entries(metadata: dict[str, Any]) -> list[NoticeEntry]:
 
 def python_runtime_dependencies() -> list[str]:
     """Return declared Python runtime dependency strings."""
-    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    pyproject = load_file(str(ROOT / "pyproject.toml"))
     project = cast("dict[str, Any]", pyproject.get("project", {}))
     return sorted(cast("list[str]", project.get("dependencies", [])))
 

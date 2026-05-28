@@ -393,7 +393,7 @@ def test_wheel_tag_checker_uses_only_stdlib_dependencies() -> None:
 
 
 def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
-    """Wheel smoke installs the built wheel while pinning external test dependencies."""
+    """Wheel smoke installs the built wheel with lane-specific test dependencies."""
     workflow = load_workflow(".github/workflows/wheels.yml")
     build = workflow["jobs"]["build"]
     steps = build["steps"]
@@ -406,12 +406,36 @@ def test_wheel_smoke_installs_local_wheel_with_pinned_test_dependency() -> None:
     assert step_index(steps, "Set TestPyPI version") < step_index(steps, "Build wheel")
     assert step_by_name(steps, "Build wheel")["uses"] == f"PyO3/maturin-action@{FULL_SHA}"
     assert step_by_name(steps, "Build wheel")["with"]["args"] == (
-        "--release --locked --out dist --interpreter python3.11"
+        "--release --locked --out dist --interpreter python${{ matrix.python }} "
+        "--no-default-features --features ${{ matrix.cargo-features }}"
     )
+    assert {entry["expected-python"] for entry in build["strategy"]["matrix"]["include"]} == {
+        "cp310",
+        "cp311",
+    }
+    assert {entry["cargo-features"] for entry in build["strategy"]["matrix"]["include"]} == {
+        "abi3-py310",
+        "abi3-py311",
+    }
+    py310_entries = [
+        entry
+        for entry in build["strategy"]["matrix"]["include"]
+        if entry["expected-python"] == "cp310"
+    ]
+    py311_entries = [
+        entry
+        for entry in build["strategy"]["matrix"]["include"]
+        if entry["expected-python"] == "cp311"
+    ]
+    assert all(entry["smoke-extra"] == "" for entry in py310_entries)
+    assert all(entry["smoke-args"] == "--stdlib-png" for entry in py310_entries)
+    assert all(entry["smoke-extra"] == "pillow==12.2.0" for entry in py311_entries)
+    assert all(entry["smoke-args"] == "" for entry in py311_entries)
 
     smoke = step_by_name(steps, "Smoke wheel")
     assert smoke["if"] == "matrix.smoke"
-    assert '"$smoke_python" -m pip install dist/*.whl "pillow==12.2.0"' in smoke["run"]
+    assert '"$smoke_python" -m pip install dist/*.whl ${{ matrix.smoke-extra }}' in smoke["run"]
+    assert '"$smoke_python" scripts/smoke_wheel.py ${{ matrix.smoke-args }}' in smoke["run"]
     assert "dist/*.whl pillow" not in smoke["run"]
     assert step_index(steps, "Smoke wheel") < step_index(steps, "Upload wheels")
 
@@ -548,20 +572,67 @@ def test_pypi_publish_requires_strict_release_tag_validation() -> None:
 
 
 def test_api_matrix_uses_locked_dev_dependencies() -> None:
-    """API matrix jobs consume the checked-in lockfile."""
+    """API matrix jobs consume locked dependencies and matching ABI lanes."""
     workflow = load_workflow(".github/workflows/api-matrix.yml")
     job = workflow["jobs"]["public-api"]
     steps = job["steps"]
 
     assert workflow["permissions"] == {"contents": "read"}
     assert job["env"] == {"UV_PYTHON": "${{ matrix.python-version }}"}
+    assert job["strategy"]["matrix"]["include"] == [
+        {"python-version": "3.10", "cargo-features": "abi3-py310"},
+        {"python-version": "3.11", "cargo-features": "abi3-py311"},
+        {"python-version": "3.12", "cargo-features": "abi3-py311"},
+        {"python-version": "3.13", "cargo-features": "abi3-py311"},
+        {"python-version": "3.14", "cargo-features": "abi3-py311"},
+    ]
     assert step_by_name(steps, "Sync dependencies")["run"] == "uv sync --locked --group dev"
     assert step_by_name(steps, "Build editable extension")["run"] == (
-        "uv run --locked --group dev maturin develop"
+        "uv run --locked --group dev maturin develop --no-default-features "
+        "--features ${{ matrix.cargo-features }}"
     )
     assert step_by_name(steps, "Run public API tests")["run"] == (
         "uv run --locked --group dev pytest tests/test_api.py -v -ra"
     )
+
+
+def test_ci_workflow_splits_independent_checks() -> None:
+    """Remote CI runs independent source checks as parallel jobs with locked dependencies."""
+    workflow = load_workflow(".github/workflows/ci.yml")
+    jobs = workflow["jobs"]
+
+    assert set(jobs) == {
+        "pre-commit",
+        "python-tests",
+        "rust-tests",
+        "dependency-audit",
+        "release-files",
+    }
+    for name in ("pre-commit", "python-tests", "dependency-audit", "release-files"):
+        steps = jobs[name]["steps"]
+        assert step_by_name(steps, "Sync dependencies")["run"] == "uv sync --locked --group dev"
+
+    assert jobs["pre-commit"]["steps"][-1]["run"] == "make pre-commit-check"
+    assert jobs["python-tests"]["steps"][-1]["run"] == "make test-py"
+    assert jobs["rust-tests"]["steps"][-1]["run"] == "make test-rust"
+    assert jobs["dependency-audit"]["steps"][-1]["run"] == "make dependency-audit"
+    assert jobs["release-files"]["steps"][-2]["run"] == "make third-party-notices-check"
+    assert jobs["release-files"]["steps"][-1]["run"] == "make wheel"
+
+
+def test_makefile_has_local_api_matrix_target() -> None:
+    """Local API matrix mirrors the supported Python and ABI feature lanes."""
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert (
+        "api-matrix: ## Run focused public API tests on all supported Python versions" in makefile
+    )
+    for version in ("3.10", "3.11", "3.12", "3.13", "3.14"):
+        assert version in makefile
+    assert "abi3-py310" in makefile
+    assert "abi3-py311" in makefile
+    assert "UV_PROJECT_ENV=.venv-api-{}" in makefile
+    assert "uv sync --locked --group dev" in makefile
 
 
 def test_failed_check_retry_is_single_attempt_and_delayed() -> None:
@@ -577,7 +648,9 @@ def test_failed_check_retry_is_single_attempt_and_delayed() -> None:
     assert workflow["permissions"] == {"actions": "write", "contents": "read"}
     assert retry["if"] == (
         "github.event.workflow_run.conclusion == 'failure' && "
-        "github.event.workflow_run.run_attempt == 1"
+        "github.event.workflow_run.run_attempt == 1 && "
+        'contains(fromJSON(\'["automation/bump-oxipng", "automation/dependency-refresh"]\'), '
+        "github.event.workflow_run.head_branch)"
     )
     assert [step["name"] for step in steps] == ["Wait before retry", "Rerun failed jobs"]
     assert step_by_name(steps, "Wait before retry")["run"] == "sleep 600"

@@ -7,10 +7,11 @@ import argparse
 import os
 import shutil
 import subprocess
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
+
+from scripts._toml_compat import loads
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -83,7 +84,7 @@ def git_file_at_ref(path: str, ref: str) -> str:
 
 def pyproject_runtime_dependencies(pyproject_text: str) -> list[str]:
     """Return normalized project runtime dependency strings."""
-    document = tomllib.loads(pyproject_text)
+    document = loads(pyproject_text)
     project = cast("dict[str, Any]", document.get("project", {}))
     raw_dependencies = project.get("dependencies", [])
     if not isinstance(raw_dependencies, list):
@@ -117,7 +118,7 @@ def cargo_lock_package_key(package: dict[str, Any]) -> CargoPackageKey | None:
 
 def cargo_lock_packages(lock_text: str) -> dict[CargoPackageKey, dict[str, Any]]:
     """Return Cargo.lock package tables keyed by name, version, and source."""
-    document = tomllib.loads(lock_text)
+    document = loads(lock_text)
     raw_packages = document.get("package", [])
     if not isinstance(raw_packages, list):
         return {}

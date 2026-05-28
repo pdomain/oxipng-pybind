@@ -88,8 +88,8 @@ The wrapper keeps caller mistakes separate from image failures.
 
 ## Wheel Strategy
 
-PyO3 uses `abi3-py311`. Each release wheel supports Python 3.11 and newer on
-one platform.
+Release builds use separate `abi3-py310` and `abi3-py311` PyO3 lanes. Each
+wheel supports its ABI3 Python floor and newer versions on one platform.
 
 See [Release Artifacts](../process/release-artifacts.md) for wheel targets,
 checks, and publishing rules.

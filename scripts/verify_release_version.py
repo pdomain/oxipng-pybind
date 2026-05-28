@@ -5,21 +5,22 @@ from __future__ import annotations
 
 import argparse
 import sys
-import tomllib
 from pathlib import Path
+
+from scripts._toml_compat import load_file
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def read_pyproject_version(path: Path = ROOT / "pyproject.toml") -> str:
     """Read the package version from pyproject.toml."""
-    document = tomllib.loads(path.read_text(encoding="utf-8"))
+    document = load_file(str(path))
     return str(document["project"]["version"])
 
 
 def read_cargo_version(path: Path = ROOT / "Cargo.toml") -> str:
     """Read the Rust crate version from Cargo.toml."""
-    document = tomllib.loads(path.read_text(encoding="utf-8"))
+    document = load_file(str(path))
     return str(document["package"]["version"])
 
 

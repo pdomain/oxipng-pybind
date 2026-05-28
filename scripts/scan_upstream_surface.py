@@ -313,7 +313,7 @@ def append_generated_docs(report: dict[str, Any], root: Path = ROOT) -> None:
     changelog = root / "CHANGELOG.md"
     if changelog.exists():
         text = changelog.read_text(encoding="utf-8")
-        marker = "## Unreleased\n"
+        marker = "## Release Notes\n"
         note = f"- Documented new unexposed upstream surface for oxipng {version}.\n"
         if marker in text and note not in text:
             text = text.replace(marker, marker + "\n" + note, 1)

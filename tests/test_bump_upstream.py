@@ -374,6 +374,84 @@ def test_update_cargo_lock_runs_precise_cargo_update(monkeypatch: pytest.MonkeyP
     ]
 
 
+def test_append_upstream_release_note_adds_to_release_notes_section(tmp_path: Path) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n\n## Release Notes\n", encoding="utf-8")
+
+    bump_upstream.append_upstream_release_note("10.2.0", root=tmp_path)
+
+    text = changelog.read_text(encoding="utf-8")
+    assert (
+        "## Release Notes\n\n## 10.2.0 - Bump Version\n\n- Rebuilt `oxipng-pybind` to track upstream `oxipng` 10.2.0."
+        in text
+    )
+
+
+def test_append_upstream_release_note_is_idempotent(tmp_path: Path) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n\n## Release Notes\n", encoding="utf-8")
+
+    bump_upstream.append_upstream_release_note("10.2.0", root=tmp_path)
+    bump_upstream.append_upstream_release_note("10.2.0", root=tmp_path)
+
+    assert (
+        changelog.read_text(encoding="utf-8").count(
+            "## 10.2.0 - Bump Version\n\n- Rebuilt `oxipng-pybind` to track upstream `oxipng` 10.2.0."
+        )
+        == 1
+    )
+
+
+def test_bump_upstream_files_adds_upstream_release_note(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    cargo = tmp_path / "Cargo.toml"
+    target = tmp_path / "target-version.txt"
+    changelog = tmp_path / "CHANGELOG.md"
+    pyproject.write_text(
+        """
+[project]
+name = "oxipng-pybind"
+version = "10.1.1.post2"
+""".lstrip(),
+        encoding="utf-8",
+    )
+    cargo.write_text(
+        """
+[package]
+name = "oxipng-pybind"
+version = "10.1.1"
+
+[dependencies]
+oxi = { package = "oxipng", version = "=10.1.1" }
+""".lstrip(),
+        encoding="utf-8",
+    )
+    changelog.write_text("# Changelog\n\n## Release Notes\n", encoding="utf-8")
+    cargo_lock_calls: list[str] = []
+    uv_lock_calls: list[None] = []
+
+    monkeypatch.setattr(bump_upstream, "update_cargo_lock", cargo_lock_calls.append)
+    monkeypatch.setattr(bump_upstream, "update_uv_lock", lambda: uv_lock_calls.append(None))
+
+    changed = bump_upstream.bump_upstream_files(
+        "10.2.0",
+        pyproject_path=pyproject,
+        cargo_path=cargo,
+        target_version_path=target,
+        changelog_root=tmp_path,
+    )
+
+    assert changed is True
+    assert (
+        "## 10.2.0 - Bump Version\n\n- Rebuilt `oxipng-pybind` to track upstream `oxipng` 10.2.0."
+        in changelog.read_text(encoding="utf-8")
+    )
+    assert cargo_lock_calls == ["10.2.0"]
+    assert uv_lock_calls == [None]
+
+
 def test_update_uv_lock_runs_uv_lock(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[list[str], Path, bool]] = []
 

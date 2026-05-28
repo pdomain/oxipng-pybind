@@ -311,7 +311,7 @@ def test_append_generated_docs_updates_existing_changelog_once(tmp_path: Path) -
     for name in ("api-compatibility.md", "options-surface.md"):
         (docs / name).write_text(f"# {name}\n", encoding="utf-8")
     changelog = tmp_path / "CHANGELOG.md"
-    changelog.write_text("# Changelog\n\n## Unreleased\n", encoding="utf-8")
+    changelog.write_text("# Changelog\n\n## Release Notes\n", encoding="utf-8")
     report: dict[str, object] = {
         "upstream_version": "10.2.0",
         "new_upstream_options": ["force"],

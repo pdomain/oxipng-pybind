@@ -1,4 +1,6 @@
 use indexmap::IndexSet;
+// PyO3 exposes the buffer API for full CPython builds and Python 3.11+ ABI3.
+#[cfg(any(not(Py_LIMITED_API), Py_3_11))]
 use pyo3::buffer::PyBuffer;
 use pyo3::create_exception;
 use pyo3::exceptions::{
@@ -90,13 +92,26 @@ fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
         return Ok(unsafe { bytearray.as_bytes() }.to_vec());
     }
     if is_memoryview(data) {
-        if let Ok(buffer) = PyBuffer::<u8>::get(data) {
-            return buffer.to_vec(data.py());
-        }
+        return bytes_like_to_vec_memoryview(data);
     }
     Err(PyTypeError::new_err(
         "data must be bytes, bytearray, or memoryview",
     ))
+}
+
+#[cfg(any(not(Py_LIMITED_API), Py_3_11))]
+fn bytes_like_to_vec_memoryview(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
+    if let Ok(buffer) = PyBuffer::<u8>::get(data) {
+        return buffer.to_vec(data.py());
+    }
+    let to_bytes = data.call_method0("tobytes")?;
+    to_bytes.extract()
+}
+
+#[cfg(all(Py_LIMITED_API, not(Py_3_11)))]
+fn bytes_like_to_vec_memoryview(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
+    let to_bytes = data.call_method0("tobytes")?;
+    to_bytes.extract()
 }
 
 fn is_bytes_like(value: &Bound<'_, PyAny>) -> bool {

@@ -12,7 +12,7 @@ from scripts import verify_release_artifacts
 if TYPE_CHECKING:
     from pathlib import Path
 
-WHEEL_NAME = "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+WHEEL_NAME = "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
 SDIST_NAME = "oxipng_pybind-10.1.1.tar.gz"
 DIST_INFO = "oxipng_pybind-10.1.1.dist-info"
 SDIST_ROOT = "oxipng_pybind-10.1.1"

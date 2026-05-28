@@ -66,7 +66,7 @@ classification, audit handling, and notice updates.
 
 ## Release changes
 
-Release wheels target Python 3.11+ ABI3. Publishing uses PyPI Trusted
+Release wheels target Python 3.10+ ABI3. Publishing uses PyPI Trusted
 Publishing from GitHub Actions. Do not add PyPI password or API-token secrets.
 
 Before release work, read [Release Artifacts](docs/process/release-artifacts.md)

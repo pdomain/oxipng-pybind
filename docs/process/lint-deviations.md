@@ -40,10 +40,13 @@ docstrings only when they clarify shared behavior.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
+| `PLC0415` | `scripts/smoke_wheel.py` | Pillow is imported only for 3.11+ smoke lanes so 3.10 wheel smoke can run with stdlib PNG checks. |
+| `PLC0415` | `tests/conftest.py` | Pillow is optional in the Python 3.10 API matrix; fixtures fall back to stdlib PNG generation. |
 | `PLR0913` | public API wrappers in `oxipng/__init__.py` | The wrapper keeps the upstream option surface as keyword parameters for pyoxipng compatibility. |
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
 | `S310` | reviewed URL calls in `scripts/bump_upstream.py` and `scripts/validate_release_tag.py` | Release automation uses validated HTTPS URLs with explicit timeouts. |
 | `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Automation passes argument lists directly and does not use `shell=True`. |
+| `S603` | `tests/test_scripts.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
 
 ## Basedpyright Suppressions
 

@@ -15,7 +15,8 @@ The prepare job uses read-only repository permissions. It:
 3. Fetches the matching upstream source tag.
 4. Copies the prior API surface manifest when the target version needs one.
 5. Runs `scripts/scan_upstream_surface.py --update-docs`.
-6. Runs the full CI gate before any pull request is published.
+6. Prepends an upstream release note in `CHANGELOG.md` under `Release Notes`.
+7. Runs the full CI gate before any pull request is published.
 
 The publish job has write permissions. It opens or updates the bump pull
 request only when files changed. The pull request body includes the upstream

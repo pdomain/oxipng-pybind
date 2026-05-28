@@ -1,15 +1,14 @@
 """Supported public API tests."""
 
 import array
+import binascii
 import inspect
 import os
 import warnings
-from io import BytesIO
 from pathlib import Path
 from typing import Any, TypeAlias, cast
 
 import pytest
-from PIL import Image
 
 from oxipng import (
     BitDepth,
@@ -33,6 +32,7 @@ PYOXIPNG_WARNING = (
     "pyoxipng compatibility path is unsupported; migrate to oxipng-pybind's stable API; "
     "this compatibility path will be removed in a future release."
 )
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
 class CustomPathLike:
@@ -62,15 +62,34 @@ class BytesMethodOnly:
 
 
 def assert_readable_png_path(path: Path) -> None:
-    """Assert that Pillow can read the optimized PNG."""
-    with Image.open(path) as image:
-        image.verify()
+    """Assert that a PNG file is structurally readable."""
+    assert_readable_png_bytes(path.read_bytes())
 
 
 def assert_readable_png_bytes(data: bytes) -> None:
-    """Assert that Pillow can read optimized PNG bytes."""
-    with Image.open(BytesIO(data)) as image:
-        image.verify()
+    """Assert that PNG bytes are structurally readable."""
+    if not data.startswith(PNG_SIGNATURE):
+        raise AssertionError("PNG output is missing the PNG signature")
+    offset = len(PNG_SIGNATURE)
+    chunks: list[bytes] = []
+    while offset + 12 <= len(data):
+        length = int.from_bytes(data[offset : offset + 4], "big")
+        name = data[offset + 4 : offset + 8]
+        payload_start = offset + 8
+        payload_end = payload_start + length
+        crc_end = payload_end + 4
+        if crc_end > len(data):
+            raise AssertionError("PNG output has a truncated chunk")
+        expected_crc = int.from_bytes(data[payload_end:crc_end], "big")
+        actual_crc = binascii.crc32(name + data[payload_start:payload_end])
+        if actual_crc != expected_crc:
+            raise AssertionError(f"PNG output has an invalid {name.decode('ascii')} CRC")
+        chunks.append(name)
+        offset = crc_end
+        if name == b"IEND":
+            break
+    if chunks[:1] != [b"IHDR"] or chunks[-1:] != [b"IEND"] or b"IDAT" not in chunks:
+        raise AssertionError("PNG output is missing required chunks")
 
 
 def png_chunk_names(data: bytes) -> list[bytes]:
@@ -81,6 +100,23 @@ def png_chunk_names(data: bytes) -> list[bytes]:
         length = int.from_bytes(data[offset : offset + 4], "big")
         name = data[offset + 4 : offset + 8]
         chunks.append(name)
+        offset += 12 + length
+        if name == b"IEND":
+            break
+    return chunks
+
+
+def png_text_chunks(data: bytes) -> dict[str, str]:
+    """Return uncompressed PNG text chunks."""
+    chunks: dict[str, str] = {}
+    offset = len(PNG_SIGNATURE)
+    while offset < len(data):
+        length = int.from_bytes(data[offset : offset + 4], "big")
+        name = data[offset + 4 : offset + 8]
+        payload = data[offset + 8 : offset + 8 + length]
+        if name == b"tEXt":
+            key, _, value = payload.partition(b"\x00")
+            chunks[key.decode("latin-1")] = value.decode("latin-1")
         offset += 12 + length
         if name == b"IEND":
             break
@@ -1241,8 +1277,7 @@ def test_raw_image_add_png_chunk_preserves_allowed_chunk() -> None:
 
     output = raw.create_optimized_png(strip=StripChunks.none)
 
-    with Image.open(BytesIO(output)) as image:
-        assert cast("Any", image).text["Comment"] == "hello"
+    assert png_text_chunks(output)["Comment"] == "hello"
 
 
 def test_raw_image_add_icc_profile_writes_iccp_chunk() -> None:

@@ -25,10 +25,15 @@ not trigger them. Upstream bump automation waits for
 Review these wheel checks when configuring release-relevant branch rules:
 
 - `wheels-linux-x86_64`
+- `wheels-linux-x86_64-py311`
 - `wheels-linux-aarch64`
+- `wheels-linux-aarch64-py311`
 - `wheels-macos-x86_64`
+- `wheels-macos-x86_64-py311`
 - `wheels-macos-aarch64`
+- `wheels-macos-aarch64-py311`
 - `wheels-windows-x86_64`
+- `wheels-windows-x86_64-py311`
 - `sdist`
 
 ## Secrets

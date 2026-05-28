@@ -7,13 +7,14 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
+
+from scripts._toml_compat import load
 
 HTTP_NOT_FOUND = 404
 RELEASE_TAG_PATTERN = re.compile(r"^v(?P<version>\d+\.\d+\.\d+(?:\.post\d+)?)$")
@@ -44,7 +45,7 @@ def release_version_from_tag(tag: str) -> str:
 def read_project_version(pyproject: Path) -> str:
     """Read project.version from pyproject.toml."""
     with pyproject.open("rb") as handle:
-        data = tomllib.load(handle)
+        data = load(handle)
     project_raw = data.get("project")
     if not isinstance(project_raw, dict):
         raise ReleaseTagError("pyproject.toml is missing [project]")

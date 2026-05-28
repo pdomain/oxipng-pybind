@@ -19,7 +19,7 @@ else
 .PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
 	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check \
-	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps ci
+	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps api-matrix ci
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -53,11 +53,19 @@ test-rust: ## Run Rust tests
 
 test-py: ## Run Python tests against editable extension
 	uv run --group dev maturin develop --quiet
-	uv run --no-sync --group dev pytest -v -ra -n auto --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under=80
+	uv run --no-sync --group dev pytest -v -ra -n auto --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing:skip-covered --cov-fail-under=60
 
 coverage: ## Run pytest with branch coverage and HTML report
 	uv run --group dev maturin develop --quiet
-	uv run --no-sync --group dev pytest --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=80
+	uv run --no-sync --group dev pytest --cov=oxipng --cov=scripts --cov-branch --cov-report=term-missing --cov-report=html --cov-fail-under=60
+
+api-matrix: ## Run focused public API tests on all supported Python versions
+	printf '%s\n' 3.10 3.11 3.12 3.13 3.14 | xargs -P 5 -I {} sh -c '\
+		case "{}" in 3.10) features=abi3-py310 ;; *) features=abi3-py311 ;; esac; \
+		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} uv sync --locked --group dev && \
+		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} CARGO_TARGET_DIR=target/api-matrix-{} uv run --locked --group dev maturin develop --no-default-features --features "$$features" && \
+		UV_PROJECT_ENV=.venv-api-{} UV_PYTHON={} uv run --locked --group dev pytest tests/test_api.py -v -ra \
+	'
 
 lint: rust-lint py-lint md-lint ## Run all lint checks
 

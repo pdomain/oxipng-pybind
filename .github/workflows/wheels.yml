@@ -56,6 +56,16 @@ jobs:
           fi
 
           sha="${GITHUB_SHA}"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "${GITHUB_REF}" = refs/tags/v* ]]; then
+            peeled_sha="$(
+              git ls-remote "https://github.com/${{ github.repository }}.git" "refs/tags/${GITHUB_REF_NAME}^{}" |
+                awk '{ print $1 }'
+            )"
+            if [ -n "$peeled_sha" ]; then
+              sha="$peeled_sha"
+            fi
+          fi
+
           wait_for_workflow() {
             local workflow="$1"
             local label="$2"

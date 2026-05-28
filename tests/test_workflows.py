@@ -571,6 +571,19 @@ def test_pypi_publish_requires_strict_release_tag_validation() -> None:
     assert "scripts/validate_release_tag.py" in paths
 
 
+def test_wheel_workflow_waits_on_tag_commit_checks() -> None:
+    """Release checks are looked up on the commit behind a tag."""
+    workflow = load_workflow(".github/workflows/wheels.yml")
+    wait = workflow["jobs"]["wait-for-release-checks"]
+    run = step_by_name(wait["steps"], "Wait for required checks on tag commit")["run"]
+
+    assert 'sha="${GITHUB_SHA}"' in run
+    assert "refs/tags/${GITHUB_REF_NAME}^{}" in run
+    assert 'sha="$peeled_sha"' in run
+    assert 'gh run list --repo "${{ github.repository }}"' in run
+    assert '--commit "$sha"' in run
+
+
 def test_api_matrix_uses_locked_dev_dependencies() -> None:
     """API matrix jobs consume locked dependencies and matching ABI lanes."""
     workflow = load_workflow(".github/workflows/api-matrix.yml")

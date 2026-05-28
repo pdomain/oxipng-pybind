@@ -167,21 +167,21 @@ fn parse_max_decompressed_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usiz
 
     if is_bool(value) {
         return Err(PyTypeError::new_err(
-            "max_decompressed_size must be a non-negative integer or None",
+            "max_decompressed_size must be a positive integer or None",
         ));
     }
 
     let parsed: i128 = value.extract().map_err(|_| {
-        PyTypeError::new_err("max_decompressed_size must be a non-negative integer or None")
+        PyTypeError::new_err("max_decompressed_size must be a positive integer or None")
     })?;
-    if parsed < 0 {
+    if parsed <= 0 {
         return Err(PyValueError::new_err(
-            "max_decompressed_size must be a non-negative integer or None",
+            "max_decompressed_size must be a positive integer or None",
         ));
     }
 
     usize::try_from(parsed).map(Some).map_err(|_| {
-        PyValueError::new_err("max_decompressed_size must be a non-negative integer or None")
+        PyValueError::new_err("max_decompressed_size must be a positive integer or None")
     })
 }
 fn warn_pyoxipng_compat(py: Python<'_>) -> PyResult<()> {

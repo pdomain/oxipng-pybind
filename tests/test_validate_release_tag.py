@@ -19,6 +19,7 @@ from scripts.validate_release_tag import (
     release_version_from_tag,
     validate_tag_matches_project_version,
 )
+from tests.helpers.automation import FakeResponse
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -81,6 +82,22 @@ def test_read_project_version_reads_project_table(tmp_path: Path) -> None:
     assert read_project_version(write_pyproject(tmp_path, "10.1.1")) == "10.1.1"
 
 
+def test_read_project_version_rejects_missing_project_table(tmp_path: Path) -> None:
+    path = tmp_path / "pyproject.toml"
+    path.write_text("[tool.example]\nname = 'x'\n", encoding="utf-8")
+
+    with pytest.raises(ReleaseTagError, match=r"project\.version"):
+        read_project_version(path)
+
+
+def test_read_project_version_rejects_missing_version(tmp_path: Path) -> None:
+    path = tmp_path / "pyproject.toml"
+    path.write_text("[project]\nname = 'oxipng-pybind'\n", encoding="utf-8")
+
+    with pytest.raises(ReleaseTagError, match=r"project\.version"):
+        read_project_version(path)
+
+
 def test_validate_tag_matches_project_version_accepts_matching_tag(tmp_path: Path) -> None:
     pyproject = write_pyproject(tmp_path, "10.1.1.post1")
 
@@ -110,18 +127,21 @@ def test_ensure_pypi_version_absent_rejects_existing_version() -> None:
 
 
 def test_pypi_version_exists_returns_true_for_200_response_and_builds_url() -> None:
-    with patch("scripts.validate_release_tag.urllib.request.urlopen") as urlopen:
-        urlopen.return_value.__enter__.return_value = object()
+    calls: list[tuple[urllib.request.Request, int]] = []
 
+    def fake_urlopen(request: urllib.request.Request, *, timeout: int) -> FakeResponse:
+        calls.append((request, timeout))
+        return FakeResponse({})
+
+    with patch("scripts.validate_release_tag.urllib.request.urlopen", fake_urlopen):
         result = pypi_version_exists("oxipng-pybind", "10.1.1", "https://pypi.org/")
 
     assert result is True
-    urlopen.assert_called_once()
-    request = urlopen.call_args.args[0]
-    assert isinstance(request, urllib.request.Request)
+    assert len(calls) == 1
+    request, timeout = calls[0]
     assert request.full_url == "https://pypi.org/pypi/oxipng-pybind/10.1.1/json"
     assert request.get_header("User-agent") == "oxipng-pybind-release-check"
-    assert urlopen.call_args.kwargs == {"timeout": 20}
+    assert timeout == 20
 
 
 def test_pypi_version_exists_returns_false_for_404_response() -> None:

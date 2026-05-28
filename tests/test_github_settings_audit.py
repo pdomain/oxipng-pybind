@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import json
-import subprocess
 from typing import TYPE_CHECKING
 
 from scripts import audit_github_settings
+from tests.helpers.automation import completed_json
 
 if TYPE_CHECKING:
+    import subprocess
+
     import pytest
-
-
-def completed(stdout: object) -> subprocess.CompletedProcess[str]:
-    return subprocess.CompletedProcess(args=["gh"], returncode=0, stdout=json.dumps(stdout))
 
 
 def test_audit_github_settings_accepts_expected_settings(
@@ -42,7 +39,7 @@ def test_audit_github_settings_accepts_expected_settings(
     }
 
     def run(command: list[str]) -> subprocess.CompletedProcess[str]:
-        return completed(payloads[command[-1]])
+        return completed_json(payloads[command[-1]])
 
     assert audit_github_settings.main(["--repo", "example/oxipng-pybind"], run_gh=run) == 0
     output = capsys.readouterr().out
@@ -71,7 +68,7 @@ def test_audit_github_settings_reports_failed_checks(
     }
 
     def run(command: list[str]) -> subprocess.CompletedProcess[str]:
-        return completed(payloads[command[-1]])
+        return completed_json(payloads[command[-1]])
 
     assert audit_github_settings.main(["--repo", "example/oxipng-pybind"], run_gh=run) == 1
     output = capsys.readouterr().out

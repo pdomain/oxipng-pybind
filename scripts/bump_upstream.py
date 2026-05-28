@@ -56,8 +56,17 @@ def next_post_release(version: str) -> str:
 def latest_upstream_version() -> str:
     """Fetch the latest upstream oxipng release version."""
     with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:  # noqa: S310
-        payload = json.loads(response.read().decode("utf-8"))
-    return normalize_version(str(payload["tag_name"]))
+        raw_payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(raw_payload, dict):
+        raise TypeError("GitHub release payload must be a JSON object")
+    payload = cast("dict[str, object]", raw_payload)
+    try:
+        tag_name = payload["tag_name"]
+    except KeyError as error:
+        raise RuntimeError("GitHub release payload is missing tag_name") from error
+    if not isinstance(tag_name, str):
+        raise TypeError("GitHub release payload tag_name must be a string")
+    return normalize_version(tag_name)
 
 
 def crates_io_version_available(version: str) -> bool:
@@ -160,7 +169,7 @@ def append_upstream_release_note(version: str, *, root: Path = ROOT) -> None:
 
 def emit_github_output(name: str, value: str) -> None:
     """Write a GitHub Actions output when running in Actions."""
-    if "\n" in name or "\n" in value:
+    if "\n" in name or "\r" in name or "\n" in value or "\r" in value:
         raise ValueError("GitHub output names and values must not contain newlines")
     output = os.environ.get("GITHUB_OUTPUT")
     if output:

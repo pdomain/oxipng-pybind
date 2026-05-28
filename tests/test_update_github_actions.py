@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-import json
-import subprocess
 from typing import TYPE_CHECKING
 
+import pytest
+
 from scripts import update_github_actions
+from tests.helpers.automation import completed_json
 
 if TYPE_CHECKING:
+    import subprocess
     from pathlib import Path
-
-
-def completed(payload: object) -> subprocess.CompletedProcess[str]:
-    """Return a completed gh API process with JSON stdout."""
-    return subprocess.CompletedProcess(args=["gh"], returncode=0, stdout=json.dumps(payload))
 
 
 def test_latest_release_commit_sha_resolves_tag_ref() -> None:
@@ -29,7 +26,7 @@ def test_latest_release_commit_sha_resolves_tag_ref() -> None:
 
     def runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         calls.append(command)
-        return completed(payloads[command[-1]])
+        return completed_json(payloads[command[-1]])
 
     release = update_github_actions.latest_release("actions/upload-artifact", runner=runner)
 
@@ -39,6 +36,16 @@ def test_latest_release_commit_sha_resolves_tag_ref() -> None:
         ["gh", "api", "repos/actions/upload-artifact/releases/latest"],
         ["gh", "api", "repos/actions/upload-artifact/git/ref/tags/v7.0.1"],
     ]
+
+
+def test_latest_release_rejects_missing_release_tag_name() -> None:
+    """Malformed latest release payloads fail before any workflow rewrite."""
+
+    def runner(_command: list[str]) -> subprocess.CompletedProcess[str]:
+        return completed_json({"name": "Release"})
+
+    with pytest.raises(TypeError, match="did not include tag_name"):
+        update_github_actions.latest_release("actions/upload-artifact", runner=runner)
 
 
 def test_update_workflow_refs_updates_managed_refs_only(tmp_path: Path) -> None:

@@ -1,7 +1,6 @@
 """Memory optimize public API tests."""
 
 import array
-import warnings
 from typing import Any, cast
 
 import pytest
@@ -17,7 +16,7 @@ from oxipng import (
     optimize_from_memory,
 )
 from tests.helpers.png import assert_png_structure
-from tests.helpers.warnings import PYOXIPNG_WARNING
+from tests.helpers.warnings import PYOXIPNG_WARNING, assert_no_deprecation_warning
 
 
 class BytesMethodOnly:
@@ -113,25 +112,22 @@ def test_pyoxipng_strip_member_factories_warn_and_work(png_bytes: bytes) -> None
     assert isinstance(safe, StripChunks)
     assert isinstance(all_, StripChunks)
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output_none = optimize_from_memory(png_bytes, strip=none)
-        output_safe = optimize_from_memory(png_bytes, strip=safe)
-        output_all = optimize_from_memory(png_bytes, strip=all_)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output_none, output_safe, output_all = assert_no_deprecation_warning(
+        lambda: (
+            optimize_from_memory(png_bytes, strip=none),
+            optimize_from_memory(png_bytes, strip=safe),
+            optimize_from_memory(png_bytes, strip=all_),
+        )
+    )
     assert_png_structure(output_none)
     assert_png_structure(output_safe)
     assert_png_structure(output_all)
 
 
 def test_pyoxipng_deflaters_optimize_memory(png_bytes: bytes) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        libdeflater = Deflaters.libdeflater(12)
-        zopfli = Deflaters.zopfli(1)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    libdeflater, zopfli = assert_no_deprecation_warning(
+        lambda: (Deflaters.libdeflater(12), Deflaters.zopfli(1))
+    )
     assert_png_structure(optimize_from_memory(png_bytes, deflate=libdeflater))
     assert_png_structure(optimize_from_memory(png_bytes, deflate=zopfli))
 
@@ -153,38 +149,26 @@ def test_advanced_bool_options_optimize_memory_without_warning(
     png_bytes: bytes,
     option: str,
 ) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = cast("Any", optimize_from_memory)(png_bytes, **{option: False})
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(
+        lambda: cast("Any", optimize_from_memory)(png_bytes, **{option: False})
+    )
     assert_png_structure(output)
 
 
 def test_timeout_optimizes_memory_without_warning(png_bytes: bytes) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = optimize_from_memory(png_bytes, timeout=1.0)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(lambda: optimize_from_memory(png_bytes, timeout=1.0))
     assert_png_structure(output)
 
 
 def test_timeout_none_optimizes_memory_without_warning(png_bytes: bytes) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = optimize_from_memory(png_bytes, timeout=None)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(lambda: optimize_from_memory(png_bytes, timeout=None))
     assert_png_structure(output)
 
 
 def test_advanced_bool_none_optimizes_memory_without_warning(png_bytes: bytes) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = optimize_from_memory(png_bytes, optimize_alpha=None)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(
+        lambda: optimize_from_memory(png_bytes, optimize_alpha=None)
+    )
     assert_png_structure(output)
 
 
@@ -193,11 +177,9 @@ def test_max_decompressed_size_optimizes_memory_without_warning(
     png_bytes: bytes,
     value: int | None,
 ) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = optimize_from_memory(png_bytes, max_decompressed_size=value)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(
+        lambda: optimize_from_memory(png_bytes, max_decompressed_size=value)
+    )
     assert_png_structure(output)
 
 
@@ -222,9 +204,8 @@ def test_pyoxipng_advanced_options_reject_invalid_values(option: str, png_bytes:
 
 
 def test_stable_option_paths_do_not_emit_deprecation_warnings(png_bytes: bytes) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = optimize_from_memory(
+    output = assert_no_deprecation_warning(
+        lambda: optimize_from_memory(
             png_bytes,
             level=2,
             interlace=Interlacing.keep,
@@ -234,8 +215,7 @@ def test_stable_option_paths_do_not_emit_deprecation_warnings(png_bytes: bytes) 
             fix_errors=False,
             force=False,
         )
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    )
     assert_png_structure(output)
 
 

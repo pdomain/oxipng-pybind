@@ -1,13 +1,12 @@
 """RawImage public API tests."""
 
-import warnings
 from typing import Any, TypeAlias, cast
 
 import pytest
 
 from oxipng import BitDepth, ColorType, PngError, RawImage, StripChunks
 from tests.helpers.png import assert_png_structure, png_chunk_names, png_text_chunks
-from tests.helpers.warnings import PYOXIPNG_WARNING
+from tests.helpers.warnings import PYOXIPNG_WARNING, assert_no_deprecation_warning
 
 Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
 
@@ -15,11 +14,9 @@ Palette: TypeAlias = list[tuple[int, int, int] | tuple[int, int, int, int]]
 def test_max_decompressed_size_optimizes_raw_image_without_warning() -> None:
     raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = raw.create_optimized_png(max_decompressed_size=10_000_000)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(
+        lambda: raw.create_optimized_png(max_decompressed_size=10_000_000)
+    )
     assert_png_structure(output)
 
 
@@ -39,22 +36,16 @@ def test_max_decompressed_size_optimizes_raw_image_without_warning() -> None:
 def test_raw_image_advanced_bool_options_without_warning(option: str) -> None:
     raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = cast("Any", raw.create_optimized_png)(**{option: False})
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(
+        lambda: cast("Any", raw.create_optimized_png)(**{option: False})
+    )
     assert_png_structure(output)
 
 
 def test_raw_image_timeout_without_warning() -> None:
     raw = RawImage(1, 1, ColorType.rgba, BitDepth.eight, bytes([255, 0, 0, 255]))
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        output = raw.create_optimized_png(timeout=1.0)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    output = assert_no_deprecation_warning(lambda: raw.create_optimized_png(timeout=1.0))
     assert_png_structure(output)
 
 
@@ -143,26 +134,22 @@ def test_pyoxipng_raw_image_constructor_rejects_huge_dimensions_without_panic() 
 
 
 def test_stable_raw_image_constructor_does_not_warn() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        raw = RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    raw = assert_no_deprecation_warning(
+        lambda: RawImage(1, 1, ColorType.rgb, BitDepth.eight, bytes([255, 0, 0]))
+    )
     assert_png_structure(raw.create_optimized_png())
 
 
 def test_stable_raw_image_constructor_accepts_keyword_arguments_without_warning() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        raw = RawImage(
+    raw = assert_no_deprecation_warning(
+        lambda: RawImage(
             width=1,
             height=1,
             color_type=ColorType.rgb,
             bit_depth=BitDepth.eight,
             data=bytes([255, 0, 0]),
         )
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    )
     assert_png_structure(raw.create_optimized_png())
 
 
@@ -222,17 +209,15 @@ def test_raw_image_rejects_non_bytes_data_before_overflow_validation(
 def test_stable_raw_image_constructor_with_positional_shape_and_keyword_data_does_not_warn() -> (
     None
 ):
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        raw = RawImage(
+    raw = assert_no_deprecation_warning(
+        lambda: RawImage(
             1,
             1,
             ColorType.rgba,
             bit_depth=BitDepth.eight,
             data=bytes([255, 0, 0, 255]),
         )
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    )
     assert_png_structure(raw.create_optimized_png())
 
 

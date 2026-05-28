@@ -1,6 +1,5 @@
 """pyoxipng compatibility API tests."""
 
-import warnings
 from pathlib import Path
 
 import pytest
@@ -16,7 +15,11 @@ from oxipng import (
     optimize,
 )
 from tests.helpers.png import assert_png_path
-from tests.helpers.warnings import PYOXIPNG_WARNING
+from tests.helpers.warnings import (
+    PYOXIPNG_WARNING,
+    assert_no_deprecation_warning,
+    assert_pyoxipng_warning,
+)
 
 
 def test_deprecated_enum_aliases_warn_on_access() -> None:
@@ -67,14 +70,9 @@ def test_pyoxipng_rowfilter_aliases_warn_on_access(name: str, value: str) -> Non
 
 
 def test_stable_enum_members_do_not_warn_on_access() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        interlace = Interlacing.off
-        filter_strategy = FilterStrategy.none
-        color_type = ColorType.rgba
-        bit_depth = BitDepth.eight
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    interlace, filter_strategy, color_type, bit_depth = assert_no_deprecation_warning(
+        lambda: (Interlacing.off, FilterStrategy.none, ColorType.rgba, BitDepth.eight)
+    )
     assert interlace.value == "off"
     assert filter_strategy.value == "none"
     assert color_type.value == "rgba"
@@ -93,14 +91,14 @@ def test_pyoxipng_color_factories_warn_and_stable_factories_do_not_warn() -> Non
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         grayscale_alpha = ColorType.grayscale_alpha()
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        strip = StripChunks.strip(["tEXt"])
-        keep = StripChunks.keep(["iCCP"])
-        libdeflater = Deflaters.libdeflater(12)
-        zopfli = Deflaters.zopfli(15)
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    strip, keep, libdeflater, zopfli = assert_no_deprecation_warning(
+        lambda: (
+            StripChunks.strip(["tEXt"]),
+            StripChunks.keep(["iCCP"]),
+            Deflaters.libdeflater(12),
+            Deflaters.zopfli(15),
+        )
+    )
     assert color_type.kind == "rgb"
     assert rgba.kind == "rgba"
     assert indexed.kind == "indexed"
@@ -144,22 +142,14 @@ def test_pyoxipng_non_indexed_color_rejects_palette(color_type: ColorType) -> No
 
 
 def test_pyoxipng_strip_factories_optimize_file(png_path: Path) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        strip = StripChunks.strip(["tEXt"])
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    strip = assert_no_deprecation_warning(lambda: StripChunks.strip(["tEXt"]))
     optimize(png_path, strip=strip)
 
     assert_png_path(png_path)
 
 
 def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        keep = StripChunks.keep({"iCCP"})
-
-    assert [warning for warning in caught if issubclass(warning.category, DeprecationWarning)] == []
+    keep = assert_no_deprecation_warning(lambda: StripChunks.keep({"iCCP"}))
     optimize(png_path, strip=keep)
 
     assert_png_path(png_path)
@@ -167,33 +157,13 @@ def test_pyoxipng_keep_factories_optimize_file(png_path: Path) -> None:
 
 @pytest.mark.parametrize("value", [True, False])
 def test_deflater_libdeflater_bool_is_compatibility_path(value: bool) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        Deflaters.libdeflater(value)
-
-    matches = [
-        warning
-        for warning in caught
-        if issubclass(warning.category, DeprecationWarning)
-        and PYOXIPNG_WARNING in str(warning.message)
-    ]
-    assert len(matches) == 1
+    assert_pyoxipng_warning(lambda: Deflaters.libdeflater(value))
 
 
 @pytest.mark.parametrize("value", [True, False])
 def test_deflater_zopfli_bool_is_compatibility_path(value: bool) -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        if value:
-            Deflaters.zopfli(value)
-        else:
-            with pytest.raises(TypeError, match="must be an integer"):
-                Deflaters.zopfli(value)
-
-    matches = [
-        warning
-        for warning in caught
-        if issubclass(warning.category, DeprecationWarning)
-        and PYOXIPNG_WARNING in str(warning.message)
-    ]
-    assert len(matches) == 1
+    if value:
+        assert_pyoxipng_warning(lambda: Deflaters.zopfli(value))
+    else:
+        with pytest.raises(TypeError, match="must be an integer"):
+            assert_pyoxipng_warning(lambda: Deflaters.zopfli(value))

@@ -24,7 +24,7 @@ def test_smoke_wheel_main_exercises_installed_package() -> None:
 
 
 def test_check_wheel_tags_main_success(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_34_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1.post1-cp310-abi3-manylinux_2_34_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
     monkeypatch.setattr(
         "sys.argv",
@@ -56,7 +56,7 @@ def test_check_wheel_tags_main_reports_errors(
 
 
 def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp313-cp313-manylinux_2_28_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1.post1-cp313-cp313-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
     errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310")
@@ -66,21 +66,21 @@ def test_check_wheel_tags_rejects_wrong_python_tag(tmp_path: Path) -> None:
 
 
 def test_check_wheel_tags_accepts_cp311_abi3(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp311-abi3-manylinux_2_28_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1.post1-cp311-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
     assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp311") == []
 
 
 def test_check_wheel_tags_accepts_cp310_abi3(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_28_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1.post1-cp310-abi3-manylinux_2_28_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
     assert check_wheel_tags.check_wheels([wheel], "manylinux_2_28_x86_64", "cp310") == []
 
 
 def test_check_wheel_tags_runs_as_script_before_install(tmp_path: Path) -> None:
-    wheel = tmp_path / "oxipng_pybind-10.1.1-cp310-abi3-manylinux_2_34_x86_64.whl"
+    wheel = tmp_path / "oxipng_pybind-10.1.1.post1-cp310-abi3-manylinux_2_34_x86_64.whl"
     wheel.write_text("", encoding="utf-8")
 
     result = subprocess.run(  # noqa: S603 - fixed interpreter and script arguments.

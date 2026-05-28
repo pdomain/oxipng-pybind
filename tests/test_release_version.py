@@ -16,6 +16,17 @@ def test_release_version_matches_python_and_cargo() -> None:
     assert errors == []
 
 
+def test_release_version_allows_python_post_release_with_cargo_base() -> None:
+    """Python post releases keep Cargo on the upstream semver base."""
+    errors = release_version_errors(
+        tag="v10.1.1.post1",
+        pyproject_version="10.1.1.post1",
+        cargo_version="10.1.1",
+    )
+
+    assert errors == []
+
+
 def test_release_version_rejects_tag_mismatch() -> None:
     """Mismatched tag versions are rejected with a stable error message."""
     errors = release_version_errors(
@@ -35,4 +46,4 @@ def test_release_version_rejects_cargo_mismatch() -> None:
         cargo_version="10.1.0",
     )
 
-    assert errors == ["cargo version 10.1.0 does not match pyproject version 10.1.1"]
+    assert errors == ["cargo version 10.1.0 does not match pyproject base version 10.1.1"]

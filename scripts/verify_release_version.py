@@ -29,15 +29,21 @@ def tag_version(tag: str) -> str:
     return tag[1:] if tag.startswith("v") else tag
 
 
+def cargo_base_version(version: str) -> str:
+    """Return the semver base used by Cargo for Python post releases."""
+    return version.split(".post", 1)[0]
+
+
 def release_version_errors(*, tag: str, pyproject_version: str, cargo_version: str) -> list[str]:
     """Return version mismatch errors for a release tag and package metadata."""
     version = tag_version(tag)
     errors: list[str] = []
     if version != pyproject_version:
         errors.append(f"tag version {version} does not match pyproject version {pyproject_version}")
-    if cargo_version != pyproject_version:
+    expected_cargo_version = cargo_base_version(pyproject_version)
+    if cargo_version != expected_cargo_version:
         errors.append(
-            f"cargo version {cargo_version} does not match pyproject version {pyproject_version}"
+            f"cargo version {cargo_version} does not match pyproject base version {expected_cargo_version}"
         )
     return errors
 

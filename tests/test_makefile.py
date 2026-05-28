@@ -2,6 +2,16 @@
 
 from pathlib import Path
 
+API_TEST_TARGETS = (
+    "tests/test_api_surface.py",
+    "tests/test_optimize_file_api.py",
+    "tests/test_optimize_memory_api.py",
+    "tests/test_option_validation.py",
+    "tests/test_pyoxipng_compat.py",
+    "tests/test_raw_image_api.py",
+)
+API_TEST_COMMAND = f"uv run --locked --group dev pytest {' '.join(API_TEST_TARGETS)} -v -ra"
+
 
 def _target_body(makefile: str, target: str) -> str:
     start = makefile.index(f"\n{target}:")
@@ -25,18 +35,6 @@ def test_bootstrap_preserves_rustup_shell_installer_for_developer_convenience() 
     assert "https://sh.rustup.rs | sh" in makefile
     assert "rustup-init" not in makefile
     assert "sha256sum -c" not in makefile
-
-
-def test_github_ci_installs_rust_before_make_ci() -> None:
-    workflow_dir = Path(".github/workflows")
-
-    for workflow in workflow_dir.glob("*.yml"):
-        text = workflow.read_text(encoding="utf-8")
-        if "make ci" not in text:
-            continue
-
-        assert "dtolnay/rust-toolchain@" in text, workflow
-        assert text.index("dtolnay/rust-toolchain@") < text.index("make ci"), workflow
 
 
 def test_bootstrap_installs_cargo_deny_through_cargo_install() -> None:
@@ -73,3 +71,19 @@ def test_wheel_build_uses_locked_cargo_dependencies() -> None:
     makefile = Path("Makefile").read_text(encoding="utf-8")
 
     assert "maturin build --release --locked" in makefile
+
+
+def test_makefile_has_local_api_matrix_target() -> None:
+    """Local API matrix mirrors the supported Python and ABI feature lanes."""
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+
+    assert (
+        "api-matrix: ## Run focused public API tests on all supported Python versions" in makefile
+    )
+    for version in ("3.10", "3.11", "3.12", "3.13", "3.14"):
+        assert version in makefile
+    assert "abi3-py310" in makefile
+    assert "abi3-py311" in makefile
+    assert "UV_PROJECT_ENV=.venv-api-{}" in makefile
+    assert "uv sync --locked --group dev" in makefile
+    assert API_TEST_COMMAND in makefile

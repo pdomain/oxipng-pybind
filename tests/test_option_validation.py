@@ -9,6 +9,7 @@ from oxipng import (
     ColorType,
     Deflaters,
     FilterStrategy,
+    PngError,
     RawImage,
     RowFilter,
     StripChunks,
@@ -135,13 +136,18 @@ def test_optimize_from_memory_level_rejects_out_of_range_values(
         optimize_from_memory(png_bytes, level=level)
 
 
-@pytest.mark.parametrize("value", [0, -1])
-def test_max_decompressed_size_rejects_non_positive_values(
+@pytest.mark.parametrize("value", [-1])
+def test_max_decompressed_size_rejects_negative_values(
     png_bytes: bytes,
     value: int,
 ) -> None:
     with pytest.raises(ValueError, match="max_decompressed_size"):
         optimize_from_memory(png_bytes, max_decompressed_size=value)
+
+
+def test_max_decompressed_size_zero_is_not_a_validation_error() -> None:
+    with pytest.raises(PngError):
+        optimize_from_memory(b"", max_decompressed_size=0)
 
 
 def test_enum_value_property_errors_are_propagated(png_bytes: bytes) -> None:

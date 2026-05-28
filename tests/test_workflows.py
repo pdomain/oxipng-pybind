@@ -23,6 +23,15 @@ WRITE_TOKEN_WORKFLOWS = (
     ".github/workflows/upstream-bump.yml",
     ".github/workflows/dependency-health.yml",
 )
+API_TEST_TARGETS = (
+    "tests/test_api_surface.py",
+    "tests/test_optimize_file_api.py",
+    "tests/test_optimize_memory_api.py",
+    "tests/test_option_validation.py",
+    "tests/test_pyoxipng_compat.py",
+    "tests/test_raw_image_api.py",
+)
+API_TEST_COMMAND = f"uv run --locked --group dev pytest {' '.join(API_TEST_TARGETS)} -v -ra"
 
 
 def load_workflow(relative: str) -> Workflow:
@@ -604,9 +613,7 @@ def test_api_matrix_uses_locked_dev_dependencies() -> None:
         "uv run --locked --group dev maturin develop --no-default-features "
         "--features ${{ matrix.cargo-features }}"
     )
-    assert step_by_name(steps, "Run public API tests")["run"] == (
-        "uv run --locked --group dev pytest tests/test_api.py -v -ra"
-    )
+    assert step_by_name(steps, "Run public API tests")["run"] == API_TEST_COMMAND
 
 
 def test_ci_workflow_splits_independent_checks() -> None:
@@ -646,6 +653,7 @@ def test_makefile_has_local_api_matrix_target() -> None:
     assert "abi3-py311" in makefile
     assert "UV_PROJECT_ENV=.venv-api-{}" in makefile
     assert "uv sync --locked --group dev" in makefile
+    assert API_TEST_COMMAND in makefile
 
 
 def test_failed_check_retry_is_single_attempt_and_delayed() -> None:

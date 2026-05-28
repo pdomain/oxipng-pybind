@@ -37,9 +37,9 @@ Invalid PyPI release tags:
 - `v10.1.1.dev1`
 - `v10.1.1rc1`
 
-The release tag must match `project.version` in `pyproject.toml`. The publish
-gate also rejects duplicate releases by checking that the version is not already
-present on PyPI.
+The release tag must match `project.version` in `pyproject.toml`.
+The publish gate also rejects duplicate releases by checking that the version is
+already present on PyPI.
 
 The PyPI Trusted Publisher must be configured with:
 

@@ -85,6 +85,8 @@ def assert_png_structure(data: bytes) -> None:
 
 
 def png_chunk_names(data: bytes) -> list[bytes]:
+    assert_png_structure(data)
+
     chunks: list[bytes] = []
     offset = len(PNG_SIGNATURE)
     while offset + 12 <= len(data):
@@ -98,6 +100,8 @@ def png_chunk_names(data: bytes) -> list[bytes]:
 
 
 def png_text_chunks(data: bytes) -> dict[str, str]:
+    assert_png_structure(data)
+
     chunks: dict[str, str] = {}
     offset = len(PNG_SIGNATURE)
     while offset + 12 <= len(data):

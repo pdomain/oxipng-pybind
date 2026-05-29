@@ -92,7 +92,7 @@ def test_pyoxipng_rowfilter_values_optimize_memory(png_bytes: bytes) -> None:
     with pytest.warns(DeprecationWarning, match=PYOXIPNG_WARNING):
         sub = RowFilter.sub
 
-    output = optimize_from_memory(png_bytes, filter={none, sub})
+    output = optimize_from_memory(png_bytes, filter=(none, sub))
 
     assert_png_structure(output)
 

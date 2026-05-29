@@ -39,6 +39,7 @@ docstrings only when they clarify shared behavior.
 
 | Rule | Location | Justification |
 | --- | --- | --- |
+| `B010` | `oxipng/__init__.py` | `ColorType.__call__` and wrapper `__signature__` values are attached dynamically to avoid Astroid recursion during consumer Pylint analysis. |
 | `E402` | `scripts/classify_dependency_refresh.py`, `scripts/generate_third_party_notices.py`, `scripts/validate_release_tag.py`, and `scripts/verify_release_version.py` | Direct script execution needs to add the repo root before importing local helpers. |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
 | `PLC0415` | `scripts/smoke_wheel.py` | Pillow is imported only for 3.11+ smoke lanes so 3.10 wheel smoke can run with stdlib PNG checks. |
@@ -47,7 +48,43 @@ docstrings only when they clarify shared behavior.
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
 | `S310` | reviewed URL calls in `scripts/bump_upstream.py` and `scripts/validate_release_tag.py` | Release automation uses validated HTTPS URLs with explicit timeouts. |
 | `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Automation passes argument lists directly and does not use `shell=True`. |
+| `S603` | `tests/test_pylint_consumers.py` | The regression test invokes the current interpreter with fixed Pylint arguments to catch Astroid recursion warnings. |
 | `S603` | `tests/test_wheel_tags.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
+
+## Pylint and Astroid
+
+This project uses Ruff and basedpyright, not Pylint. Some consumers still run
+Pylint over code that imports `oxipng`. Pylint 4.0.5 uses Astroid 4.0.4, which
+can recurse while transforming this facade's runtime Python shapes.
+
+Keep the current package-side workarounds until a supported Pylint release can
+analyze a broad consumer import without Astroid recursion warnings:
+
+These deviations intentionally make the runtime facade uglier than the
+straightforward implementation. Treat the `.post2` Pylint/Astroid workaround
+commit as the historical anchor for this debt: preserve these shapes only while
+the consumer Pylint regression needs them, and prefer returning to normal enum
+members, inline annotations, and direct signature assignment once Pylint can
+analyze them safely.
+
+- Keep complex runtime annotations in `oxipng/__init__.py` as strings. The
+  precise public type surface stays in `oxipng/__init__.pyi`.
+- Keep deprecated pyoxipng enum aliases as descriptors assigned after class
+  creation. Astroid recurses on the custom enum metaclass that previously
+  warned on alias access, and on `setattr()` / helper-call alias installation.
+- Keep `ColorType.__call__` attached outside the enum body. Astroid recurses
+  on callable enum methods.
+- Keep custom runtime signature setup out of large inline
+  `inspect.Signature(parameters=[...])` lists. Use the native PyO3 signatures
+  instead.
+
+When Pylint allows a fixed Astroid version, test the cleanup with a temporary
+consumer that imports and calls `analyze`, `optimize`, `optimize_from_memory`,
+`ColorType`, `Deflaters`, `FilterStrategy.predefined`, and `StripChunks`. If
+plain `python -m pylint --exit-zero consumer.py` emits no `Astroid was unable
+to transform` warnings, consider returning aliases and callable enum methods to
+normal enum bodies, restoring inline runtime signatures only if needed, and
+removing the related inline suppressions.
 
 ## Basedpyright Suppressions
 
@@ -61,7 +98,7 @@ docstrings only when they clarify shared behavior.
 
 | Rule | Location | Justification |
 | --- | --- | --- |
-| `reportImplicitOverride` | `oxipng/_pyoxipng_compat.py` | The enum metaclass overrides `EnumType.__getattribute__` so deprecated pyoxipng names can warn on access. |
+| `reportAttributeAccessIssue` | `oxipng/__init__.py` | Deprecated pyoxipng enum aliases are assigned after class creation so Pylint/Astroid can inspect consumer imports without recursing. Public typing stays in `oxipng/__init__.pyi`. |
 | `reportArgumentType` | `tests/typecheck/typing_filter_options.py` | Negative typing samples intentionally pass invalid palette values to exercise static checks. |
 | `reportUnknownArgumentType`, `reportUnknownVariableType` | `scripts/scan_upstream_surface.py` | `tomlkit` returns dynamic TOML objects. The scanner narrows only at the comparison boundary. |
 | `reportUnannotatedClassAttribute`, `reportUnknownArgumentType`, `reportUnknownLambdaType`, `reportUnusedParameter` | `tests/test_bump_upstream.py` | The tests use small fake response objects and monkeypatched callables to assert subprocess and network behavior. Full fake types would hide the behavior under test. |

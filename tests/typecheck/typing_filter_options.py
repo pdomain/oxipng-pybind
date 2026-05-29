@@ -6,7 +6,7 @@ png_data = b"not used by basedpyright"
 
 optimize_from_memory(png_data, filter=FilterStrategy.predefined(["none", "sub"]))
 optimize_from_memory(png_data, filter=[FilterStrategy.none, "sub"])
-optimize_from_memory(png_data, filter={FilterStrategy.none, FilterStrategy.sub})
+optimize_from_memory(png_data, filter=(FilterStrategy.none, FilterStrategy.sub))
 optimize_from_memory(png_data, filter=[FilterStrategy.predefined(["none", "sub"])])
 
 RawImage(1, 1, ColorType.indexed, BitDepth.eight, b"\x00", palette=[(255, 0, 0)])

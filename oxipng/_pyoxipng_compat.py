@@ -1,10 +1,8 @@
 """pyoxipng compatibility helpers slated for removal."""
-# pyright: reportImplicitOverride=false
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from enum import EnumMeta
-from typing import TypeAlias, TypeVar
+from typing import TypeAlias, TypeVar, cast
 from warnings import warn
 
 _T = TypeVar("_T")
@@ -43,20 +41,17 @@ def chunk_names(names: StableIterable[str]) -> tuple[str, ...]:
     return tuple(normalized)
 
 
-class PyoxipngCompatEnumMeta(EnumMeta):
-    """Warn when deprecated pyoxipng enum aliases are accessed."""
+class DeprecatedAlias:
+    """Descriptor for deprecated pyoxipng enum aliases."""
 
-    def __getattribute__(cls, name: str) -> object:
-        value = super().__getattribute__(name)
-        if not name.startswith("_"):
-            deprecated_names = (
-                super()
-                .__getattribute__("__dict__")
-                .get("__pyoxipng_deprecated_names__", frozenset())
-            )
-            if name in deprecated_names:
-                warn_pyoxipng_compat(stacklevel=3)
-        return value
+    value: object
+
+    def __init__(self, value: object) -> None:
+        self.value = value
+
+    def __get__(self, obj: object, owner: object = None) -> object:
+        warn_pyoxipng_compat(stacklevel=3)
+        return self.value
 
 
 @dataclass(frozen=True)
@@ -67,10 +62,48 @@ class CompatColorType:
     transparent: int | tuple[int, int, int] | None = None
 
 
+def color_type_call(
+    value: object,
+    transparent: object = None,
+    *,
+    bit_depth: object,
+) -> CompatColorType:
+    """Create a pyoxipng-compatible color descriptor."""
+    warn_pyoxipng_compat()
+    raw_bit_depth = cast("int", getattr(bit_depth, "value", bit_depth))
+    raw_value = cast("str", getattr(value, "value", value))
+    if raw_value == "indexed":
+        if not isinstance(transparent, list):
+            raise ValueError("indexed color_type requires a palette")
+        transparent_palette = cast(
+            "list[tuple[int, int, int] | tuple[int, int, int, int]]", transparent
+        )
+        palette = list(transparent_palette)
+        return CompatColorType("indexed", raw_bit_depth, palette=palette)
+    if raw_value in {"rgba", "grayscale_alpha"}:
+        if transparent is not None:
+            raise ValueError(f"{raw_value} does not accept transparent")
+        return CompatColorType(raw_value, raw_bit_depth)
+    if isinstance(transparent, list):
+        raise TypeError(f"{raw_value} does not accept palette")
+    transparent_value = cast("int | tuple[int, int, int] | None", transparent)
+    return CompatColorType(raw_value, raw_bit_depth, transparent=transparent_value)
+
+
 @dataclass(frozen=True)
 class CompatStripChunks:
     mode: str
     names: tuple[str, ...]
+
+
+def strip_chunks(names: StableIterable[str]) -> CompatStripChunks:
+    """Create a strip-chunk option for explicit PNG chunk names."""
+    return CompatStripChunks("strip", chunk_names(names))
+
+
+def keep_chunks(names: StableIterable[str]) -> CompatStripChunks:
+    """Create a keep-chunk option for explicit PNG chunk names."""
+    return CompatStripChunks("keep", chunk_names(names))
 
 
 @dataclass(frozen=True)
@@ -79,9 +112,34 @@ class CompatDeflater:
     value: int
 
 
+def libdeflater(compression: int = 11) -> CompatDeflater:
+    """Create a libdeflater option with an explicit compression level."""
+    if isinstance(compression, bool):
+        warn_pyoxipng_compat()
+    return CompatDeflater("libdeflater", compression)
+
+
+def zopfli(iterations: int = 15) -> CompatDeflater:
+    """Create a zopfli option with an explicit iteration count."""
+    if isinstance(iterations, bool):
+        warn_pyoxipng_compat()
+        if iterations is False:
+            raise TypeError("deflate zopfli iterations must be an integer")
+    return CompatDeflater("zopfli", iterations)
+
+
 @dataclass(frozen=True)
 class PredefinedFilters:
     filters: tuple[str, ...]
+
+
+def predefined_filters(filters: StableIterable[object]) -> PredefinedFilters:
+    """Create a predefined row-filter sequence."""
+    values = stable_values(filters, context="predefined filters")
+    if not values:
+        raise ValueError("predefined filter must not be empty")
+    parsed = tuple(basic_row_filter_value(filter_value) for filter_value in values)
+    return PredefinedFilters(parsed)
 
 
 def basic_row_filter_value(value: object) -> str:

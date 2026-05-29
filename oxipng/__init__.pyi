@@ -181,11 +181,7 @@ class RawImage:
         interlace: Interlacing | str | None = None,
         strip: StripChunks | _CompatStripChunks | str | None = None,
         deflate: Deflater | _CompatDeflater | str | None = None,
-        filter: FilterOption
-        | list[FilterOption]
-        | tuple[FilterOption, ...]
-        | set[FilterOption]
-        | None = None,
+        filter: FilterOption | list[FilterOption] | tuple[FilterOption, ...] | None = None,
         fix_errors: bool = False,
         force: bool = False,
         optimize_alpha: bool | None = None,
@@ -209,11 +205,7 @@ def optimize(
     interlace: Interlacing | str | None = None,
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
-    filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
-    | None = None,
+    filter: FilterOption | list[FilterOption] | tuple[FilterOption, ...] | None = None,
     fix_errors: bool = False,
     force: bool = False,
     backup: bool = False,
@@ -238,11 +230,7 @@ def analyze(
     interlace: Interlacing | str | None = None,
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
-    filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
-    | None = None,
+    filter: FilterOption | list[FilterOption] | tuple[FilterOption, ...] | None = None,
     fix_errors: bool = False,
     force: bool = False,
     optimize_alpha: bool | None = None,
@@ -265,11 +253,7 @@ def optimize_from_memory(
     interlace: Interlacing | str | None = None,
     strip: StripChunks | _CompatStripChunks | str | None = None,
     deflate: Deflater | _CompatDeflater | str | None = None,
-    filter: FilterOption
-    | list[FilterOption]
-    | tuple[FilterOption, ...]
-    | set[FilterOption]
-    | None = None,
+    filter: FilterOption | list[FilterOption] | tuple[FilterOption, ...] | None = None,
     fix_errors: bool = False,
     force: bool = False,
     optimize_alpha: bool | None = None,
@@ -284,3 +268,5 @@ def optimize_from_memory(
     max_decompressed_size: int | None = None,
 ) -> bytes:
     """Optimize PNG bytes in memory."""
+
+__all__: list[str]

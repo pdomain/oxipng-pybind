@@ -39,6 +39,7 @@ Upstream = "https://github.com/oxipng/oxipng"
 [dependency-groups]
 test = [
     "pillow>=12.2; python_version >= '3.11'",
+    "pylint==4.0.5",
     "pytest>=8.4",
     "pytest-cov>=6.2.1",
     "pytest-xdist>=3.6",

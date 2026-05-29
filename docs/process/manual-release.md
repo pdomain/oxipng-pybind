@@ -20,10 +20,19 @@ Update the Python package version and lockfile before tagging:
 uv lock
 ```
 
-Commit and push the version change. Wait for the required checks on `main`:
+Commit and push the version change. Wait for the required source checks on
+`main`:
 
-- `ci`
-- `api-matrix`
+- `pre-commit checks`
+- `python tests`
+- `rust tests`
+- `dependency audit`
+- `release file checks`
+- `public api py3.10`
+- `public api py3.11`
+- `public api py3.12`
+- `public api py3.13`
+- `public api py3.14`
 
 Do not push the release tag until these checks pass on the commit you plan to
 tag.

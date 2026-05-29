@@ -13,7 +13,17 @@ uv run --group dev python scripts/audit_github_settings.py
 - Protect `main`.
 - Allow only rebase merges. Disable merge commits and squash merges.
 - Enable repository auto-merge.
-- Require the `source ci` check before merging.
+- Require the split source checks before merging:
+  - `pre-commit checks`
+  - `python tests`
+  - `rust tests`
+  - `dependency audit`
+  - `release file checks`
+  - `public api py3.10`
+  - `public api py3.11`
+  - `public api py3.12`
+  - `public api py3.13`
+  - `public api py3.14`
 - Allow GitHub Actions to create and approve pull requests.
 
 ## Wheel Checks

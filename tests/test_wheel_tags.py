@@ -79,7 +79,9 @@ def test_rejects_wrong_version(tmp_path: Path) -> None:
 
     errors = check_wheel_tags.check_wheels([wheel], "manylinux_2_34_x86_64")
 
-    assert errors == [f"{wheel.name} uses version 10.1.0, expected 10.1.1.post1"]
+    assert errors == [
+        f"{wheel.name} uses version 10.1.0, expected {check_wheel_tags.expected_version()}"
+    ]
 
 
 def test_rejects_invalid_wheel_filename_format(tmp_path: Path) -> None:

@@ -5,22 +5,29 @@ from __future__ import annotations
 import io
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING
+from pathlib import Path
 
-if TYPE_CHECKING:
-    from pathlib import Path
+from scripts import _toml_compat
 
-DEFAULT_VERSION = "10.1.1.post1"
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def project_version() -> str:
+    """Return the project version from pyproject.toml."""
+    with (ROOT / "pyproject.toml").open("rb") as file:
+        pyproject = _toml_compat.load(file)
+    return str(pyproject["project"]["version"])
 
 
 def wheel_name(
     distribution: str = "oxipng_pybind",
-    version: str = DEFAULT_VERSION,
+    version: str | None = None,
     python_tag: str = "cp310",
     abi_tag: str = "abi3",
     platform: str = "manylinux_2_34_x86_64",
 ) -> str:
-    return f"{distribution}-{version}-{python_tag}-{abi_tag}-{platform}.whl"
+    wheel_version = version or project_version()
+    return f"{distribution}-{wheel_version}-{python_tag}-{abi_tag}-{platform}.whl"
 
 
 def touch_wheel(directory: Path, **kwargs: str) -> Path:

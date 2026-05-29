@@ -26,7 +26,18 @@ def test_audit_github_settings_accepts_expected_settings(
         },
         "repos/example/oxipng-pybind/branches/main/protection": {
             "required_status_checks": {
-                "contexts": ["source ci"],
+                "contexts": [
+                    "pre-commit checks",
+                    "python tests",
+                    "rust tests",
+                    "dependency audit",
+                    "release file checks",
+                    "public api py3.10",
+                    "public api py3.11",
+                    "public api py3.12",
+                    "public api py3.13",
+                    "public api py3.14",
+                ],
                 "checks": [],
             }
         },
@@ -44,7 +55,8 @@ def test_audit_github_settings_accepts_expected_settings(
     assert audit_github_settings.main(["--repo", "example/oxipng-pybind"], run_gh=run) == 0
     output = capsys.readouterr().out
     assert "PASS default branch is main" in output
-    assert "PASS required check present: source ci" in output
+    assert "PASS required check present: pre-commit checks" in output
+    assert "PASS required check present: public api py3.10" in output
     assert "PASS merge commits are disabled" in output
     assert "PASS squash merges are disabled" in output
     assert "PASS required secret available: UPSTREAM_BUMP_TOKEN" in output
@@ -77,5 +89,6 @@ def test_audit_github_settings_reports_failed_checks(
     assert "FAIL rebase merge is disabled" in output
     assert "FAIL merge commits are enabled" in output
     assert "FAIL squash merges are enabled" in output
-    assert "FAIL required check missing: source ci" in output
+    assert "FAIL required check missing: pre-commit checks" in output
+    assert "FAIL required check missing: public api py3.10" in output
     assert "FAIL required secret missing: DEPENDENCY_REFRESH_TOKEN" in output

@@ -13,7 +13,18 @@ from pathlib import Path
 from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REQUIRED_CHECKS = ("source ci",)
+DEFAULT_REQUIRED_CHECKS = (
+    "pre-commit checks",
+    "python tests",
+    "rust tests",
+    "dependency audit",
+    "release file checks",
+    "public api py3.10",
+    "public api py3.11",
+    "public api py3.12",
+    "public api py3.13",
+    "public api py3.14",
+)
 DEFAULT_REQUIRED_SECRETS = ("DEPENDENCY_REFRESH_TOKEN", "UPSTREAM_BUMP_TOKEN")
 GITHUB_API_HEADERS = (
     "Accept: application/vnd.github+json",

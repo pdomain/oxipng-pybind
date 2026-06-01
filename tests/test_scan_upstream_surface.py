@@ -429,6 +429,44 @@ def test_append_generated_docs_skips_when_report_has_no_new_surface(tmp_path: Pa
     assert not (tmp_path / "CHANGELOG.md").exists()
 
 
+def test_append_generated_docs_emits_markdownlint_clean_sections(tmp_path: Path) -> None:
+    """Generated version sections must satisfy MD022 (blanks around headings) and
+    MD032 (blanks around lists) so markdownlint passes in the bump workflow."""
+    docs = tmp_path / "docs" / "architecture"
+    docs.mkdir(parents=True)
+    for name in ("api-compatibility.md", "options-surface.md"):
+        (docs / name).write_text(f"# {name}\n\nExisting content.\n", encoding="utf-8")
+    report: dict[str, object] = {
+        "upstream_version": "10.2.0",
+        "new_upstream_options": ["force"],
+        "enums": {"InFile": {"new_upstream_variants": ["Path"]}},
+        "blocking": False,
+    }
+
+    append_generated_docs(report, tmp_path)
+
+    for name in ("api-compatibility.md", "options-surface.md"):
+        text = (docs / name).read_text(encoding="utf-8")
+        heading_pos = text.index("### oxipng 10.2.0")
+        # MD022: blank line must follow the heading (heading line ends, then blank line before list)
+        after_heading = text[heading_pos + len("### oxipng 10.2.0") :]
+        assert after_heading.startswith("\n\n"), (
+            f"{name}: heading must be followed by a blank line (MD022); got {after_heading[:20]!r}"
+        )
+        # MD032: blank line must precede the list (blank line before first bullet)
+        first_bullet_pos = text.index("\n- `")
+        char_before_bullet = text[first_bullet_pos - 1 : first_bullet_pos]
+        assert char_before_bullet == "\n", f"{name}: list must be preceded by a blank line (MD032)"
+        # MD032: blank line must follow the list (blank line after last bullet)
+        last_bullet_end = text.rindex("\n- `")
+        rest_after_last_bullet = text[last_bullet_end + 1 :]
+        last_bullet_line_end = rest_after_last_bullet.index("\n")
+        after_list = rest_after_last_bullet[last_bullet_line_end + 1 :]
+        assert after_list == "" or after_list.startswith("\n"), (
+            f"{name}: list must be followed by a blank line or end of file (MD032)"
+        )
+
+
 def test_current_manifest_path_uses_pinned_oxipng_version(tmp_path: Path) -> None:
     (tmp_path / "Cargo.toml").write_text(
         '[dependencies]\noxi = { package = "oxipng", version = "=10.1.1" }\n',

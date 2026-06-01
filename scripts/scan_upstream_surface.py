@@ -293,12 +293,13 @@ def append_generated_docs(report: dict[str, Any], root: Path = ROOT) -> None:
         return
 
     version = report["upstream_version"]
-    lines = [f"\n### oxipng {version}\n"]
+    lines = [f"\n### oxipng {version}\n\n"]
     lines.extend(f"- `Options.{option}`\n" for option in report["new_upstream_options"])
     for enum_name, enum_report in report["enums"].items():
         lines.extend(
             f"- `{enum_name}::{variant}`\n" for variant in enum_report["new_upstream_variants"]
         )
+    lines.append("\n")
     addition = "".join(lines)
 
     for relative in (

@@ -16,7 +16,7 @@ $(_goals):
 
 else
 
-.PHONY: help bootstrap-rust setup develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
+.PHONY: help bootstrap-rust setup setup-env setup-hooks develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
 	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check \
 	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps api-matrix ci
@@ -36,12 +36,20 @@ bootstrap-rust: ## Install rustup, Rust toolchain, and cargo-deny if missing
 		cargo install --locked cargo-deny --version $(CARGO_DENY_VERSION); \
 	fi
 
-setup: bootstrap-rust ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
+setup-env: bootstrap-rust ## Install toolchains, sync deps, and build editable extension (no hook install)
 	uv lock --check
 	uv sync --locked --group dev --reinstall
 	@$(MAKE) --no-print-directory develop
-	uv run --group dev pre-commit install --install-hooks
-	uv run --group dev pre-commit install --hook-type commit-msg
+
+setup-hooks: ## Install pre-commit hooks (skipped silently when core.hooksPath is set)
+	@if git config --get core.hooksPath >/dev/null 2>&1; then \
+		echo "Note: core.hooksPath is set; skipping pre-commit hook install (hooks run via make pre-commit-check)"; \
+	else \
+		uv run --group dev pre-commit install --install-hooks; \
+		uv run --group dev pre-commit install --hook-type commit-msg; \
+	fi
+
+setup: setup-env setup-hooks ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
 
 develop: ## Build and install the editable extension
 	uv run --group dev maturin develop
@@ -155,7 +163,7 @@ upgrade-deps: ## Upgrade Python and Rust lockfiles
 	uv run --group dev maturin develop
 
 ci: ## Run full CI
-	@$(MAKE) --no-print-directory setup
+	@$(MAKE) --no-print-directory setup-env
 	@$(MAKE) --no-print-directory pre-commit-check
 	@$(MAKE) --no-print-directory lint
 	@$(MAKE) --no-print-directory rust-deny

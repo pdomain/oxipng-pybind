@@ -467,6 +467,91 @@ def test_append_generated_docs_emits_markdownlint_clean_sections(tmp_path: Path)
         )
 
 
+def test_png_error_infile_outfile_variants_are_fully_unexposed() -> None:
+    """PngError, InFile, OutFile variants must all appear in [enums.<Name>.unexposed]
+    so the scan never flags them as new untracked surface after an upstream bump.
+
+    Drive with a synthetic surface (no network / rustdoc required).
+    """
+    png_error_variants = [
+        "APNGOutOfOrder",
+        "C2PAMetadataPreventsChanges",
+        "CRCMismatch",
+        "ChunkMissing",
+        "DeflatedDataTooLong",
+        "IncorrectDataLength",
+        "InflatedDataTooLong",
+        "InvalidData",
+        "InvalidDepthForType",
+        "NotPNG",
+        "Other",
+        "ReadFailed",
+        "TruncatedData",
+        "WriteFailed",
+    ]
+    surface = UpstreamSurface(
+        options_fields=[],
+        enums={
+            "PngError": png_error_variants,
+            "InFile": ["Path", "StdIn"],
+            "OutFile": ["None", "Path", "StdOut"],
+        },
+        functions=["optimize", "optimize_from_memory"],
+    )
+
+    # Manifest exactly as it stands before this task: [exceptions] exposed = ["PngError"]
+    # but NO [enums.PngError.unexposed], [enums.InFile.*], or [enums.OutFile.*] tables.
+    manifest_without_unexposed_tables: dict[str, object] = {
+        "upstream_version": "10.1.1",
+        "functions": {"exposed": ["optimize", "optimize_from_memory"]},
+        "exceptions": {"exposed": ["PngError"]},
+        "enums": {},
+    }
+
+    report_before = compare_surface(surface, manifest_without_unexposed_tables)
+
+    # Before the fix: the scan DOES flag these as new (all three lists are non-empty).
+    assert report_before["enums"]["PngError"]["new_upstream_variants"] == sorted(png_error_variants)
+    assert report_before["enums"]["InFile"]["new_upstream_variants"] == ["Path", "StdIn"]
+    assert report_before["enums"]["OutFile"]["new_upstream_variants"] == ["None", "Path", "StdOut"]
+
+    # Manifest WITH the [enums.<Name>.unexposed] tables added (the fix).
+    manifest_with_unexposed_tables: dict[str, object] = {
+        "upstream_version": "10.1.1",
+        "functions": {"exposed": ["optimize", "optimize_from_memory"]},
+        "exceptions": {"exposed": ["PngError"]},
+        "enums": {
+            "PngError": {
+                "unexposed": dict.fromkeys(
+                    png_error_variants,
+                    "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API.",
+                )
+            },
+            "InFile": {
+                "unexposed": {
+                    "Path": "input handled via file path / bytes; InFile enum not exposed to Python",
+                    "StdIn": "stdio unsupported (see [notes].stdio)",
+                }
+            },
+            "OutFile": {
+                "unexposed": {
+                    "None": "used internally by analyze() dry-run, OutFile enum not exposed",
+                    "Path": "output handled via file path; OutFile enum not exposed",
+                    "StdOut": "stdio unsupported (see [notes].stdio)",
+                }
+            },
+        },
+    }
+
+    report_after = compare_surface(surface, manifest_with_unexposed_tables)
+
+    # After the fix: no variants are flagged as new untracked surface.
+    assert report_after["enums"]["PngError"]["new_upstream_variants"] == []
+    assert report_after["enums"]["InFile"]["new_upstream_variants"] == []
+    assert report_after["enums"]["OutFile"]["new_upstream_variants"] == []
+    assert has_new_unexposed(report_after) is False
+
+
 def test_current_manifest_path_uses_pinned_oxipng_version(tmp_path: Path) -> None:
     (tmp_path / "Cargo.toml").write_text(
         '[dependencies]\noxi = { package = "oxipng", version = "=10.1.1" }\n',

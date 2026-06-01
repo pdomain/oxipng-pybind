@@ -108,6 +108,31 @@ bigrams = "Python facade compatibility alias; maps through FilterStrategy, not u
 bigent = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
 brute = "Python facade compatibility alias; maps through FilterStrategy, not upstream RowFilter"
 
+[enums.PngError.unexposed]
+APNGOutOfOrder = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+C2PAMetadataPreventsChanges = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+CRCMismatch = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+ChunkMissing = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+DeflatedDataTooLong = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+IncorrectDataLength = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+InflatedDataTooLong = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+InvalidData = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+InvalidDepthForType = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+NotPNG = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+Other = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+ReadFailed = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+TruncatedData = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+WriteFailed = "PngError is surfaced as a single flat Python exception; individual variants are not discriminated in the Python API."
+
+[enums.InFile.unexposed]
+Path = "input handled via file path / bytes; InFile enum not exposed to Python"
+StdIn = "stdio unsupported (see [notes].stdio)"
+
+[enums.OutFile.unexposed]
+None = "used internally by analyze() dry-run, OutFile enum not exposed"
+Path = "output handled via file path; OutFile enum not exposed"
+StdOut = "stdio unsupported (see [notes].stdio)"
+
 [notes]
 interlacing = "Python Interlacing.keep maps to leaving Options.interlace unchanged as None."
 libdeflater = "Python Deflater.libdeflater preserves the preset compression level."

@@ -299,7 +299,6 @@ def append_generated_docs(report: dict[str, Any], root: Path = ROOT) -> None:
         lines.extend(
             f"- `{enum_name}::{variant}`\n" for variant in enum_report["new_upstream_variants"]
         )
-    lines.append("\n")
     addition = "".join(lines)
 
     for relative in (

@@ -564,6 +564,21 @@ def test_upsert_surface_issue_creates_when_missing(
         RecordedRun(
             [
                 "/usr/bin/gh",
+                "label",
+                "create",
+                "upstream-surface",
+                "--color",
+                "BFD4F2",
+                "--description",
+                "Upstream oxipng surface change awaiting triage",
+                "--force",
+            ],
+            cwd=bump_upstream.ROOT,
+            check=True,
+        ),
+        RecordedRun(
+            [
+                "/usr/bin/gh",
                 "issue",
                 "create",
                 "--title",
@@ -575,8 +590,62 @@ def test_upsert_surface_issue_creates_when_missing(
             ],
             cwd=bump_upstream.ROOT,
             check=True,
-        )
+        ),
     ]
+
+
+def test_upsert_surface_issue_ensure_label_called_before_issue_create(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """ensure_label must be called before gh issue create so a missing label never hard-fails."""
+    report = tmp_path / "pr-body-section.md"
+    report.write_text("report", encoding="utf-8")
+    call_order: list[str] = []
+    recorder = RunRecorder()
+
+    original_call = recorder.__call__
+
+    def ordered_call(command: list[str], **kwargs: object) -> object:
+        if "label" in command and "create" in command:
+            call_order.append("label_create")
+        elif "issue" in command and "create" in command:
+            call_order.append("issue_create")
+        return original_call(command, **kwargs)
+
+    monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: None)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", ordered_call)
+
+    bump_upstream.upsert_surface_issue("10.2.0", report)
+
+    assert call_order == ["label_create", "issue_create"]
+
+
+def test_upsert_surface_issue_ensure_label_tolerates_already_exists(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A non-zero exit from gh label create --force must not abort issue creation."""
+    report = tmp_path / "pr-body-section.md"
+    report.write_text("report", encoding="utf-8")
+    issue_create_called: list[bool] = []
+
+    def run_with_label_failure(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        if "label" in command and "create" in command:
+            raise subprocess.CalledProcessError(1, command, output="")
+        if "issue" in command and "create" in command:
+            issue_create_called.append(True)
+        return subprocess.CompletedProcess(command, 0, stdout="")
+
+    monkeypatch.setattr(bump_upstream, "find_surface_issue", lambda version: None)
+    monkeypatch.setattr(shutil, "which", fake_which("/usr/bin"))
+    monkeypatch.setattr(subprocess, "run", run_with_label_failure)
+
+    # Must not raise even when label create exits non-zero
+    bump_upstream.upsert_surface_issue("10.2.0", report)
+
+    assert issue_create_called == [True]
 
 
 def test_issue_body_mentions_manual_surface_triage() -> None:

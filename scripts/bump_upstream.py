@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -223,6 +224,36 @@ Triage checklist:
 """
 
 
+UPSTREAM_SURFACE_LABEL = "upstream-surface"
+UPSTREAM_SURFACE_LABEL_COLOR = "BFD4F2"
+UPSTREAM_SURFACE_LABEL_DESCRIPTION = "Upstream oxipng surface change awaiting triage"
+
+
+def ensure_label(name: str, *, color: str, description: str) -> None:
+    """Ensure a GitHub label exists, creating it if necessary.
+
+    Uses ``--force`` so ``gh label create`` is idempotent.  If the command
+    still exits non-zero for any reason (e.g. a permissions error on a fork),
+    the error is swallowed so that callers can proceed with issue creation.
+    """
+    with contextlib.suppress(subprocess.CalledProcessError):
+        subprocess.run(  # noqa: S603
+            [
+                resolve_executable("gh"),
+                "label",
+                "create",
+                name,
+                "--color",
+                color,
+                "--description",
+                description,
+                "--force",
+            ],
+            cwd=ROOT,
+            check=True,
+        )
+
+
 def find_surface_issue(version: str) -> int | None:
     """Find an open upstream-surface issue for a specific version."""
     command = [
@@ -254,6 +285,11 @@ def upsert_surface_issue(version: str, report_path: Path) -> None:
     existing = find_surface_issue(version)
     gh = resolve_executable("gh")
     if existing is None:
+        ensure_label(
+            UPSTREAM_SURFACE_LABEL,
+            color=UPSTREAM_SURFACE_LABEL_COLOR,
+            description=UPSTREAM_SURFACE_LABEL_DESCRIPTION,
+        )
         subprocess.run(  # noqa: S603
             [
                 gh,
@@ -262,7 +298,7 @@ def upsert_surface_issue(version: str, report_path: Path) -> None:
                 "--title",
                 title,
                 "--label",
-                "upstream-surface",
+                UPSTREAM_SURFACE_LABEL,
                 "--body",
                 body,
             ],

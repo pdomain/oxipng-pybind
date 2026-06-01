@@ -2,6 +2,8 @@
 
 ## Release Notes
 
+- Documented new unexposed upstream surface for oxipng 10.1.1.
+
 ## 10.1.1.post2 - Work around Pylint/Astroid facade analysis recursion
 
 - Reworked the Python compatibility facade so consumers running Pylint 4.0.x /

@@ -73,3 +73,25 @@ The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
 
 No generated Rust surface additions have been recorded for 10.1.1.
+
+### oxipng 10.1.1
+
+- `InFile::Path`
+- `InFile::StdIn`
+- `OutFile::None`
+- `OutFile::Path`
+- `OutFile::StdOut`
+- `PngError::APNGOutOfOrder`
+- `PngError::C2PAMetadataPreventsChanges`
+- `PngError::CRCMismatch`
+- `PngError::ChunkMissing`
+- `PngError::DeflatedDataTooLong`
+- `PngError::IncorrectDataLength`
+- `PngError::InflatedDataTooLong`
+- `PngError::InvalidData`
+- `PngError::InvalidDepthForType`
+- `PngError::NotPNG`
+- `PngError::Other`
+- `PngError::ReadFailed`
+- `PngError::TruncatedData`
+- `PngError::WriteFailed`

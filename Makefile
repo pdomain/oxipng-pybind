@@ -41,9 +41,9 @@ setup-env: bootstrap-rust ## Install toolchains, sync deps, and build editable e
 	uv sync --locked --group dev --reinstall
 	@$(MAKE) --no-print-directory develop
 
-setup-hooks: ## Install pre-commit hooks (skipped silently when core.hooksPath is set)
-	@if git config --get core.hooksPath >/dev/null 2>&1; then \
-		echo "Note: core.hooksPath is set; skipping pre-commit hook install (hooks run via make pre-commit-check)"; \
+setup-hooks: ## Install pre-commit hooks (skipped silently when core.hooksPath is set or git worktree)
+	@if git config --get core.hooksPath >/dev/null 2>&1 || [ -f .git ]; then \
+		echo "Note: core.hooksPath is set or git worktree; skipping pre-commit hook install (hooks run via make pre-commit-check)"; \
 	else \
 		uv run --group dev pre-commit install --install-hooks; \
 		uv run --group dev pre-commit install --hook-type commit-msg; \

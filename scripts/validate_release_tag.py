@@ -111,9 +111,13 @@ def pypi_version_exists(project: str, version: str, index_url: str) -> bool:
         with urllib.request.urlopen(request, timeout=20):  # noqa: S310 - URL scheme is validated above.
             return True
     except urllib.error.HTTPError as error:
-        if error.code == HTTP_NOT_FOUND:
-            return False
-        raise ReleaseTagError(f"PyPI version check failed with HTTP {error.code}") from error
+        # HTTPError is a file-like response object (urllib wraps it in a
+        # tempfile-backed closer). Close it so its finalizer does not emit a
+        # spurious ResourceWarning on garbage collection.
+        with error:
+            if error.code == HTTP_NOT_FOUND:
+                return False
+            raise ReleaseTagError(f"PyPI version check failed with HTTP {error.code}") from error
     except urllib.error.URLError as error:
         raise ReleaseTagError(f"PyPI version check failed: {error.reason}") from error
 

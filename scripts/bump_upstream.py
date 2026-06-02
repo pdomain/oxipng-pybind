@@ -77,9 +77,13 @@ def crates_io_version_available(version: str) -> bool:
         with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310
             payload = cast("dict[str, Any]", json.loads(response.read().decode("utf-8")))
     except urllib.error.HTTPError as error:
-        if error.code == HTTP_NOT_FOUND:
-            return False
-        raise
+        # HTTPError is a file-like response object (urllib wraps it in a
+        # tempfile-backed closer). Close it so its finalizer does not emit a
+        # spurious ResourceWarning on garbage collection.
+        with error:
+            if error.code == HTTP_NOT_FOUND:
+                return False
+            raise
     crate_version = payload.get("version")
     if not isinstance(crate_version, dict):
         return False

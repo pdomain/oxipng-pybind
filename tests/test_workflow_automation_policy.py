@@ -166,6 +166,7 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert prepare["outputs"] == {
         "changed": "${{ steps.changes.outputs.changed }}",
         "changed-paths": "${{ steps.changes.outputs.paths }}",
+        "ci-passed": "${{ steps.ci.outputs.ci-passed }}",
         "release-label": "${{ steps.classification.outputs.label }}",
         "release-needed": "${{ steps.classification.outputs.release-needed }}",
         "release-reason": "${{ steps.classification.outputs.reason }}",
@@ -193,27 +194,23 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
             "Upload dependency refresh workspace",
         ],
     )
-    assert step_by_name(prepare_steps, "Refresh lockfiles")["run"] == (
-        "uv lock --upgrade\ncargo update\n"
-    )
-    assert step_by_name(prepare_steps, "Sync refreshed dependencies")["run"] == (
-        "uv sync --locked --group dev"
-    )
-    assert step_by_name(prepare_steps, "Refresh pre-commit hooks")["run"] == (
-        "uv run --locked --group dev pre-commit autoupdate"
-    )
-    assert step_by_name(prepare_steps, "Refresh GitHub Actions")["run"] == (
-        "uv run --locked --group dev python scripts/update_github_actions.py"
-    )
-    assert step_by_name(prepare_steps, "Apply lint and generated-file fixes")["run"] == (
-        "make lint-fix"
-    )
-    assert step_by_name(prepare_steps, "Generate third-party notices")["run"] == (
-        "make third-party-notices"
-    )
-    assert step_by_name(prepare_steps, "Run dependency audits")["run"] == "make dependency-audit"
-    assert step_by_name(prepare_steps, "Run CI")["run"] == "make ci"
+    expected_runs = {
+        "Refresh lockfiles": "uv lock --upgrade\ncargo update\n",
+        "Sync refreshed dependencies": "uv sync --locked --group dev",
+        "Refresh pre-commit hooks": "uv run --locked --group dev pre-commit autoupdate",
+        "Refresh GitHub Actions": (
+            "uv run --locked --group dev python scripts/update_github_actions.py"
+        ),
+        "Apply lint and generated-file fixes": "make lint-fix",
+        "Generate third-party notices": "make third-party-notices",
+        "Run dependency audits": "make dependency-audit",
+    }
+    for name, run in expected_runs.items():
+        assert step_by_name(prepare_steps, name)["run"] == run
 
+    # The "Run CI" / "Check for changes" CI-outcome contract (recorded but
+    # non-aborting, change detection on always()) is asserted in
+    # test_dependency_refresh_opens_pr_even_when_ci_fails.
     changes = step_by_name(prepare_steps, "Check for changes")
     assert changes["id"] == "changes"
     assert "git diff --name-only" in changes["run"]
@@ -246,18 +243,64 @@ def test_dependency_refresh_auto_merge_is_ci_gated() -> None:
     assert "scripts/update_github_actions.py" in create_pr["with"]["body"]
     assert "Release classification:" in create_pr["with"]["body"]
     assert "${{ needs.prepare.outputs.release-label }}" in create_pr["with"]["body"]
+    # The PR body must surface the CI outcome so a reviewer immediately sees
+    # whether the refresh passed the local gate.
+    assert "${{ needs.prepare.outputs.ci-passed }}" in create_pr["with"]["body"]
+    # A red refresh is labelled so it is visible at a glance and never confused
+    # with a clean one.
     assert create_pr["with"]["labels"] == (
-        "dependencies, automated, ${{ needs.prepare.outputs.release-label }}"
+        "dependencies, automated, ${{ needs.prepare.outputs.release-label }}, "
+        "${{ needs.prepare.outputs.ci-passed == 'true' && 'ci-passed' || 'ci-failed' }}"
     )
 
     auto_merge = step_by_name(publish_steps, "Enable auto-merge")
     assert auto_merge["env"] == {"GH_TOKEN": "${{ secrets.DEPENDENCY_REFRESH_TOKEN }}"}
+    # SAFETY: a red refresh must never auto-merge. Auto-merge requires CI green.
+    assert "needs.prepare.outputs.ci-passed == 'true'" in auto_merge["if"]
     assert "needs.prepare.outputs.release-needed == 'false'" in auto_merge["if"]
     assert 'contains(fromJSON(\'["created", "updated"]\')' in auto_merge["if"]
     assert "gh pr merge" in auto_merge["run"]
     assert "--auto --rebase --delete-branch" in auto_merge["run"]
     assert "--merge" not in auto_merge["run"]
     assert "--squash" not in auto_merge["run"]
+
+
+def test_dependency_refresh_opens_pr_even_when_ci_fails() -> None:
+    """A red post-bump CI must still open a PR for human review, not abort the job.
+
+    The reviewed-action-ref security gate rejects unreviewed SHAs by design, so a
+    GitHub Actions bump makes ``make ci`` fail. The workflow must surface that
+    failure as a reviewable PR rather than swallowing the whole run.
+    """
+    workflow = load_workflow(".github/workflows/dependency-health.yml")
+    prepare = workflow["jobs"]["prepare"]
+    publish = workflow["jobs"]["publish"]
+    prepare_steps = prepare["steps"]
+
+    # 1. Run CI does not hard-fail the job; it records the outcome instead.
+    run_ci = step_by_name(prepare_steps, "Run CI")
+    assert run_ci["continue-on-error"] is True
+    assert run_ci["id"] == "ci"
+
+    # 2. Change detection runs regardless of CI outcome.
+    assert step_by_name(prepare_steps, "Check for changes")["if"] == "always()"
+
+    # 3. The CI outcome is a prepare-job output, so publish can read it.
+    assert prepare["outputs"]["ci-passed"] == "${{ steps.ci.outputs.ci-passed }}"
+
+    # 4. The publish job is reachable on red CI: it is gated only on changes,
+    #    not on CI passing.
+    assert publish["if"] == "needs.prepare.outputs.changed == 'true'"
+    assert "ci-passed" not in publish["if"]
+
+    # 5. Steps that depend on detected changes stay gated on the change flag,
+    #    which is now computed even when CI failed.
+    assert step_by_name(prepare_steps, "Classify dependency refresh")["if"] == (
+        "steps.changes.outputs.changed == 'true'"
+    )
+    assert step_by_name(prepare_steps, "Upload dependency refresh workspace")["if"] == (
+        "steps.changes.outputs.changed == 'true'"
+    )
 
 
 def test_dependency_refresh_docs_describe_ci_gated_auto_merge() -> None:
@@ -268,6 +311,10 @@ def test_dependency_refresh_docs_describe_ci_gated_auto_merge() -> None:
     assert "required checks pass" in text
     assert "classify_dependency_refresh.py --base-ref origin/main" in text
     assert "review lockfile diffs before merge" not in text
+    # The docs must explain that a red local CI still opens a PR for review and
+    # never auto-merges.
+    assert "ci-passed" in text
+    assert "ci-failed" in text
 
 
 def test_api_matrix_uses_locked_dev_dependencies() -> None:

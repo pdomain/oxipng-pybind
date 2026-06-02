@@ -50,8 +50,17 @@ The prepare job has read-only repository permissions. It refreshes `uv.lock` and
 third-party notices. It then applies lint fixes, runs dependency audits, and
 runs full CI.
 
+The "Run CI" step records its result as the `ci-passed` job output and does not
+abort the job on failure. This matters because a GitHub Action pin bump produces
+an unreviewed SHA, which the reviewed-action-ref security gate rejects by design,
+so `make ci` fails. The prepare job therefore continues, detects changes
+regardless of CI outcome, and lets the publish job open a PR for human review.
+
 A separate write-scoped publish job opens or updates a dependency refresh PR
-only when the prepare job changed files.
+only when the prepare job changed files. It labels the PR `ci-passed` when local
+CI was green and `ci-failed` when it was red, and threads the `ci-passed` value
+into the PR body. A `ci-failed` PR opens as a normal PR awaiting human review and
+never auto-merges; review the new pins (or other changes) before merge.
 
 The prepare job runs `scripts/classify_dependency_refresh.py --base-ref origin/main`
 after it detects changed files. The publish job adds the classifier label and
@@ -61,9 +70,10 @@ The publish job commits only the changed files from the prepare job. This keeps
 lockfiles, `.pre-commit-config.yaml`, workflow action pins, generated notices,
 and lint fixes in one PR.
 
-`no-release-needed` PRs may auto-merge after required checks pass.
-`release-needed` PRs are opened but not auto-merged; they stay open for wrapper
-version review.
+`no-release-needed` PRs with a green prepare-job CI (`ci-passed`) may auto-merge
+after required checks pass. `release-needed` PRs are opened but not auto-merged;
+they stay open for wrapper version review. Any `ci-failed` PR also stays open for
+human review and never auto-merges, regardless of release classification.
 
 Branch protection remains the merge gate, so failed checks leave the PR open
 for manual repair.

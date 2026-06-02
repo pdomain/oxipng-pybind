@@ -15,6 +15,7 @@ jobs:
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       changed-paths: ${{ steps.changes.outputs.paths }}
+      ci-passed: ${{ steps.ci.outputs.ci-passed }}
       release-needed: ${{ steps.classification.outputs.release-needed }}
       release-label: ${{ steps.classification.outputs.label }}
       release-reason: ${{ steps.classification.outputs.reason }}
@@ -51,9 +52,24 @@ jobs:
       - name: Run dependency audits
         run: make dependency-audit
       - name: Run CI
-        run: make ci
+        id: ci
+        # A post-bump CI failure is expected when an unreviewed GitHub Action
+        # SHA trips the reviewed-action-ref security gate. Record the outcome so
+        # the publish job can surface it, but do not abort the job: the refresh
+        # must still open a PR for human review. continue-on-error keeps the red
+        # result visible in the run while letting later steps run, and the
+        # explicit ci-passed output is what gates auto-merge.
+        continue-on-error: true
+        run: |
+          if make ci; then
+            echo "ci-passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ci-passed=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
       - name: Check for changes
         id: changes
+        if: always()
         run: |
           paths="$({
             git diff --name-only
@@ -115,6 +131,13 @@ jobs:
           body: |
             Automated dependency refresh.
 
+            Prepare-job local CI result: `ci-passed=${{ needs.prepare.outputs.ci-passed }}`.
+
+            When `ci-passed=false` the refresh tripped the local CI gate — most
+            often the reviewed-action-ref security check rejecting a freshly
+            bumped GitHub Action SHA. Review the new pins before merging; this PR
+            does **not** auto-merge while CI is red.
+
             Verification run in the prepare job:
 
             - `uv run --locked --group dev pre-commit autoupdate`
@@ -128,15 +151,21 @@ jobs:
             - `${{ needs.prepare.outputs.release-label }}`
             - `${{ needs.prepare.outputs.release-reason }}`
 
-            `no-release-needed` PRs auto-merge after required checks pass.
-            `release-needed` PRs stay open for an explicit wrapper version bump
-            before merge.
+            `no-release-needed` PRs with green CI auto-merge after required checks
+            pass. `release-needed` PRs, and any PR whose prepare-job CI was red,
+            stay open for human review before merge.
           branch: automation/dependency-refresh
           delete-branch: true
-          labels: dependencies, automated, ${{ needs.prepare.outputs.release-label }}
+          labels: >-
+            dependencies, automated, ${{ needs.prepare.outputs.release-label }},
+            ${{ needs.prepare.outputs.ci-passed == 'true' && 'ci-passed' || 'ci-failed' }}
           add-paths: ${{ needs.prepare.outputs.changed-paths }}
       - name: Enable auto-merge
+        # SAFETY: never auto-merge a red refresh. Auto-merge requires the
+        # prepare-job CI to have passed; a red refresh opens as a normal PR
+        # awaiting human review.
         if: >-
+          needs.prepare.outputs.ci-passed == 'true' &&
           needs.prepare.outputs.release-needed == 'false' &&
           steps.cpr.outputs.pull-request-number != '' &&
           contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)

@@ -41,6 +41,8 @@ jobs:
       - name: Refresh pre-commit hooks
         run: uv run --locked --group dev pre-commit autoupdate
       - name: Refresh GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: uv run --locked --group dev python scripts/update_github_actions.py
       - name: Apply lint and generated-file fixes
         run: make lint-fix

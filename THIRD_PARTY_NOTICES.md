@@ -82,7 +82,7 @@ dependencies retain their upstream licenses and notices.
 - License: Apache-2.0
 
 - Project: [log](https://github.com/rust-lang/log)
-- Version: 0.4.30
+- Version: 0.4.32
 - License: MIT OR Apache-2.0
 
 - Project: [memoffset](https://github.com/Gilnaa/memoffset)

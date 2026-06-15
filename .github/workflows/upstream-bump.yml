@@ -36,6 +36,8 @@ jobs:
         run: uv sync --locked --group dev
       - name: Bump upstream
         id: bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --locked --group dev python scripts/bump_upstream.py
       - name: Generate third-party notices
         run: make third-party-notices

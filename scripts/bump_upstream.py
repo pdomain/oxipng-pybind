@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST_RELEASE_URL = "https://api.github.com/repos/oxipng/oxipng/releases/latest"
 CRATES_IO_VERSION_URL = "https://crates.io/api/v1/crates/oxipng/{version}"
 HTTP_NOT_FOUND = 404
+GITHUB_API_VERSION = "2022-11-28"
+GITHUB_USER_AGENT = "oxipng-pybind-bump"
 WRAPPER_VERSION_PATTERN = re.compile(r"^(?P<base>\d+\.\d+\.\d+)(?:\.post(?P<post>\d+))?$")
 UPSTREAM_VERSION_PATTERN = re.compile(r"^v?(?P<version>\d+\.\d+\.\d+)$")
 
@@ -54,9 +56,31 @@ def next_post_release(version: str) -> str:
     return f"{base}.post{int(post) + 1}"
 
 
+def _github_request_headers(token: str | None) -> dict[str, str]:
+    """Build request headers for the GitHub REST API, authenticating if able."""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        "User-Agent": GITHUB_USER_AGENT,
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def latest_upstream_version() -> str:
-    """Fetch the latest upstream oxipng release version."""
-    with urllib.request.urlopen(LATEST_RELEASE_URL, timeout=30) as response:  # noqa: S310
+    """Fetch the latest upstream oxipng release version.
+
+    Authenticates with ``GITHUB_TOKEN`` (or ``GH_TOKEN``) when present so that
+    scheduled CI runs use GitHub's 5000/hr authenticated rate limit instead of
+    the 60/hr unauthenticated limit shared across GitHub-hosted runner egress
+    IPs. Local runs without a token still work unauthenticated.
+    """
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    request = urllib.request.Request(  # noqa: S310
+        LATEST_RELEASE_URL, headers=_github_request_headers(token)
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
         raw_payload = json.loads(response.read().decode("utf-8"))
     if not isinstance(raw_payload, dict):
         raise TypeError("GitHub release payload must be a JSON object")

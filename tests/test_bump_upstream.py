@@ -45,10 +45,12 @@ def test_next_post_release_rejects_unsupported_versions(version: str) -> None:
 def test_latest_upstream_version_reads_github_release_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GH_TOKEN", raising=False)
     calls: list[tuple[str, int]] = []
 
-    def fake_urlopen(url: str, *, timeout: int) -> FakeResponse:
-        calls.append((url, timeout))
+    def fake_urlopen(request: urllib.request.Request, *, timeout: int) -> FakeResponse:
+        calls.append((request.full_url, timeout))
         return FakeResponse({"tag_name": "v10.2.0"})
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
@@ -60,14 +62,73 @@ def test_latest_upstream_version_reads_github_release_payload(
 def test_latest_upstream_version_rejects_missing_tag_name(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.setattr(
         urllib.request,
         "urlopen",
-        lambda url, *, timeout: FakeResponse({"name": "release"}),
+        lambda request, *, timeout: FakeResponse({"name": "release"}),
     )
 
     with pytest.raises(RuntimeError, match="missing tag_name"):
         bump_upstream.latest_upstream_version()
+
+
+def test_latest_upstream_version_sets_authorization_header_when_token_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
+    captured: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, *, timeout: int) -> FakeResponse:
+        captured.append(request)
+        return FakeResponse({"tag_name": "v10.2.0"})
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    assert bump_upstream.latest_upstream_version() == "10.2.0"
+    request = captured[0]
+    # urllib.request.Request normalizes header keys to capitalized form.
+    assert request.get_header("Authorization") == "Bearer secret-token"
+    assert request.get_header("Accept") == "application/vnd.github+json"
+    assert request.get_header("X-github-api-version") == "2022-11-28"
+    assert request.get_header("User-agent") == "oxipng-pybind-bump"
+
+
+def test_latest_upstream_version_omits_authorization_header_without_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    captured: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, *, timeout: int) -> FakeResponse:
+        captured.append(request)
+        return FakeResponse({"tag_name": "v10.2.0"})
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    assert bump_upstream.latest_upstream_version() == "10.2.0"
+    assert captured[0].get_header("Authorization") is None
+    assert captured[0].get_header("Accept") == "application/vnd.github+json"
+
+
+def test_latest_upstream_version_falls_back_to_gh_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GH_TOKEN", "gh-fallback")
+    captured: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, *, timeout: int) -> FakeResponse:
+        captured.append(request)
+        return FakeResponse({"tag_name": "v10.2.0"})
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    assert bump_upstream.latest_upstream_version() == "10.2.0"
+    assert captured[0].get_header("Authorization") == "Bearer gh-fallback"
 
 
 def test_crates_io_version_available_checks_exact_crate_version(

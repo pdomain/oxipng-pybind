@@ -33,13 +33,13 @@ struct ParsedOptions {
 }
 
 fn value_as_string(value: &Bound<'_, PyAny>, option: &str) -> PyResult<String> {
-    if let Ok(text) = value.downcast::<PyString>() {
+    if let Ok(text) = value.cast::<PyString>() {
         return Ok(text.to_str()?.to_owned());
     }
 
     match value.getattr("value") {
         Ok(enum_value) => {
-            if let Ok(text) = enum_value.downcast::<PyString>() {
+            if let Ok(text) = enum_value.cast::<PyString>() {
                 return Ok(text.to_str()?.to_owned());
             }
         }
@@ -81,14 +81,14 @@ fn enum_value_is_present(value: &Bound<'_, PyAny>) -> PyResult<bool> {
 }
 
 fn is_memoryview(value: &Bound<'_, PyAny>) -> bool {
-    value.downcast::<PyMemoryView>().is_ok()
+    value.cast::<PyMemoryView>().is_ok()
 }
 
 fn bytes_like_to_vec(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
-    if let Ok(bytes) = data.downcast::<PyBytes>() {
+    if let Ok(bytes) = data.cast::<PyBytes>() {
         return Ok(bytes.as_bytes().to_vec());
     }
-    if let Ok(bytearray) = data.downcast::<PyByteArray>() {
+    if let Ok(bytearray) = data.cast::<PyByteArray>() {
         return Ok(unsafe { bytearray.as_bytes() }.to_vec());
     }
     if is_memoryview(data) {
@@ -115,7 +115,7 @@ fn bytes_like_to_vec_memoryview(data: &Bound<'_, PyAny>) -> PyResult<Vec<u8>> {
 }
 
 fn is_bytes_like(value: &Bound<'_, PyAny>) -> bool {
-    if value.downcast::<PyBytes>().is_ok() || value.downcast::<PyByteArray>().is_ok() {
+    if value.cast::<PyBytes>().is_ok() || value.cast::<PyByteArray>().is_ok() {
         return true;
     }
     is_memoryview(value)
@@ -265,7 +265,7 @@ fn parse_strip(value: &Bound<'_, PyAny>) -> PyResult<oxi::StripChunks> {
             .ok_or_else(|| PyValueError::new_err("strip compatibility object missing mode"))?;
         let names = value
             .getattr("names")?
-            .downcast_into::<PyTuple>()
+            .cast_into::<PyTuple>()
             .map_err(|_| {
                 PyValueError::new_err("strip compatibility object names must be a tuple")
             })?;
@@ -382,7 +382,7 @@ fn parse_basic_row_filter(value: &str) -> PyResult<oxi::RowFilter> {
 fn parse_predefined_filters(value: &Bound<'_, PyAny>) -> PyResult<oxi::FilterStrategy> {
     let filters = value
         .getattr("filters")?
-        .downcast_into::<PyTuple>()
+        .cast_into::<PyTuple>()
         .map_err(|_| PyValueError::new_err("predefined filter entries must be a tuple"))?;
     if filters.is_empty() {
         return Err(PyValueError::new_err("predefined filter must not be empty"));
@@ -404,12 +404,12 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
         return Ok(filters);
     }
 
-    if value.downcast::<PyString>().is_ok() || enum_value_is_present(value)? {
+    if value.cast::<PyString>().is_ok() || enum_value_is_present(value)? {
         filters.insert(parse_filter_strategy(value)?);
         return Ok(filters);
     }
 
-    if let Ok(list) = value.downcast::<PyList>() {
+    if let Ok(list) = value.cast::<PyList>() {
         if list.is_empty() {
             return Err(PyValueError::new_err("filter must not be empty"));
         }
@@ -419,7 +419,7 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
         return Ok(filters);
     }
 
-    if let Ok(tuple) = value.downcast::<PyTuple>() {
+    if let Ok(tuple) = value.cast::<PyTuple>() {
         if tuple.is_empty() {
             return Err(PyValueError::new_err("filter must not be empty"));
         }
@@ -429,7 +429,7 @@ fn parse_filters(value: &Bound<'_, PyAny>) -> PyResult<IndexSet<oxi::FilterStrat
         return Ok(filters);
     }
 
-    if let Ok(set) = value.downcast::<PySet>() {
+    if let Ok(set) = value.cast::<PySet>() {
         if set.is_empty() {
             return Err(PyValueError::new_err("filter must not be empty"));
         }
@@ -575,7 +575,7 @@ fn parse_options(kwargs: Option<&Bound<'_, PyDict>>, mode: ParseMode) -> PyResul
         options.strip = value;
     }
     if let Some(value) = deflate {
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             options.deflater = parse_deflater(value.bind(py), options.deflater)?;
             Ok::<(), PyErr>(())
         })?;
@@ -665,7 +665,7 @@ fn optimize(
 
     if parsed.backup {
         let backup_input = input.clone();
-        py.allow_threads(move || create_backup(&backup_input))
+        py.detach(move || create_backup(&backup_input))
             .map_err(|error| {
                 if error.kind() == io::ErrorKind::AlreadyExists {
                     PyFileExistsError::new_err(backup_path_for(&input).display().to_string())
@@ -681,7 +681,7 @@ fn optimize(
         preserve_attrs: parsed.preserve_attrs,
     };
 
-    py.allow_threads(move || oxi::optimize(&input_file, &output_file, &parsed.options))
+    py.detach(move || oxi::optimize(&input_file, &output_file, &parsed.options))
         .map_err(map_png_error)?;
     Ok(())
 }
@@ -702,7 +702,7 @@ fn analyze(
     let output_file = oxi::OutFile::None;
 
     let (original_size, optimized_size) = py
-        .allow_threads(move || oxi::optimize(&input_file, &output_file, &parsed.options))
+        .detach(move || oxi::optimize(&input_file, &output_file, &parsed.options))
         .map_err(map_png_error)?;
 
     Ok(PyOptimizationResult {
@@ -771,7 +771,7 @@ fn parse_rgb16_with_depth(
     bit_depth: oxi::BitDepth,
 ) -> PyResult<oxi::RGB16> {
     let tuple = value
-        .downcast::<PyTuple>()
+        .cast::<PyTuple>()
         .map_err(|_| PyValueError::new_err(format!("{context} must be a 3-tuple")))?;
     if tuple.len() != 3 {
         return Err(PyValueError::new_err(format!(
@@ -917,7 +917,7 @@ fn validate_raw_image_data_length(
 
 fn parse_palette_color(value: &Bound<'_, PyAny>) -> PyResult<oxi::RGBA8> {
     let tuple = value
-        .downcast::<PyTuple>()
+        .cast::<PyTuple>()
         .map_err(|_| PyValueError::new_err("palette entries must be 3- or 4-tuples"))?;
     if tuple.len() != 3 && tuple.len() != 4 {
         return Err(PyValueError::new_err(
@@ -944,7 +944,7 @@ fn parse_palette(value: Option<&Bound<'_, PyAny>>) -> PyResult<Vec<oxi::RGBA8>> 
         ));
     };
     let list = value
-        .downcast::<PyList>()
+        .cast::<PyList>()
         .map_err(|_| PyValueError::new_err("palette must be a list of colors"))?;
     if list.is_empty() || list.len() > 256 {
         return Err(PyValueError::new_err(
@@ -1234,7 +1234,7 @@ impl PyRawImage {
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Vec<u8>> {
         let parsed = parse_options(kwargs, ParseMode::Memory)?;
-        py.allow_threads(|| self.inner.create_optimized_png(&parsed.options))
+        py.detach(|| self.inner.create_optimized_png(&parsed.options))
             .map_err(map_png_error)
     }
 }
@@ -1253,7 +1253,7 @@ fn optimize_from_memory(
     let data = bytes_like_to_vec(data)?;
     let parsed = parse_options(kwargs, ParseMode::Memory)?;
 
-    py.allow_threads(move || oxi::optimize_from_memory(&data, &parsed.options))
+    py.detach(move || oxi::optimize_from_memory(&data, &parsed.options))
         .map_err(map_png_error)
 }
 

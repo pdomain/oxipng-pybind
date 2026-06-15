@@ -14,10 +14,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 indexmap = "2.14.0"
 oxi = { package = "oxipng", version = "=10.1.1", default-features = false, features = ["parallel", "zopfli"] }
-pyo3 = { version = "0.25.1", features = ["extension-module"] }
+pyo3 = { version = "0.29.0", features = ["extension-module"] }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.25.1", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.29.0", features = ["resolve-config"] }
 
 [features]
 default = ["abi3-py310"]

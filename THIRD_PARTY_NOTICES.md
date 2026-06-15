@@ -65,10 +65,6 @@ dependencies retain their upstream licenses and notices.
 - Version: 2.14.0
 - License: Apache-2.0 OR MIT
 
-- Project: [indoc](https://github.com/dtolnay/indoc)
-- Version: 2.0.7
-- License: MIT OR Apache-2.0
-
 - Project: [libc](https://github.com/rust-lang/libc)
 - Version: 0.2.186
 - License: MIT OR Apache-2.0
@@ -84,10 +80,6 @@ dependencies retain their upstream licenses and notices.
 - Project: [log](https://github.com/rust-lang/log)
 - Version: 0.4.32
 - License: MIT OR Apache-2.0
-
-- Project: [memoffset](https://github.com/Gilnaa/memoffset)
-- Version: 0.9.1
-- License: MIT
 
 - Project: [once_cell](https://github.com/matklad/once_cell)
 - Version: 1.21.4
@@ -106,23 +98,19 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [pyo3](https://github.com/pyo3/pyo3)
-- Version: 0.25.1
-- License: MIT OR Apache-2.0
-
-- Project: [pyo3-build-config](https://github.com/pyo3/pyo3)
-- Version: 0.25.1
+- Version: 0.29.0
 - License: MIT OR Apache-2.0
 
 - Project: [pyo3-ffi](https://github.com/pyo3/pyo3)
-- Version: 0.25.1
+- Version: 0.29.0
 - License: MIT OR Apache-2.0
 
 - Project: [pyo3-macros](https://github.com/pyo3/pyo3)
-- Version: 0.25.1
+- Version: 0.29.0
 - License: MIT OR Apache-2.0
 
 - Project: [pyo3-macros-backend](https://github.com/pyo3/pyo3)
-- Version: 0.25.1
+- Version: 0.29.0
 - License: MIT OR Apache-2.0
 
 - Project: [quote](https://github.com/dtolnay/quote)
@@ -161,17 +149,9 @@ dependencies retain their upstream licenses and notices.
 - Version: 1.0.1
 - License: MIT
 
-- Project: [target-lexicon](https://github.com/bytecodealliance/target-lexicon)
-- Version: 0.13.5
-- License: Apache-2.0 WITH LLVM-exception
-
 - Project: [unicode-ident](https://github.com/dtolnay/unicode-ident)
 - Version: 1.0.24
 - License: (MIT OR Apache-2.0) AND Unicode-3.0
-
-- Project: [unindent](https://github.com/dtolnay/indoc)
-- Version: 0.2.4
-- License: MIT OR Apache-2.0
 
 - Project: [wyz](https://github.com/myrrlyn/wyz)
 - Version: 0.5.1

@@ -10,7 +10,7 @@ dependencies retain their upstream licenses and notices.
 ## Runtime Rust Dependencies
 
 - Project: [bitvec](https://github.com/bitvecto-rs/bitvec)
-- Version: 1.0.1
+- Version: 1.1.1
 - License: MIT
 
 - Project: [bumpalo](https://github.com/fitzgen/bumpalo)
@@ -78,7 +78,7 @@ dependencies retain their upstream licenses and notices.
 - License: Apache-2.0
 
 - Project: [log](https://github.com/rust-lang/log)
-- Version: 0.4.32
+- Version: 0.4.33
 - License: MIT OR Apache-2.0
 
 - Project: [once_cell](https://github.com/matklad/once_cell)
@@ -114,7 +114,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [quote](https://github.com/dtolnay/quote)
-- Version: 1.0.45
+- Version: 1.0.46
 - License: MIT OR Apache-2.0
 
 - Project: [radium](https://github.com/bitvecto-rs/radium)
@@ -142,7 +142,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT
 
 - Project: [syn](https://github.com/dtolnay/syn)
-- Version: 2.0.117
+- Version: 2.0.118
 - License: MIT OR Apache-2.0
 
 - Project: [tap](https://github.com/myrrlyn/tap)

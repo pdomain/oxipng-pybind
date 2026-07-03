@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "oxipng-pybind"
-version = "10.1.1.post2"
+version = "10.1.1.post3"
 description = "Focused Python wrapper for oxipng."
 readme = "PYPI-DESCRIPTION.md"
 requires-python = ">=3.10"

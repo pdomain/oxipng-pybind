@@ -344,7 +344,7 @@ wheels = [
 
 [[package]]
 name = "oxipng-pybind"
-version = "10.1.1.post2"
+version = "10.1.1.post3"
 source = { editable = "." }
 
 [package.dev-dependencies]

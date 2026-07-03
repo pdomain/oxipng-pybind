@@ -2,8 +2,9 @@ export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 AI ?=
 LOG := .ci-ai.log
-RUST_VERSION := 1.85.1
+RUST_VERSION := 1.96.0
 CARGO_DENY_VERSION := 0.19.7
+REFRESH_BRANCH := automation/dependency-refresh
 
 ifdef AI
 _goals := $(or $(MAKECMDGOALS),ci)
@@ -18,7 +19,7 @@ else
 
 .PHONY: help bootstrap-rust setup setup-env setup-hooks develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
-	rust-deny py-audit-lock dependency-audit dependency-refresh-check pre-commit-check \
+	rust-deny py-audit-lock dependency-audit dependency-refresh-check refresh-actions accept-refresh-pr pre-commit-check \
 	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps api-matrix ci
 
 help: ## Show this help message
@@ -131,6 +132,24 @@ dependency-refresh-check: ## Refresh lockfiles, then run audits and full CI
 	@$(MAKE) --no-print-directory develop
 	@$(MAKE) --no-print-directory dependency-audit
 	@$(MAKE) --no-print-directory ci
+
+refresh-actions: ## Refresh reviewed GitHub Action pins and sync the allowlist for local sign-off
+	uv run --locked --group dev python scripts/update_github_actions.py --sync-reviewed-refs
+	uv run --no-sync --group dev pytest tests/test_workflow_security.py tests/test_update_github_actions.py tests/test_makefile.py -q
+
+accept-refresh-pr: ## Rebase the dependency-refresh PR on main, sync pins, run CI, and push; prints the merge command
+	@git diff --quiet && git diff --cached --quiet || { echo "Working tree not clean; commit or stash first."; exit 1; }
+	git fetch origin $(REFRESH_BRANCH) main
+	git checkout -B $(REFRESH_BRANCH) origin/$(REFRESH_BRANCH)
+	git rebase origin/main
+	uv run --locked --group dev python scripts/update_github_actions.py --sync-reviewed-refs
+	@git diff --quiet || git commit -am "test(workflows): approve reviewed action refs for dependency refresh"
+	@$(MAKE) --no-print-directory ci
+	git push --force-with-lease origin $(REFRESH_BRANCH)
+	@pr=$$(gh pr list --head $(REFRESH_BRANCH) --state open --json number --jq '.[0].number'); \
+		echo ""; \
+		echo "PR #$$pr is green and ready. Review the changelog links above, then merge with:"; \
+		echo "  gh pr merge $$pr --rebase"
 
 pre-commit-check: ## Run all pre-commit hooks
 	uv run --group dev pre-commit run --all-files

@@ -87,6 +87,35 @@ full commit SHAs. `scripts/update_github_actions.py` updates only the reviewed
 allowlist of workflow actions. It also updates the `dtolnay/rust-toolchain`
 selector from the latest stable Rust release tag.
 
+## Local Action Pin Sign-Off
+
+The scheduled refresh PR fails on purpose when a pin bump introduces an
+unreviewed SHA: CI bumps the workflow YAML but not the reviewed allowlist in
+`tests/helpers/workflows.py`, so the security gate rejects the mismatch. Turning
+that PR green is the human sign-off.
+
+Do it locally:
+
+```bash
+make refresh-actions
+```
+
+This bumps the workflow pins, syncs `REVIEWED_ACTION_REFS` and
+`RUST_TOOLCHAIN_VERSION` to match, and prints a review report with each action's
+repository and changelog link. Review the diff and the linked release notes,
+then commit. The sync mode is local only; CI still runs the script without
+`--sync-reviewed-refs` so the gate keeps its meaning.
+
+To carry the sign-off onto the open refresh PR:
+
+```bash
+make accept-refresh-pr
+```
+
+This rebases `automation/dependency-refresh` on `main`, syncs the allowlist,
+runs full CI, pushes the fix, and prints the `gh pr merge` command. It stops
+before merging; run the printed command yourself after checks pass.
+
 ## Release Classification
 
 Dependency refresh PRs are classified before publication.

@@ -1,6 +1,9 @@
 """Tests for Makefile developer workflow guarantees."""
 
+import re
 from pathlib import Path
+
+from tests.helpers.workflows import RUST_TOOLCHAIN_VERSION
 
 API_TEST_TARGETS = (
     "tests/test_api_surface.py",
@@ -56,6 +59,20 @@ def test_bootstrap_enforces_pinned_cargo_deny_version() -> None:
     assert "cargo-deny --version" not in rust_deny_body
 
 
+def test_bootstrap_rust_version_matches_ci_toolchain() -> None:
+    """Local bootstrap installs the same reviewed Rust toolchain CI uses.
+
+    The pin must stay current with `RUST_TOOLCHAIN_VERSION`; drifting to an
+    older toolchain breaks `make ci` when a pinned tool (for example
+    cargo-deny) raises its minimum supported Rust version.
+    """
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+    match = re.search(r"(?m)^RUST_VERSION := (\S+)$", makefile)
+
+    assert match is not None, "Makefile must define RUST_VERSION"
+    assert match.group(1) == RUST_TOOLCHAIN_VERSION
+
+
 def test_dependency_audit_includes_lockfile_python_audit() -> None:
     makefile = Path("Makefile").read_text(encoding="utf-8")
 
@@ -71,6 +88,33 @@ def test_wheel_build_uses_locked_cargo_dependencies() -> None:
     makefile = Path("Makefile").read_text(encoding="utf-8")
 
     assert "maturin build --release --locked" in makefile
+
+
+def test_refresh_actions_target_syncs_reviewed_allowlist() -> None:
+    """`make refresh-actions` bumps pins and syncs the reviewed allowlist locally."""
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+
+    assert (
+        "refresh-actions: ## Refresh reviewed GitHub Action pins and sync the allowlist" in makefile
+    )
+    body = _target_body(makefile, "refresh-actions")
+
+    assert "scripts/update_github_actions.py --sync-reviewed-refs" in body
+    assert "tests/test_workflow_security.py" in body
+
+
+def test_accept_refresh_pr_target_prepares_pr_but_stops_before_merge() -> None:
+    """`make accept-refresh-pr` gets the PR green but leaves the merge to a human."""
+    makefile = Path("Makefile").read_text(encoding="utf-8")
+
+    assert "accept-refresh-pr: ## " in makefile
+    body = _target_body(makefile, "accept-refresh-pr")
+
+    assert "git rebase origin/main" in body
+    assert "scripts/update_github_actions.py --sync-reviewed-refs" in body
+    # The target surfaces the merge command but never runs the merge itself.
+    assert 'echo "  gh pr merge' in body
+    assert "--auto" not in body
 
 
 def test_makefile_has_local_api_matrix_target() -> None:

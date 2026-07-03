@@ -12,7 +12,7 @@ depend on that local installer path.
 
 ## Setup
 
-`make setup` installs Rust `1.85.1` and `cargo-deny` if needed. It also:
+`make setup` installs Rust `1.96.0` and `cargo-deny` if needed. It also:
 
 - checks `uv.lock`
 - syncs locked Python dependencies

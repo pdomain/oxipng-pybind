@@ -2,6 +2,14 @@
 
 ## Release Notes
 
+## 10.1.1.post3 - Security-hygiene rebuild on PyO3 0.29
+
+- Rebuilt the extension on PyO3 0.29.0, clearing RUSTSEC-2026-0176 and
+  RUSTSEC-2026-0177.
+- Refreshed bundled runtime Rust crates (bitvec, log, rustc-hash).
+- No public API or optimization-behavior change; still wraps upstream
+  `oxipng` 10.1.1.
+
 ## 10.1.1.post2 - Work around Pylint/Astroid facade analysis recursion
 
 - Reworked the Python compatibility facade so consumers running Pylint 4.0.x /

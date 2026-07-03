@@ -12,12 +12,12 @@ Workflow = dict[Any, Any]
 Step = dict[str, Any]
 
 REVIEWED_ACTION_REFS = {
-    "actions/checkout": "df4cb1c069e1874edd31b4311f1884172cec0e10",
-    "actions/setup-python": "a309ff8b426b58ec0e2a45f0f869d46889d02405",
+    "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
+    "actions/setup-python": "ece7cb06caefa5fff74198d8649806c4678c61a1",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "astral-sh/setup-uv": "fac544c07dec837d0ccb6301d7b5580bf5edae39",
-    "taiki-e/install-action": "0631aa6515c7d545823c67cfae7ef4fc7f490154",
+    "taiki-e/install-action": "c93ccc03e00cd0e08e494f5fd058a6c55a6a1907",
     "peter-evans/create-pull-request": "5f6978faf089d4d20b00c7766989d076bb2fc7f1",
     "PyO3/maturin-action": "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b",
     "pypa/gh-action-pypi-publish": "cef221092ed1bacb1cc03d23a2d87d1d172e277b",

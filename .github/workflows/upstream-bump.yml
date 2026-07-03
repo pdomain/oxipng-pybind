@@ -29,7 +29,7 @@ jobs:
       - name: Install nightly rustdoc JSON toolchain
         run: rustup toolchain install nightly --profile minimal
       - name: Install cargo-deny
-        uses: taiki-e/install-action@9bcaee1dcae34154180f412e2fa69355a7cda9f6
+        uses: taiki-e/install-action@c93ccc03e00cd0e08e494f5fd058a6c55a6a1907
         with:
           tool: cargo-deny@0.19.7
       - name: Sync dependencies

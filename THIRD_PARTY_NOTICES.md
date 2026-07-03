@@ -134,7 +134,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT
 
 - Project: [rustc-hash](https://github.com/rust-lang/rustc-hash)
-- Version: 2.1.2
+- Version: 2.1.3
 - License: Apache-2.0 OR MIT
 
 - Project: [simd-adler32](https://github.com/mcountryman/simd-adler32)

@@ -51,7 +51,7 @@ docstrings only when they clarify shared behavior.
 | `S603` | `tests/test_pylint_consumers.py` | The regression test invokes the current interpreter with fixed Pylint arguments to catch Astroid recursion warnings. |
 | `S603` | `tests/test_wheel_tags.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
 
-## Pylint and Astroid
+## Pylint and Astroid Workarounds
 
 This project uses Ruff and basedpyright, not Pylint. Some consumers still run
 Pylint over code that imports `oxipng`. Pylint 4.0.5 uses Astroid 4.0.4, which
@@ -61,11 +61,12 @@ Keep the current package-side workarounds until a supported Pylint release can
 analyze a broad consumer import without Astroid recursion warnings:
 
 These deviations intentionally make the runtime facade uglier than the
-straightforward implementation. Treat the `.post2` Pylint/Astroid workaround
-commit as the historical anchor for this debt: preserve these shapes only while
-the consumer Pylint regression needs them, and prefer returning to normal enum
-members, inline annotations, and direct signature assignment once Pylint can
-analyze them safely.
+straightforward implementation. The `.post2` Pylint/Astroid workaround commit
+is the historical anchor for this debt.
+
+Keep these shapes only while the consumer Pylint regression needs them. Prefer
+returning to normal enum members, inline annotations, and direct signature
+assignment once Pylint can analyze them safely.
 
 - Keep complex runtime annotations in `oxipng/__init__.py` as strings. The
   precise public type surface stays in `oxipng/__init__.pyi`.
@@ -82,9 +83,10 @@ When Pylint allows a fixed Astroid version, test the cleanup with a temporary
 consumer that imports and calls `analyze`, `optimize`, `optimize_from_memory`,
 `ColorType`, `Deflaters`, `FilterStrategy.predefined`, and `StripChunks`. If
 plain `python -m pylint --exit-zero consumer.py` emits no `Astroid was unable
-to transform` warnings, consider returning aliases and callable enum methods to
-normal enum bodies, restoring inline runtime signatures only if needed, and
-removing the related inline suppressions.
+to transform` warnings, Pylint can analyze the facade safely. At that point,
+consider returning aliases and callable enum methods to normal enum bodies,
+restoring inline runtime signatures only if needed, and removing the related
+inline suppressions.
 
 ## Basedpyright Suppressions
 

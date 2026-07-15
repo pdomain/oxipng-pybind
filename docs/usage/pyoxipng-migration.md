@@ -11,9 +11,11 @@ commit `357ea12453f352685acaf1b7a9c4573866b5bbf6`.
 not this project's stable API contract. For supported names, see
 [API Compatibility](../architecture/api-compatibility.md).
 
-Compatibility paths emit `DeprecationWarning`. They will be removed in a
-future release. Some names also existed in pyoxipng and are stable here, so
-they do not warn. Examples include `StripChunks.strip`, `StripChunks.keep`,
+Compatibility paths emit `DeprecationWarning`, and a future release will
+remove them.
+
+Some names also existed in pyoxipng and are stable here, so they do not warn.
+Examples include `StripChunks.strip`, `StripChunks.keep`,
 `Deflaters.libdeflater`, and `Deflaters.zopfli`.
 
 ## Package And Import Names
@@ -122,8 +124,8 @@ data = bytes([255, 0, 0, 255])
 raw = RawImage(data, 1, 1, color_type=ColorType.rgba())
 ```
 
-That path emits `DeprecationWarning`. The callable `ColorType` value also
-warns. Do not mix the two shapes.
+Do not mix the two shapes. The old-order path emits `DeprecationWarning`, and
+so does the callable `ColorType` value.
 
 This call is rejected:
 
@@ -163,7 +165,7 @@ They emit `DeprecationWarning`.
 For palette and transparency rules, see
 [Create PNGs From Raw Pixels](raw-image.md).
 
-## Other Options
+## Other Stable Options
 
 Common optimization options are stable. Use Python option names directly:
 

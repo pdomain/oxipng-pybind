@@ -5,14 +5,16 @@ Use this process when publishing a release by hand.
 For artifact rules, supported wheel tags, and Trusted Publishing setup, see
 [Release Artifacts](release-artifacts.md).
 
-## Before You Tag
+## Set the Version Before Tagging
 
 Choose the exact PyPI version first. The release tag must match
 `project.version` in `pyproject.toml`.
 
 For wrapper-only corrections, use a Python post release such as
-`10.1.1.post1`. Keep the Cargo package version on the upstream semver base,
-such as `10.1.1`. Cargo does not use Python `.postN` versions.
+`10.1.1.post1`.
+
+Keep the Cargo package version on the upstream semver base, such as
+`10.1.1`. Cargo does not use Python `.postN` versions.
 
 Update the Python package version and lockfile before tagging:
 
@@ -20,8 +22,9 @@ Update the Python package version and lockfile before tagging:
 uv lock
 ```
 
-Commit and push the version change. Wait for the required source checks on
-`main`:
+Commit and push the version change.
+
+Then wait for the required source checks on `main`:
 
 - `pre-commit checks`
 - `python tests`

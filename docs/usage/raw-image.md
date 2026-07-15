@@ -7,7 +7,7 @@ It wraps Rust [`oxipng::RawImage`].
 
 [`oxipng::RawImage`]: https://docs.rs/oxipng/latest/oxipng/struct.RawImage.html
 
-## Basic Use
+## Create a One-Pixel RGBA PNG
 
 Create a one-pixel RGBA PNG:
 
@@ -24,7 +24,7 @@ raw = RawImage(
 png_bytes = raw.create_optimized_png(level=3)
 ```
 
-## Constructor
+## Constructor Arguments
 
 Use the stable constructor order:
 
@@ -32,8 +32,8 @@ Use the stable constructor order:
 RawImage(width, height, color_type, bit_depth, data)
 ```
 
-Width and height are pixels. The five stable arguments may be positional or
-keyword arguments.
+Width and height are pixels. You can pass the five stable arguments as
+positional or keyword arguments.
 
 `color_type` accepts `ColorType` enum values or string aliases.
 See Rust [`ColorType`] for the underlying color model.
@@ -63,7 +63,7 @@ Pixel data may be:
 ## Optimization Options
 
 `create_optimized_png()` returns `bytes`. It accepts the same in-memory
-optimization options as `optimize_from_memory`. File-only options are rejected.
+optimization options as `optimize_from_memory` and rejects file-only options.
 
 See [Options Surface](../architecture/options-surface.md) for option names,
 value types, and rejected file-only options.
@@ -88,7 +88,7 @@ png_bytes = raw.create_optimized_png()
 
 ## Transparency
 
-Transparent colors are supported for grayscale and RGB raw images:
+`RawImage` supports transparent colors for grayscale and RGB raw images:
 
 ```python
 from oxipng import BitDepth, ColorType, RawImage
@@ -111,9 +111,9 @@ rgb = RawImage(
 )
 ```
 
-`transparent` is not accepted for indexed, grayscale-alpha, or RGBA images. Use
-alpha values in palette entries for indexed transparency. Transparent values
-must fit the selected bit depth.
+`RawImage` does not accept `transparent` for indexed, grayscale-alpha, or RGBA
+images. Use alpha values in palette entries for indexed transparency instead.
+Transparent values must fit the selected bit depth.
 
 ## PNG Chunks
 
@@ -161,8 +161,10 @@ png_bytes = raw.create_optimized_png()
 Bad argument values raise `ValueError`. Examples include invalid bit depths,
 color types, palette values, transparency values, and chunk names.
 
-Unsupported keywords raise `TypeError`. Invalid raw image data raises
-`PngError`. One example is data with the wrong length for the image shape.
+Unsupported keywords raise `TypeError`.
+
+Invalid raw image data raises `PngError`. One example is data with the wrong
+length for the image shape.
 
 ```python
 from oxipng import BitDepth, ColorType, PngError, RawImage

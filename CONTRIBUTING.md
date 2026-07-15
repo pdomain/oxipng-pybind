@@ -22,7 +22,7 @@ Check [Unfinished Work](docs/plans/unfinished-work.md) before large changes.
 
 ## Setup
 
-Run the normal setup before local work:
+Run setup before local work:
 
 ```bash
 make setup

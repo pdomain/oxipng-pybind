@@ -5,7 +5,7 @@ Use this guide when your platform does not have a published wheel.
 Source builds compile the Rust extension on your machine. They need more tools
 than a wheel install.
 
-## Required Tools
+## Install the Required Tools
 
 Install these tools first:
 
@@ -22,18 +22,17 @@ Platform compiler options:
 - macOS: install [Xcode Command Line Tools](https://developer.apple.com/xcode/resources/).
 - Windows: install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 
-Some Linux distributions package Python build headers separately.
-
-If the build cannot find Python headers, install your distro's Python
-development package. It is often named `python3-dev` or `python3-devel`.
+Some Linux distributions package Python build headers separately. If the
+build cannot find Python headers, install your distro's Python development
+package. It is often named `python3-dev` or `python3-devel`.
 
 The build backend is [maturin](https://www.maturin.rs/).
 
 ## Build From an sdist
 
-Released source distributions (sdists) include the source needed to build a
-wheel locally. Use this path when you want to build from the published release
-source instead of a Git checkout.
+Use this path to build from the published release source instead of a Git
+checkout. A released source distribution, or sdist, includes the source
+needed to build a wheel locally.
 
 ```bash
 python -m pip download --no-binary oxipng-pybind oxipng-pybind
@@ -77,10 +76,11 @@ Do not run this in a checkout with uncommitted generated files you want to keep.
 For released wheel and source distribution policy, see
 [Release Artifacts](../process/release-artifacts.md).
 
-## Notes
+## Troubleshooting Source Builds
 
-Source builds are slower than wheel installs. If the build fails, check that
-these commands are on `PATH`:
+Source builds are slower than wheel installs.
+
+If the build fails, check that these commands are on `PATH`:
 
 - `rustc`
 - `cargo`

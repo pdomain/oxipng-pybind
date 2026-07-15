@@ -2,7 +2,7 @@
 
 Use [`optimize`](../../oxipng/__init__.pyi#L204) when the PNG is on disk.
 
-## Basic use
+## Write an optimized file
 
 Write the optimized PNG to a new path:
 
@@ -38,7 +38,7 @@ print(result.original_size, result.optimized_size)
 [`OptimizationResult`](../../oxipng/__init__.pyi#L140).
 Its `original_size` and `optimized_size` values are byte counts.
 
-## Options
+## Configure optimization options
 
 `level` must be an integer from `0` through `6`.
 
@@ -48,9 +48,11 @@ See [Options Surface](../architecture/options-surface.md) for the Python names
 and value types.
 
 Use `backup=True` when an in-place write should keep the original file. This
-requires `output` to be omitted. The backup path is the input path plus `.bak`.
-If that backup file already exists, `optimize` raises `FileExistsError`. It does
-not replace the existing backup file.
+requires `output` to be omitted.
+
+The backup path is the input path plus `.bak`. If that backup file already
+exists, `optimize` raises `FileExistsError` and does not replace the existing
+backup file.
 
 ```python
 from oxipng import optimize
@@ -73,7 +75,7 @@ them.
 stdin and stdout optimization are caller-owned. See
 [Optimize PNG data in memory](memory-optimization.md#stdin-and-stdout).
 
-## Errors
+## Errors optimize can raise
 
 Caller errors raise `TypeError` or `ValueError`. File I/O errors use normal
 Python file exceptions. PNG decode and optimization errors raise `PngError`.

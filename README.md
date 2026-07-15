@@ -2,8 +2,9 @@
 
 `oxipng-pybind` optimizes PNG files and bytes from Python.
 
-It wraps Rust [`oxipng`](https://github.com/oxipng/oxipng) and imports as `oxipng`. It can replace `pyoxipng`,
-and it provides a stable API for new code.
+It wraps Rust [`oxipng`](https://github.com/oxipng/oxipng) and imports as `oxipng`.
+
+It can replace `pyoxipng` and provides a stable API for new code.
 
 ## Install
 
@@ -47,7 +48,9 @@ Old `pyoxipng` names are compatibility paths. Some emit `DeprecationWarning`.
 before a future release removes them.
 
 In this project, "upstream" means the Rust `oxipng` optimizer that this package
-wraps. This API maps supported Rust `oxipng` options to Python types.
+wraps.
+
+This API maps supported Rust `oxipng` options to Python types.
 
 ## Contributing
 

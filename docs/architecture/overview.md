@@ -1,7 +1,7 @@
 # Architecture Overview
 
-`oxipng-pybind` is a Python package over the Rust `oxipng` crate. The package
-name is `oxipng-pybind`. Users import it as `oxipng`.
+`oxipng-pybind` is a Python package that wraps the Rust `oxipng` crate. Users
+import it as `oxipng`.
 
 ## Package Layout
 
@@ -31,21 +31,23 @@ The Rust extension owns:
 - calls into upstream Rust `oxipng`
 
 The GIL (Global Interpreter Lock) is the Python lock that normally stops Python
-code from running in parallel. The binding copies Python-owned data into Rust
-memory before long optimization work. Then it releases the GIL.
+code from running in parallel.
 
-## File Flow
+The binding copies Python-owned data into Rust memory before long optimization
+work, then releases the GIL.
+
+## File Optimization Flow
 
 `optimize(input=..., output=None, ...)` accepts path-like objects. Rust converts
 those paths to `PathBuf` values.
 
 Rust handles file-only controls, such as `backup` and `preserve_attrs`.
 
-Then Rust calls `oxipng::optimize` with the GIL released. If `output` is
-omitted, Rust `oxipng` writes in place. If `output` is set, Rust `oxipng` writes
-to that path.
+Rust then calls `oxipng::optimize` with the GIL released. If `output` is
+omitted, Rust `oxipng` writes in place; if `output` is set, it writes to that
+path instead.
 
-## Memory Flow
+## Memory Optimization Flow
 
 `optimize_from_memory(data=..., ...)` accepts:
 
@@ -60,7 +62,7 @@ bytes.
 Memory mode, `analyze`, and `RawImage.create_optimized_png` reject file-only
 options. See [Options Surface](options-surface.md) for supported options.
 
-## Raw Image Flow
+## Raw Image Optimization Flow
 
 `RawImage(width=..., height=..., color_type=..., bit_depth=..., data=...)`
 wraps Rust `oxipng::RawImage`. The stable constructor does not warn.
@@ -71,9 +73,10 @@ pixel bytes are copied into Rust memory.
 `RawImage.create_optimized_png(...)` uses the memory-mode option parser and
 returns PNG bytes.
 
-`add_png_chunk` adds auxiliary chunks. `add_icc_profile` attaches ICC profile
-data. `add_png_chunk` accepts only valid safe-to-copy ancillary PNG chunk names.
-It rejects structural chunks.
+`add_png_chunk` adds auxiliary chunks. It accepts only valid safe-to-copy
+ancillary PNG chunk names and rejects structural chunks.
+
+`add_icc_profile` attaches ICC profile data.
 
 ## Error Mapping
 

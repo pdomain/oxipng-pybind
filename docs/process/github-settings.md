@@ -28,9 +28,11 @@ uv run --group dev python scripts/audit_github_settings.py
 
 ## Wheel Checks
 
-Do not globally require path-filtered wheel checks. Dependency refresh PRs may
-not trigger them. Upstream bump automation waits for
-`.github/workflows/wheels.yml` before enabling auto-merge.
+Do not globally require path-filtered wheel checks, because dependency refresh
+PRs may not trigger them.
+
+Upstream bump automation waits for `.github/workflows/wheels.yml` before
+enabling auto-merge.
 
 Review these wheel checks when configuring release-relevant branch rules:
 

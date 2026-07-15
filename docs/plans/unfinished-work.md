@@ -4,7 +4,7 @@ This file tracks active work that is not covered by durable process docs.
 
 Last checked: 2026-05-27.
 
-## Verified Baseline
+## What's Already Working
 
 Repository release automation is implemented.
 
@@ -27,7 +27,7 @@ See the durable process docs for implementation details:
 - [Release Artifacts](../process/release-artifacts.md)
 - [Rust oxipng updates](../process/upstream-bumps.md)
 
-## Remaining Work
+## What's Left To Do
 
 ### Publish the first PyPI release
 
@@ -44,14 +44,17 @@ Then publish `v10.1.1` through the tag-driven release flow in
 
 After publishing, smoke-test the PyPI wheel in a clean environment.
 
-### Prove automated upstream release tags
+### Confirm upstream bumps create release tags automatically
 
 Upstream `oxipng` is still at `10.1.1`, which matches this repo.
 
-When upstream publishes a newer release on GitHub and crates.io, run the hosted
-upstream bump workflow. Confirm that the bump PR merges only after required
-checks pass.
+When upstream publishes a newer release on GitHub and crates.io, run the
+hosted upstream bump workflow.
+
+Confirm that the bump PR merges only after required checks pass.
 
 After the bump lands on `main`, confirm that
-`.github/workflows/release-tag.yml` creates the matching release tag and that
-`.github/workflows/wheels.yml` publishes it through `environment: pypi`.
+`.github/workflows/release-tag.yml` creates the matching release tag.
+
+Confirm that `.github/workflows/wheels.yml` then publishes that tag through
+`environment: pypi`.

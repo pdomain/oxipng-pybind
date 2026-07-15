@@ -67,7 +67,7 @@ These paths are not supported:
 
 Unsupported paths may fail, warn, or stay absent.
 
-## Source Of Truth
+## Machine-Readable Surface Record
 
 The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).

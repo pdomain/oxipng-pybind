@@ -1,9 +1,12 @@
 # Handle Untrusted Input
 
-PNG optimization can use a lot of CPU and memory. Treat user uploads, queues,
-and other attacker-controlled sources as untrusted input.
+Set a timeout and a decompressed-size limit whenever you optimize PNG data
+from an untrusted source, such as a user upload, a queue, or another
+attacker-controlled input. PNG optimization can use a lot of CPU and memory,
+so an untrusted file can force the optimizer to run long or allocate large
+buffers.
 
-## Use Limits
+## Set a timeout and a size limit
 
 Set both a timeout and a decompressed-size limit:
 
@@ -25,7 +28,7 @@ configured byte count. It defaults to `None`.
 Set a separate upload or read limit before loading bytes. The memory API
 receives bytes after Python has already read them.
 
-## File Uploads
+## Apply the same limits to file uploads
 
 Use the same limits for files:
 
@@ -35,13 +38,15 @@ from oxipng import optimize
 optimize(input="upload.png", timeout=2.0, max_decompressed_size=50_000_000)
 ```
 
-## Request-Time Work
+## Use conservative settings under latency pressure
 
 Use conservative compression settings during web requests or other
-latency-sensitive work. Use `fix_errors` or `force` only when the caller
-accepts the extra work.
+latency-sensitive work.
 
-## Byte Streams
+Turn on `fix_errors` or `force` only when the caller accepts the extra work
+these options add.
+
+## Enforce limits on stdin and stdout
 
 For stdin and stdout, use the memory API and enforce a read limit before
 optimization:
@@ -65,6 +70,7 @@ sys.stdout.buffer.write(optimized)
 ```
 
 See [Optimize PNG data in memory](memory-optimization.md#stdin-and-stdout) for
-the basic stream pattern. See
-[Options Surface](../architecture/options-surface.md) for supported option
-names and value types.
+the basic stream pattern.
+
+See [Options Surface](../architecture/options-surface.md) for supported
+option names and value types.

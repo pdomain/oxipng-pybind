@@ -3,7 +3,7 @@
 Use [`optimize_from_memory`](../../oxipng/__init__.pyi#L261) when PNG data is
 already in Python memory.
 
-## Basic use
+## Optimize bytes in three steps
 
 Read PNG bytes, optimize them, and write the result.
 
@@ -20,7 +20,7 @@ Path("cover.optimized.png").write_bytes(optimized)
 The return value is
 [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes).
 
-## Inputs
+## Accepted input types
 
 `data` accepts these byte values:
 
@@ -39,7 +39,7 @@ optimized_from_bytearray = optimize_from_memory(data=bytearray(png_bytes))
 optimized_from_view = optimize_from_memory(data=memoryview(png_bytes))
 ```
 
-## Options
+## Configure common options
 
 Common options include `level`, `strip`, `timeout`, and
 `max_decompressed_size`.
@@ -67,7 +67,7 @@ optimized = optimize_from_memory(data=data)
 sys.stdout.buffer.write(optimized)
 ```
 
-## Errors
+## Errors raised on bad input
 
 Caller errors raise `TypeError` or `ValueError`. Invalid PNG data raises
 `PngError`. See [Error Mapping](../architecture/overview.md#error-mapping) for

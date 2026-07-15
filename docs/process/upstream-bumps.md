@@ -19,9 +19,11 @@ The prepare job uses read-only repository permissions. It:
 7. Runs the full CI gate before any pull request is published.
 
 The publish job has write permissions. It opens or updates the bump pull
-request only when files changed. The pull request body includes the upstream
-surface scan summary. The job also opens or updates one `upstream-surface`
-triage issue per upstream version.
+request only when files changed, and the pull request body includes the
+upstream surface scan summary.
+
+The job also opens or updates one `upstream-surface` triage issue per
+upstream version.
 
 The workflow never pushes directly to `main`.
 
@@ -74,15 +76,19 @@ For upstream releases, run the default bump:
 uv run --group dev python scripts/bump_upstream.py
 ```
 
-The script checks crates.io for the target `oxipng` crate before editing files.
-If crates.io has not indexed the matching crate yet, the scheduled run exits
-successfully without file changes. It prints a retryable message. The next
-scheduled or manual run can pick up the same upstream version.
+The script checks crates.io for the target `oxipng` crate before editing
+files.
+
+If crates.io has not yet indexed the matching crate, the scheduled run exits
+successfully without changing any files and prints a message saying the run
+is retryable. The next scheduled or manual run can then pick up the same
+upstream version.
 
 If the pinned upstream version is already current, the script leaves existing
-wrapper post releases unchanged. When upstream moves from `10.1.1` to
-`10.2.0`, the script resets the Python and Cargo package versions to `10.2.0`
-and pins `oxi` to `=10.2.0`.
+wrapper post releases unchanged.
+
+When upstream moves from `10.1.1` to `10.2.0`, the script resets the Python
+and Cargo package versions to `10.2.0` and pins `oxi` to `=10.2.0`.
 
 Third-party GitHub Actions in write-scoped jobs must be pinned to reviewed full
 commit SHAs. Review updated SHAs before merging workflow maintenance changes.

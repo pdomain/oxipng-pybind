@@ -4,13 +4,13 @@ Most Python keyword options map to Rust
 [`oxipng::Options`](https://docs.rs/oxipng/10.1.1/oxipng/struct.Options.html).
 `backup` and `preserve_attrs` are Python-only file options.
 
-## Option Parsing
+## How Options Get Parsed and Validated
 
 Rust starts with `oxipng::Options::from_preset(level)`. Then it applies
 explicit Python overrides.
 
 The Rust extension owns validation and path conversion. The Python facade keeps
-the public names ergonomic.
+the public names easy to use.
 
 ## Python Keyword Options
 
@@ -59,7 +59,7 @@ accepts a non-empty sequence of basic row filters:
 `RowFilter` values are accepted only for old pyoxipng code. See
 [Move from pyoxipng](../usage/pyoxipng-migration.md#row-filters).
 
-## Factory Values
+## Chunk and DEFLATE Factory Functions
 
 Use these factories for explicit chunk or DEFLATE settings:
 
@@ -71,7 +71,7 @@ Use these factories for explicit chunk or DEFLATE settings:
 `Deflaters.libdeflater(compression)` accepts `0` through `12`.
 `Deflaters.zopfli(iterations)` accepts `1` through `255`.
 
-## Dry Run
+## How analyze Runs Without Writing Output
 
 [`analyze`](../../oxipng/__init__.pyi#L234) maps to Rust `OutFile::None`. It
 uses the memory-mode option parser.
@@ -79,7 +79,7 @@ uses the memory-mode option parser.
 For return values and examples, see
 [Analyze Without Writing](../usage/file-optimization.md#analyze-without-writing).
 
-## Source Of Truth
+## The Machine-Readable Surface Record
 
 The machine-readable Rust surface record is
 [oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).

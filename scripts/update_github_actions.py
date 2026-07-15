@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_DIR = ROOT / ".github/workflows"
 HELPERS_PATH = ROOT / "tests" / "helpers" / "workflows.py"
+MAKEFILE_PATH = ROOT / "Makefile"
 MANAGED_ACTIONS = (
     "actions/checkout",
     "actions/setup-python",
@@ -230,6 +231,27 @@ def sync_reviewed_refs(
     return True
 
 
+def sync_makefile_rust_version(path: Path, *, rust_toolchain: str) -> bool:
+    """Rewrite the Makefile ``RUST_VERSION`` bootstrap pin in place.
+
+    Keeps the local bootstrap toolchain aligned with the reviewed CI version so
+    ``test_bootstrap_rust_version_matches_ci_toolchain`` stays green. Returns
+    whether the file's contents changed.
+    """
+    text = path.read_text(encoding="utf-8")
+    updated, count = re.subn(
+        r"(?m)^RUST_VERSION := \S+$",
+        f"RUST_VERSION := {rust_toolchain}",
+        text,
+    )
+    if count == 0:
+        raise ValueError("RUST_VERSION assignment not found in Makefile")
+    if updated == text:
+        return False
+    path.write_text(updated, encoding="utf-8")
+    return True
+
+
 def _rendered_action_entry(action: str, release: ActionRelease, old_sha: str | None) -> list[str]:
     """Render review-report lines for one changed action ref."""
     old_short = old_sha[:8] if old_sha is not None else "(new)"
@@ -288,6 +310,7 @@ def sync_github_actions(
     *,
     workflow_dir: Path = WORKFLOW_DIR,
     helpers_path: Path = HELPERS_PATH,
+    makefile_path: Path = MAKEFILE_PATH,
     runner: GhRunner = run_gh,
 ) -> str:
     """Bump workflow refs, sync the reviewed allowlist, and return the review report."""
@@ -299,9 +322,12 @@ def sync_github_actions(
     allowlist_changed = sync_reviewed_refs(
         helpers_path, releases=releases, rust_toolchain=rust_toolchain
     )
+    makefile_changed = sync_makefile_rust_version(makefile_path, rust_toolchain=rust_toolchain)
     changed_paths = [str(path.relative_to(ROOT)) for path in changed_workflows]
     if allowlist_changed:
         changed_paths.append(str(helpers_path.relative_to(ROOT)))
+    if makefile_changed:
+        changed_paths.append(str(makefile_path.relative_to(ROOT)))
     return render_review_report(
         old_refs=old_allowlist.action_refs,
         releases=releases,

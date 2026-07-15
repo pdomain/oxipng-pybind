@@ -51,6 +51,11 @@ jobs:
         run: make third-party-notices
       - name: Run dependency audits
         run: make dependency-audit
+      - name: Audit dependency overrides
+        # Fails when a refreshed parent no longer needs an override, so the
+        # weekly run flags the override for removal. Kept out of `make ci` so it
+        # never blocks unrelated pull requests.
+        run: make override-audit
       - name: Run CI
         id: ci
         # A post-bump CI failure is expected when an unreviewed GitHub Action

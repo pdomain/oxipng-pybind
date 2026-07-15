@@ -194,6 +194,42 @@ def test_sync_reviewed_refs_returns_false_when_values_already_match(tmp_path: Pa
     assert helpers_path.read_text(encoding="utf-8") == SAMPLE_HELPERS_TEXT
 
 
+def test_sync_makefile_rust_version_rewrites_pin(tmp_path: Path) -> None:
+    """Syncing rewrites the RUST_VERSION pin while leaving other Makefile lines alone."""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "RUST_VERSION := 1.96.0\n\nsetup:\n\trustup toolchain install $(RUST_VERSION)\n",
+        encoding="utf-8",
+    )
+
+    changed = update_github_actions.sync_makefile_rust_version(makefile, rust_toolchain="1.97.0")
+
+    assert changed is True
+    assert makefile.read_text(encoding="utf-8") == (
+        "RUST_VERSION := 1.97.0\n\nsetup:\n\trustup toolchain install $(RUST_VERSION)\n"
+    )
+
+
+def test_sync_makefile_rust_version_returns_false_when_already_current(tmp_path: Path) -> None:
+    """No rewrite occurs, and False is returned, when the pin already matches."""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("RUST_VERSION := 1.97.0\n", encoding="utf-8")
+
+    changed = update_github_actions.sync_makefile_rust_version(makefile, rust_toolchain="1.97.0")
+
+    assert changed is False
+    assert makefile.read_text(encoding="utf-8") == "RUST_VERSION := 1.97.0\n"
+
+
+def test_sync_makefile_rust_version_rejects_missing_pin(tmp_path: Path) -> None:
+    """A Makefile without a RUST_VERSION assignment fails loudly instead of silently."""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("setup:\n\techo hi\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="RUST_VERSION assignment not found"):
+        update_github_actions.sync_makefile_rust_version(makefile, rust_toolchain="1.97.0")
+
+
 def test_render_review_report_emits_changed_entries_only() -> None:
     """The report lists only actions whose SHA changed, plus a changed Rust toolchain."""
     old_refs = {

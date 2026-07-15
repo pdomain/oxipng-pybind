@@ -19,7 +19,7 @@ else
 
 .PHONY: help bootstrap-rust setup setup-env setup-hooks develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
-	rust-deny py-audit-lock dependency-audit dependency-refresh-check refresh-actions accept-refresh-pr pre-commit-check \
+	rust-deny py-audit-lock override-audit dependency-audit dependency-refresh-check refresh-actions accept-refresh-pr pre-commit-check \
 	third-party-notices third-party-notices-check build wheel clean clean-cache reset remove-venv upgrade-deps api-matrix ci
 
 help: ## Show this help message
@@ -116,6 +116,9 @@ rust-deny: ## Run cargo deny
 
 py-audit-lock: ## Audit locked Python dependency set for known vulnerabilities
 	uv audit --locked
+
+override-audit: ## Flag dependency overrides the natural resolution no longer needs
+	uv run --no-sync --group dev scripts/audit_dependency_overrides.py
 
 dependency-audit: rust-deny py-audit-lock ## Run Rust and Python dependency vulnerability checks
 

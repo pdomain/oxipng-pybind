@@ -54,6 +54,13 @@ enough to break the parent. For each override, confirm three things:
 - the parent still works with the forced version
 - the floor still clears the advisory
 
+`make override-audit` automates the first check. It re-resolves the project
+without its overrides in an isolated virtual project, then fails if any
+override's floor is already met by the natural resolution — meaning the
+override is removable. The weekly refresh runs it as a dedicated step, so a
+parent that ships a fix surfaces the override for removal. It stays out of
+`make ci` to avoid blocking unrelated pull requests.
+
 Remove the override once the parent requests a safe version on its own.
 
 Current overrides:
@@ -124,9 +131,10 @@ Do it locally:
 make refresh-actions
 ```
 
-This bumps the workflow pins, syncs `REVIEWED_ACTION_REFS` and
-`RUST_TOOLCHAIN_VERSION` to match, and prints a review report with each action's
-repository and changelog link. Review the diff and the linked release notes,
+This bumps the workflow pins, syncs `REVIEWED_ACTION_REFS`,
+`RUST_TOOLCHAIN_VERSION`, and the `Makefile` `RUST_VERSION` bootstrap pin to
+match, and prints a review report with each action's repository and changelog
+link. Review the diff and the linked release notes,
 then commit. The sync mode is local only; CI still runs the script without
 `--sync-reviewed-refs` so the gate keeps its meaning.
 

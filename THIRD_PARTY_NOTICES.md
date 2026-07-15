@@ -18,7 +18,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [bytemuck](https://github.com/Lokathor/bytemuck)
-- Version: 1.25.0
+- Version: 1.25.1
 - License: Zlib OR Apache-2.0 OR MIT
 
 - Project: [cfg-if](https://github.com/rust-lang/cfg-if)
@@ -30,15 +30,15 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-deque](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.8.6
+- Version: 0.8.7
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-epoch](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.9.18
+- Version: 0.9.20
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-utils](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.8.21
+- Version: 0.8.22
 - License: MIT OR Apache-2.0
 
 - Project: [either](https://github.com/rayon-rs/either)
@@ -138,11 +138,11 @@ dependencies retain their upstream licenses and notices.
 - License: Apache-2.0 OR MIT
 
 - Project: [simd-adler32](https://github.com/mcountryman/simd-adler32)
-- Version: 0.3.9
+- Version: 0.3.10
 - License: MIT
 
 - Project: [syn](https://github.com/dtolnay/syn)
-- Version: 2.0.118
+- Version: 2.0.119
 - License: MIT OR Apache-2.0
 
 - Project: [tap](https://github.com/myrrlyn/tap)

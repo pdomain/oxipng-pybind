@@ -40,6 +40,30 @@ If no fixed version exists, document these items in the PR body:
 
 Do not ignore advisories in `deny.toml` without a dated comment and an issue.
 
+## Dependency Overrides
+
+`[tool.uv] override-dependencies` in `pyproject.toml` forces a transitive
+dependency to a version its parent does not request. Each override needs a
+comment naming the advisory or reason it exists.
+
+Re-audit every override after each dependency upgrade. An override can outlive
+its reason: the parent may ship a fix, or the forced version may drift far
+enough to break the parent. For each override, confirm three things:
+
+- the advisory or reason still applies
+- the parent still works with the forced version
+- the floor still clears the advisory
+
+Remove the override once the parent requests a safe version on its own.
+
+Current overrides:
+
+- `click>=8.3.3` — `gitlint-core[trusted-deps]` pins the vulnerable
+  `click==8.1.3` (PYSEC-2026-2132, command injection in `click.edit()`).
+  `click` is a dev-only transitive dependency, and commit-msg linting runs in
+  pre-commit's own environment, so the override only affects the audited
+  lockfile. Remove it if `gitlint` ships a release that drops the pin.
+
 ## Scheduled Refresh
 
 `.github/workflows/dependency-health.yml` runs weekly and on demand. It owns

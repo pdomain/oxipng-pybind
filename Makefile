@@ -2,7 +2,7 @@ export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 AI ?=
 LOG := .ci-ai.log
-RUST_VERSION := 1.96.0
+RUST_VERSION := 1.97.0
 CARGO_DENY_VERSION := 0.19.7
 REFRESH_BRANCH := automation/dependency-refresh
 

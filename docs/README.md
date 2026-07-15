@@ -1,4 +1,4 @@
-# Documentation
+# Documentation Map
 
 Use this map to find the right project doc.
 
@@ -27,6 +27,7 @@ specs, and reports.
 - [Architecture overview](architecture/overview.md)
 - [API compatibility](architecture/api-compatibility.md)
 - [Options surface](architecture/options-surface.md)
+- [Test architecture](architecture/test-architecture.md)
 - [Upstream API surface scan](api-surface/oxipng-10.1.1.toml)
 
 ## Process

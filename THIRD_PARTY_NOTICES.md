@@ -54,7 +54,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [indexmap](https://github.com/indexmap-rs/indexmap)
-- Version: 2.14.0
+- Version: 2.14.1
 - License: Apache-2.0 OR MIT
 
 - Project: [libc](https://github.com/rust-lang/libc)

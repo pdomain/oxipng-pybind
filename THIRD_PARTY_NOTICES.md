@@ -18,23 +18,23 @@ dependencies retain their upstream licenses and notices.
 - License: Zlib OR Apache-2.0 OR MIT
 
 - Project: [cfg-if](https://github.com/rust-lang/cfg-if)
-- Version: 1.0.4
+- Version: 1.0.5
 - License: MIT OR Apache-2.0
 
 - Project: [crc32fast](https://github.com/srijs/rust-crc32fast)
-- Version: 1.5.1
+- Version: 1.5.2
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-deque](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.8.7
+- Version: 0.8.8
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-epoch](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.9.20
+- Version: 0.9.21
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-utils](https://github.com/crossbeam-rs/crossbeam)
-- Version: 0.8.22
+- Version: 0.8.23
 - License: MIT OR Apache-2.0
 
 - Project: [either](https://github.com/rayon-rs/either)
@@ -54,7 +54,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [indexmap](https://github.com/indexmap-rs/indexmap)
-- Version: 2.14.0
+- Version: 2.14.2
 - License: Apache-2.0 OR MIT
 
 - Project: [libc](https://github.com/rust-lang/libc)
@@ -62,11 +62,11 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [libdeflate-sys](https://github.com/libdeflater/libdeflater)
-- Version: 1.26.0
+- Version: 1.26.1
 - License: Apache-2.0
 
 - Project: [libdeflater](https://github.com/libdeflater/libdeflater)
-- Version: 1.26.0
+- Version: 1.26.1
 - License: Apache-2.0
 
 - Project: [log](https://github.com/rust-lang/log)
@@ -134,7 +134,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [unicode-ident](https://github.com/dtolnay/unicode-ident)
-- Version: 1.0.24
+- Version: 1.0.26
 - License: (MIT OR Apache-2.0) AND Unicode-3.0
 
 - Project: [zopfli](https://github.com/zopfli-rs/zopfli)

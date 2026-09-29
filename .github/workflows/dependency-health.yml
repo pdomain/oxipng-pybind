@@ -23,14 +23,14 @@ jobs:
       UV_PYTHON: "3.13"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
         with:
           version: 0.11.12
-      - uses: dtolnay/rust-toolchain@1.98.0
+      - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: clippy
       - name: Install cargo-deny
-        uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
         with:
           tool: cargo-deny@0.19.7
       - name: Refresh lockfiles

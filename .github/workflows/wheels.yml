@@ -208,7 +208,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: ${{ matrix.python }}
-      - uses: dtolnay/rust-toolchain@1.98.0
+      - uses: dtolnay/rust-toolchain@1.99.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
         shell: bash
@@ -260,7 +260,7 @@ jobs:
           "$smoke_python" -m pip install dist/*.whl ${{ matrix.smoke-extra }}
           "$smoke_python" scripts/smoke_wheel.py ${{ matrix.smoke-args }}
       - name: Upload wheels
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: ${{ matrix.artifact }}
           path: dist/*.whl
@@ -275,7 +275,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.10"
-      - uses: dtolnay/rust-toolchain@1.98.0
+      - uses: dtolnay/rust-toolchain@1.99.0
       - name: Set TestPyPI version
         if: github.event_name == 'workflow_dispatch' && inputs.publish-target == 'testpypi'
         shell: bash
@@ -318,7 +318,7 @@ jobs:
           .sdist-smoke/bin/python -m pip install source-wheel/*.whl
           .sdist-smoke/bin/python -c "import oxipng; assert callable(oxipng.optimize)"
       - name: Upload sdist
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -363,7 +363,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Download release artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: dist
           merge-multiple: true
@@ -388,7 +388,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Download release artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: dist
           merge-multiple: true

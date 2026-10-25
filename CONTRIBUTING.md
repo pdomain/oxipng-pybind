@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Contributing
 
 This project is a Python wrapper around upstream Rust `oxipng`. It aims to be
@@ -12,7 +17,8 @@ Read these files before you start:
 - [Conventions](CONVENTIONS.md)
 - [Docs index](docs/README.md)
 
-`CLAUDE.md` is only for AI coding agents.
+`AGENTS.md` holds the shared guidance for AI coding agents. `CLAUDE.md` links
+to it.
 
 When writing docs or user-facing text, also read
 [Writing Style](docs/process/writing-style.md).

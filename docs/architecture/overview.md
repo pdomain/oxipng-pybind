@@ -1,7 +1,7 @@
 ---
 kind: architecture
 status: built
-last_verified: 2026-08-21
+last_verified: 2026-10-25
 ---
 # Architecture Overview
 
@@ -11,6 +11,7 @@ import it as `oxipng`.
 ## Package Layout
 
 - `oxipng/__init__.py` is the Python facade.
+- `oxipng/_pyoxipng_compat.py` implements compatibility adapters and warnings.
 - `oxipng/__init__.pyi` defines the typed Python API.
 - `oxipng/py.typed` marks the package as typed.
 - `src/lib.rs` is the PyO3 Rust extension.
@@ -20,8 +21,11 @@ import it as `oxipng`.
 
 ## Rust and Python Split
 
-The Python facade owns public names and stable call signatures. It also owns
-compatibility warnings for old pyoxipng shapes.
+The Python facade owns public names and stable call signatures.
+`_pyoxipng_compat.py` provides compatibility adapters and warnings for old
+pyoxipng shapes. Rust emits warnings for the legacy `RawImage` constructor.
+Python checks some factory arguments and rejects boolean `level` values.
+Rust validates DEFLATE factory values when parsing options.
 
 See [API Compatibility](api-compatibility.md) for stable names, warnings, and
 migration paths.
@@ -34,6 +38,9 @@ The Rust extension owns:
 - raw image validation
 - GIL release
 - calls into upstream Rust `oxipng`
+
+The upstream version is pinned in [`Cargo.toml`](../../Cargo.toml).
+PNG optimization algorithms stay in that upstream crate.
 
 The GIL (Global Interpreter Lock) is the Python lock that normally stops Python
 code from running in parallel.
@@ -52,6 +59,15 @@ Rust then calls `oxipng::optimize` with the GIL released.
 
 If `output` is omitted, Rust `oxipng` writes in place. If `output` is set, it
 writes to that path instead.
+
+## Analyze Without Writing
+
+`analyze(input=..., ...)` accepts a file path and uses the memory-mode option
+parser, which rejects file-only controls. Rust calls `oxipng::optimize` with
+`OutFile::None` and the GIL released, so no output file is written.
+
+It returns an immutable `OptimizationResult` with read-only `original_size`
+and `optimized_size` properties. Both sizes are byte counts.
 
 ## Memory Optimization Flow
 

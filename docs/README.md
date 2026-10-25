@@ -1,7 +1,7 @@
 ---
 kind: process
 status: active
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # Documentation Map
 
@@ -49,7 +49,7 @@ specs, and reports.
 - [API compatibility](architecture/api-compatibility.md)
 - [Options surface](architecture/options-surface.md)
 - [Test architecture](architecture/test-architecture.md)
-- [Upstream API surface scan](api-surface/oxipng-10.2.0.toml)
+- [Upstream API surface scan](api-surface/oxipng-10.2.1.toml)
 
 ## Process
 

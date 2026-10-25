@@ -1,7 +1,7 @@
 ---
 kind: architecture
 status: built
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # Test Architecture
 
@@ -70,6 +70,6 @@ modules. They only work as long as basedpyright still reports unused
   `tests/test_option_validation.py`, `tests/test_pyoxipng_compat.py`,
   `tests/test_workflow_*.py`, `tests/test_release_*.py`, `tests/test_wheel_tags.py`,
   `tests/typecheck/typing_filter_options.py`
-- Verified 2026-07-15: this plan's target structure was checked against the
+- Verified 2026-10-25: the documented structure was checked against the
   current `tests/` tree. The mixed `test_api.py`, `test_workflows.py`, and
   `test_scripts.py` modules are gone.

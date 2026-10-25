@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Handle Untrusted Input
 
 Set a timeout and a decompressed-size limit whenever you optimize PNG data

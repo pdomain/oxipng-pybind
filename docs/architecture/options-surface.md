@@ -1,12 +1,12 @@
 ---
 kind: architecture
 status: built
-last_verified: 2026-08-28
+last_verified: 2026-10-25
 ---
 # Options Surface
 
 Most Python keyword options map to Rust
-[`oxipng::Options`](https://docs.rs/oxipng/10.2.0/oxipng/struct.Options.html).
+[`oxipng::Options`](https://docs.rs/oxipng/10.2.1/oxipng/struct.Options.html).
 
 Two options have no Rust equivalent: `backup` and `preserve_attrs` are
 Python-only file options.
@@ -16,8 +16,9 @@ Python-only file options.
 Rust starts with `oxipng::Options::from_preset(level)`. Then it applies
 explicit Python overrides.
 
-The Rust extension owns validation and path conversion. The Python facade keeps
-the public names easy to use.
+The Rust extension owns the central option parser and path conversion.
+The Python facade also checks some factory arguments and rejects boolean
+`level` values. DEFLATE factory values are validated during Rust option parsing.
 
 ## Python Keyword Options
 
@@ -43,7 +44,7 @@ Use these options with `optimize`, `optimize_from_memory`, `analyze`, or
 | `idat_recoding` | `bool` or `None` |
 | `scale_16` | `bool` or `None` |
 | `fast_evaluation` | `bool` or `None` |
-| `timeout` | non-negative seconds or `None` |
+| `timeout` | finite, non-negative seconds or `None` |
 | `max_decompressed_size` | non-negative integer bytes or `None` |
 
 `backup` and `preserve_attrs` are valid only for `optimize`. Memory mode,
@@ -80,7 +81,7 @@ Use these factories for explicit chunk or DEFLATE settings:
 
 ## How analyze Runs Without Writing Output
 
-[`analyze`](../../oxipng/__init__.pyi#L234) maps to Rust `OutFile::None`. It
+[`analyze`](../../oxipng/__init__.pyi) maps to Rust `OutFile::None`. It
 uses the memory-mode option parser.
 
 For return values and examples, see
@@ -89,8 +90,8 @@ For return values and examples, see
 ## The Machine-Readable Surface Record
 
 The machine-readable Rust surface record is
-[oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
-It records mapped upstream items and intentional gaps for `oxipng` 10.1.1.
+[oxipng-10.2.1.toml](../api-surface/oxipng-10.2.1.toml).
+It records mapped upstream items and intentional gaps for the pinned version.
 
 ### oxipng 10.2.0
 

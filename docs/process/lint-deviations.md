@@ -1,7 +1,7 @@
 ---
 kind: process
 status: active
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # Lint Deviations
 
@@ -45,10 +45,10 @@ docstrings only when they clarify shared behavior.
 | Rule | Location | Justification |
 | --- | --- | --- |
 | `B010` | `oxipng/__init__.py` | `ColorType.__call__` and wrapper `__signature__` values are attached dynamically to avoid Astroid recursion during consumer Pylint analysis. |
-| `E402` | `scripts/classify_dependency_refresh.py`, `scripts/generate_third_party_notices.py`, `scripts/validate_release_tag.py`, and `scripts/verify_release_version.py` | Direct script execution needs to add the repo root before importing local helpers. |
+| `E402` | `scripts/audit_dependency_overrides.py`, `scripts/classify_dependency_refresh.py`, `scripts/generate_third_party_notices.py`, `scripts/validate_release_tag.py`, and `scripts/verify_release_version.py` | Direct script execution needs to add the repo root before importing local helpers. |
 | `PLC0415` | `scripts/bump_upstream.py` | `tomlkit` is an optional automation dependency loaded only in functions that need to edit TOML. |
 | `PLC0415` | `scripts/smoke_wheel.py` | Pillow is imported only for 3.11+ smoke lanes so 3.10 wheel smoke can run with stdlib PNG checks. |
-| `PLC0415` | `tests/conftest.py` | Pillow is optional in the Python 3.10 API matrix; fixtures fall back to stdlib PNG generation. |
+| `PLC0415` | `tests/helpers/png.py` | Pillow is optional in the Python 3.10 API matrix; fixtures fall back to stdlib PNG generation. |
 | `PLR0913` | public API wrappers in `oxipng/__init__.py` | The wrapper keeps the upstream option surface as keyword parameters for pyoxipng compatibility. |
 | `PLR0913`, `PLR0917` | `tests/helpers/artifacts.py` | The test factory mirrors the six fields returned by GitHub workflow runs. |
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |

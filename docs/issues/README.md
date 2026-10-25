@@ -2,7 +2,7 @@
 Status: active
 Owner: pdomain
 Created: 2026-07-17
-Last verified: 2026-07-17
+Last verified: 2026-10-25
 Kind: process
 Level: I1
 ---
@@ -14,7 +14,7 @@ Level: I1
 - **Kind:** process
 - **Status:** active
 - **Level:** I1
-- **Last verified:** 2026-07-17
+- **Last verified:** 2026-10-25
 - **Read when:** filing a bug / defect / investigation report, or looking up an
   open issue's status, evidence, or resolution.
 - **Search terms:** issues folder, bug report, defect report, issue template,
@@ -47,9 +47,9 @@ than in per-machine harness memory.
   - **Resolved / Won't fix / Duplicate** → `Status: retired`, routed through
     `doc-retirer`, with the resolving commit/spec linked in `## Resolution`.
 - **Link it (no orphans):** reference every new issue from a governed doc — by
-  default an **Open issues** bullet in `docs/context/intent-map.md`, or a Risk in
-  `docs/context/current-state.md`. This `README` also links the live issues below,
-  which satisfies the no-orphan rule.
+  default an **Open issues** bullet in this `README`. If context docs are added,
+  they can also link issues from `docs/context/intent-map.md` or
+  `docs/context/current-state.md`. This repo currently has neither context file.
 - **Stage + reindex:** under `mode = "git"` a new doc is invisible until
   `git add`ed; stage it, then `docgraph reindex` and `docgraph check --strict` the
   same turn (a new `dangling` blocks completion).

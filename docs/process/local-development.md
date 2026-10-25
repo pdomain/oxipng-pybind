@@ -1,7 +1,7 @@
 ---
 kind: process
 status: active
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # Local Development
 
@@ -19,12 +19,20 @@ that local installer path.
 
 ## What make setup does
 
-`make setup` installs Rust `1.97.0` and `cargo-deny` if needed. It also:
+`make setup` installs the Rust and `cargo-deny` versions pinned in the
+[`Makefile`](../../Makefile). It also:
 
 - checks `uv.lock`
 - syncs locked Python dependencies
 - builds the editable native extension
 - installs pre-commit hooks
+
+Pre-commit tooling uses a separate Python 3.13 environment in
+`.cache/pre-commit`. The project environment keeps its selected Python
+version, including Python 3.10.
+
+Hook installation is skipped in worktrees and when `core.hooksPath` is set.
+Use `make pre-commit-check` to run the hooks in either case.
 
 See the [`setup` target](../../Makefile) for the exact commands.
 

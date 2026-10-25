@@ -1,7 +1,7 @@
 ---
 kind: process
 status: active
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # GitHub Settings
 
@@ -12,6 +12,18 @@ Maintainers can audit API-visible settings with:
 ```bash
 uv run --group dev python scripts/audit_github_settings.py
 ```
+
+The script checks classic branch protection, not repository rulesets. This
+repo protects `main` through an active ruleset, so the script reports missing
+protection and required checks. Inspect the effective rules separately:
+
+```bash
+gh api repos/pdomain/oxipng-pybind/rules/branches/main
+```
+
+As of 2026-10-25, that ruleset requires all source checks listed below and
+allows only rebase merges. The Actions setting for creating and approving
+pull requests is disabled. Automation uses the repository tokens listed below.
 
 ## Required Repository Settings
 
@@ -29,7 +41,9 @@ uv run --group dev python scripts/audit_github_settings.py
   - `public api py3.12`
   - `public api py3.13`
   - `public api py3.14`
-- Allow GitHub Actions to create and approve pull requests.
+- Use the repository tokens below for pull-request automation. With these
+  tokens, the Actions setting for creating and approving pull requests is not
+  required.
 
 ## Wheel Checks
 
@@ -59,6 +73,8 @@ Review these wheel checks when configuring release-relevant branch rules:
   [Upstream Bumps](upstream-bumps.md#required-repository-settings).
 - Add `DEPENDENCY_REFRESH_TOKEN`. It must write contents and pull requests.
   See [Dependency Health](dependency-health.md#scheduled-refresh).
+- Add `RELEASE_TAG_TOKEN` for the automated release-tag push. See
+  [Upstream Bumps](upstream-bumps.md).
 
 ## Merge Method
 

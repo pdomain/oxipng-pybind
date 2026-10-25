@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # oxipng-pybind
 
 `oxipng-pybind` optimizes PNG files and bytes from Python.

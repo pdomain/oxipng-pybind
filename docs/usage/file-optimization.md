@@ -1,11 +1,11 @@
 ---
 kind: usage
 status: active
-last_verified: 2026-08-28
+last_verified: 2026-10-25
 ---
 # Optimize PNG files
 
-Use [`optimize`](../../oxipng/__init__.pyi#L204) when the PNG is on disk.
+Use [`optimize`](../../oxipng/__init__.pyi) when the PNG is on disk.
 
 ## Write an optimized file
 
@@ -29,7 +29,7 @@ For files from untrusted users, see
 
 ## Analyze without writing
 
-Use [`analyze`](../../oxipng/__init__.pyi#L234) to check sizes without writing a
+Use [`analyze`](../../oxipng/__init__.pyi) to check sizes without writing a
 file:
 
 ```python
@@ -40,7 +40,7 @@ print(result.original_size, result.optimized_size)
 ```
 
 `analyze` returns an
-[`OptimizationResult`](../../oxipng/__init__.pyi#L140).
+[`OptimizationResult`](../../oxipng/__init__.pyi).
 Its `original_size` and `optimized_size` values are byte counts.
 
 ## Configure optimization options
@@ -48,7 +48,7 @@ Its `original_size` and `optimized_size` values are byte counts.
 `level` must be an integer from `0` through `6`.
 
 Most optimization options map to Rust
-[`oxipng::Options`](https://docs.rs/oxipng/10.2.0/oxipng/struct.Options.html).
+[`oxipng::Options`](https://docs.rs/oxipng/10.2.1/oxipng/struct.Options.html).
 See [Options Surface](../architecture/options-surface.md) for the Python names
 and value types.
 

@@ -1,7 +1,7 @@
 ---
 kind: runbook
 status: active
-last_verified: 2026-08-28
+last_verified: 2026-10-25
 ---
 # Manual Release Process
 
@@ -44,8 +44,8 @@ command from a clean `main` checkout.
 1. Record the version, tag, and exact release commit.
 
    ```bash
-   release_version=$(uv run --no-sync python -c \
-     'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+   release_version=$(uv run --no-sync --group dev python -c \
+     'from scripts._toml_compat import load_file; print(load_file("pyproject.toml")["project"]["version"])')
    release_tag="v${release_version}"
    release_sha=$(git rev-parse HEAD)
    ```

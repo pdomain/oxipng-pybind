@@ -1,7 +1,7 @@
 ---
 kind: architecture
 status: built
-last_verified: 2026-07-17
+last_verified: 2026-10-25
 ---
 # API Compatibility
 
@@ -76,9 +76,12 @@ Unsupported paths may fail, warn, or stay absent.
 ## The Machine-Readable Surface Record
 
 The machine-readable Rust surface record is
-[oxipng-10.1.1.toml](../api-surface/oxipng-10.1.1.toml).
+[oxipng-10.2.1.toml](../api-surface/oxipng-10.2.1.toml).
 
-This document has no generated Rust surface additions for 10.1.1.
+Upstream 10.2.1 keeps the same tracked surface as 10.2.0. Rust PNG decode and
+optimization errors map to one Python `PngError` exception. Read and write
+failures map to normal Python file exceptions. See
+[Error Mapping](overview.md#error-mapping).
 
 ### oxipng 10.2.0
 

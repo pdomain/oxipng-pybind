@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Build From Source
 
 Use this guide when your platform does not have a published wheel.
@@ -38,7 +43,7 @@ build a wheel locally.
 
 ```bash
 python -m pip download --no-binary oxipng-pybind oxipng-pybind
-python -m pip wheel --no-binary oxipng-pybind oxipng-pybind-*.tar.gz
+python -m pip wheel --no-binary oxipng-pybind oxipng_pybind-*.tar.gz
 python -m pip install oxipng_pybind-*.whl
 ```
 
@@ -55,12 +60,12 @@ make wheel
 
 `make wheel` uses the locked maturin version through `uv`.
 
-The wheel is written to `target/wheels/`.
+The wheel is written to `dist/`.
 
 Install that wheel with pip:
 
 ```bash
-python -m pip install target/wheels/oxipng_pybind-*.whl
+python -m pip install dist/oxipng_pybind-*.whl
 ```
 
 ## Build a Pure Source Tree

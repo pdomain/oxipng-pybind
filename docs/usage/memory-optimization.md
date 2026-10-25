@@ -1,6 +1,11 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Optimize PNG data in memory
 
-Use [`optimize_from_memory`](../../oxipng/__init__.pyi#L261) when PNG data is
+Use [`optimize_from_memory`](../../oxipng/__init__.pyi) when PNG data is
 already in Python memory.
 
 ## Optimize bytes in three steps

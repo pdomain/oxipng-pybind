@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Create PNGs From Raw Pixels
 
 Use [`RawImage`](../../oxipng/__init__.pyi) when you have packed pixel bytes

@@ -1,3 +1,8 @@
+---
+kind: usage
+status: active
+last_verified: 2026-10-25
+---
 # Move From pyoxipng
 
 Use this guide when old code depends on the `pyoxipng` distribution or uses

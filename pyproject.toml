@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "oxipng-pybind"
-version = "10.2.1"
+version = "10.2.1.post1"
 description = "Focused Python wrapper for oxipng."
 readme = "PYPI-DESCRIPTION.md"
 requires-python = ">=3.10"
@@ -47,7 +47,8 @@ test = [
 lint = [
     "basedpyright>=1.39.4",
     "gitlint>=0.19.1",
-    "pre-commit>=4.3",
+    # Patched filelock is available only on Python 3.11+.
+    "pre-commit>=4.3; python_version >= '3.11'",
     "ruff>=0.13",
 ]
 build = [

@@ -7,6 +7,23 @@ last_verified: 2026-08-28
 
 ## Release Notes
 
+## 10.2.1.post1 - Refresh dependencies and development tooling
+
+- Updated Rust dependencies, including PyO3 from 0.29.2 to 0.29.3,
+  `libdeflate-sys` and `libdeflater` from 1.26.0 to 1.26.1, and `zopfli`
+  from 0.8.3 to 0.8.4. Refreshed third-party notices.
+- Refreshed Python development dependencies. Updated `virtualenv` to
+  21.14.13 and removed the vulnerable Python 3.10 `filelock` resolution.
+  Kept the `click` and `sh` security overrides because they are still needed.
+- Pre-commit tooling now runs in a separate, locked Python 3.13 environment.
+  The project environment keeps its selected Python version, including 3.10.
+- Fixed Pillow 13 type checking for Python 3.10 in test helpers and wheel
+  smoke checks.
+- Updated the Rust toolchain to 1.99.1, pre-commit hooks, and reviewed
+  GitHub Action pins.
+- The public Python API is unchanged. The package still wraps upstream
+  `oxipng` 10.2.1. Python runtime dependencies remain empty.
+
 ## 10.2.1 - Bump Version
 
 - Rebuilt `oxipng-pybind` to track upstream `oxipng` 10.2.1.

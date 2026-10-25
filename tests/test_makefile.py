@@ -1,7 +1,13 @@
 """Tests for Makefile developer workflow guarantees."""
 
+from __future__ import annotations
+
+import os
 import re
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from tests.helpers.workflows import RUST_TOOLCHAIN_VERSION
 
@@ -81,6 +87,54 @@ def test_dependency_audit_includes_lockfile_python_audit() -> None:
     assert "uv audit --locked" in makefile
     assert "pip-audit" not in makefile
     assert "uv export --locked" not in makefile
+
+
+@pytest.mark.skipif(not Path("/usr/bin/make").is_file(), reason="requires Make")
+def test_pre_commit_tooling_keeps_selected_project_environment(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / ".nobackup").touch()
+    uv = bin_dir / "uv"
+    uv.write_text(
+        "#!/bin/sh\n"
+        + 'printf "%s|%s\\n" "$UV_PROJECT_ENVIRONMENT" "$*" >> "$UV_RECORD"\n'
+        + 'if [ "$1" = "sync" ]; then mkdir -p "$UV_PROJECT_ENVIRONMENT"; fi\n',
+        encoding="utf-8",
+    )
+    uv.chmod(0o755)
+    project_env = tmp_path / "project-python310"
+    record = tmp_path / "uv-record"
+
+    subprocess.run(
+        [
+            "/usr/bin/make",
+            "--no-print-directory",
+            "md-lint",
+            "pre-commit-check",
+            "AI=",
+        ],
+        cwd=tmp_path,
+        env=os.environ
+        | {
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+            "UV_PROJECT_ENVIRONMENT": str(project_env),
+            "UV_RECORD": str(record),
+            "MAKEFILES": str(Path("Makefile").resolve()),
+        },
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    calls = record.read_text(encoding="utf-8").splitlines()
+    assert len(calls) == 3
+    assert calls[0].startswith(f"{tmp_path / '.cache/pre-commit'}|sync --locked ")
+    assert "--only-group lint" in calls[0]
+    for call in calls[1:]:
+        assert call.startswith(f"{project_env}|run --no-project --python ")
+        assert str(tmp_path / ".cache/pre-commit/bin/pre-commit") in call
+    assert calls[1].endswith("run markdownlint-cli2 --all-files")
+    assert calls[2].endswith("run --all-files")
 
 
 def test_wheel_build_uses_locked_cargo_dependencies() -> None:

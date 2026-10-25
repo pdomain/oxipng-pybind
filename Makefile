@@ -2,9 +2,11 @@ export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 AI ?=
 LOG := .ci-ai.log
-RUST_VERSION := 1.98.0
+RUST_VERSION := 1.99.1
 CARGO_DENY_VERSION := 0.19.7
 REFRESH_BRANCH := automation/dependency-refresh
+PRE_COMMIT_ENV := $(CURDIR)/.cache/pre-commit
+PRE_COMMIT := uv run --no-project --python "$(PRE_COMMIT_ENV)/bin/python" "$(PRE_COMMIT_ENV)/bin/pre-commit"
 
 ifdef AI
 _goals := $(or $(MAKECMDGOALS),ci)
@@ -20,7 +22,7 @@ else
 .PHONY: help bootstrap-rust setup setup-env setup-hooks develop test test-rust test-py coverage lint lint-fix py-lint py-lint-fix \
 	rust-lint rust-lint-fix md-lint md-lint-fix format format-check typecheck \
 	rust-deny py-audit-lock override-audit dependency-audit dependency-refresh-check refresh-actions accept-refresh-pr pre-commit-check \
-	third-party-notices third-party-notices-check build release-artifacts wheel sdist verify-release-artifacts \
+	pre-commit-env third-party-notices third-party-notices-check build release-artifacts wheel sdist verify-release-artifacts \
 	clean clean-cache reset remove-venv upgrade-deps api-matrix ci
 
 help: ## Show this help message
@@ -43,12 +45,18 @@ setup-env: bootstrap-rust ## Install toolchains, sync deps, and build editable e
 	uv sync --locked --group dev --reinstall
 	@$(MAKE) --no-print-directory develop
 
-setup-hooks: ## Install pre-commit hooks (skipped silently when core.hooksPath is set or git worktree)
+pre-commit-env: ## Sync locked pre-commit tooling on Python 3.13
+	mkdir -p .cache
+	touch .cache/.nobackup
+	UV_PROJECT_ENVIRONMENT="$(PRE_COMMIT_ENV)" uv sync --locked --python 3.13 --only-group lint
+	touch "$(PRE_COMMIT_ENV)/.nobackup"
+
+setup-hooks: pre-commit-env ## Install pre-commit hooks (skipped silently when core.hooksPath is set or git worktree)
 	@if git config --get core.hooksPath >/dev/null 2>&1 || [ -f .git ]; then \
 		echo "Note: core.hooksPath is set or git worktree; skipping pre-commit hook install (hooks run via make pre-commit-check)"; \
 	else \
-		uv run --group dev pre-commit install --install-hooks; \
-		uv run --group dev pre-commit install --hook-type commit-msg; \
+		$(PRE_COMMIT) install --install-hooks; \
+		$(PRE_COMMIT) install --hook-type commit-msg; \
 	fi
 
 setup: setup-env setup-hooks ## Install toolchains, sync deps, build editable extension, and install pre-commit hooks
@@ -94,11 +102,11 @@ py-lint-fix: ## Run ruff format and ruff check --fix
 	uv run --group dev ruff format
 	uv run --group dev ruff check --fix .
 
-md-lint: ## Run markdownlint via pre-commit
-	uv run --group dev pre-commit run markdownlint-cli2 --all-files
+md-lint: pre-commit-env ## Run markdownlint via pre-commit
+	$(PRE_COMMIT) run markdownlint-cli2 --all-files
 
-md-lint-fix: ## Run markdownlint auto-fix via pre-commit
-	uv run --group dev pre-commit run markdownlint-cli2-fix --hook-stage manual --all-files
+md-lint-fix: pre-commit-env ## Run markdownlint auto-fix via pre-commit
+	$(PRE_COMMIT) run markdownlint-cli2-fix --hook-stage manual --all-files
 
 format: ## Format Rust and Python, then run lint
 	cargo fmt --all
@@ -155,8 +163,8 @@ accept-refresh-pr: ## Rebase the dependency-refresh PR on main, sync pins, run C
 		echo "PR #$$pr is green and ready. Review the changelog links above, then merge with:"; \
 		echo "  gh pr merge $$pr --rebase"
 
-pre-commit-check: ## Run all pre-commit hooks
-	uv run --group dev pre-commit run --all-files
+pre-commit-check: pre-commit-env ## Run all pre-commit hooks
+	$(PRE_COMMIT) run --all-files
 
 build: release-artifacts ## Build and verify release artifacts
 

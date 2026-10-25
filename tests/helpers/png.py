@@ -128,7 +128,8 @@ def png_text_chunks(data: bytes) -> dict[str, str]:
 def decoded_rgba(data: bytes) -> tuple[tuple[int, int], bytes]:
     from PIL import Image  # noqa: PLC0415 - real pixel tests require Pillow.
 
-    with Image.open(BytesIO(data)) as image:
+    image = Image.open(BytesIO(data))
+    with image:
         rgba = image.convert("RGBA")
         return rgba.size, rgba.tobytes()
 

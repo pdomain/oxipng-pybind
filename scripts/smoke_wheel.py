@@ -59,7 +59,8 @@ def verify_png_with_pillow(path: Path) -> None:
     """Verify a PNG file with Pillow."""
     from PIL import Image  # noqa: PLC0415 - optional 3.11+ smoke dependency.
 
-    with Image.open(path) as image:
+    image = Image.open(path)
+    with image:
         image.verify()
 
 
@@ -67,7 +68,8 @@ def verify_png_bytes_with_pillow(data: bytes) -> None:
     """Verify PNG bytes with Pillow."""
     from PIL import Image  # noqa: PLC0415 - optional 3.11+ smoke dependency.
 
-    with Image.open(BytesIO(data)) as image:
+    image = Image.open(BytesIO(data))
+    with image:
         image.verify()
 
 

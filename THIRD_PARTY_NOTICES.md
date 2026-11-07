@@ -22,7 +22,7 @@ dependencies retain their upstream licenses and notices.
 - License: MIT OR Apache-2.0
 
 - Project: [crc32fast](https://github.com/srijs/rust-crc32fast)
-- Version: 1.5.3
+- Version: 1.5.4
 - License: MIT OR Apache-2.0
 
 - Project: [crossbeam-deque](https://github.com/crossbeam-rs/crossbeam)
@@ -70,7 +70,7 @@ dependencies retain their upstream licenses and notices.
 - License: Apache-2.0
 
 - Project: [log](https://github.com/rust-lang/log)
-- Version: 0.4.34
+- Version: 0.4.35
 - License: MIT OR Apache-2.0
 
 - Project: [once_cell](https://github.com/matklad/once_cell)

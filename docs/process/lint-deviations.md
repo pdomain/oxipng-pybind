@@ -54,17 +54,22 @@ docstrings only when they clarify shared behavior.
 | `PLR0912` | `tests/test_real_pngs.py` | The fixture keeps each Pillow PNG mode explicit so real PNG coverage remains easy to audit. |
 | `S310` | reviewed URL calls in `scripts/bump_upstream.py` and `scripts/validate_release_tag.py` | Release automation uses validated HTTPS URLs with explicit timeouts. |
 | `S603` | reviewed `subprocess.run` calls in `scripts/*.py` | Automation passes argument lists directly and does not use `shell=True`. |
-| `S603` | `tests/test_pylint_consumers.py` | The regression test invokes the current interpreter with fixed Pylint arguments to catch Astroid recursion warnings. |
+| `S603` | `tests/test_pylint_consumers.py` | The regression test runs fixed Pylint commands, one with the locked interpreter and one through an isolated `uv run`, to catch Astroid recursion warnings. |
 | `S603` | `tests/test_wheel_tags.py` | Direct script execution regression tests use fixed interpreter and script arguments. |
 
 ## Pylint and Astroid Workarounds
 
 This project uses Ruff and basedpyright, not Pylint. Some consumers still run
-Pylint over code that imports `oxipng`. Pylint 4.0.5 uses Astroid 4.0.4.
-Astroid can recurse while transforming this facade's runtime Python shapes.
+Pylint over code that imports `oxipng`. The locked canary is Pylint 4.1.3,
+which uses Astroid 4.3.4 and clears GHSA-22qq-2fwx-7p67. The same test also
+runs Pylint 4.0.6, the Standard Ebooks developer pin, which still uses Astroid
+4.0.4.
 
-Keep the current package-side workarounds until a supported Pylint release can
-analyze a broad consumer import without Astroid recursion warnings.
+Astroid can recurse while transforming this facade's runtime Python shapes.
+On 6 November 2026, the pre-workaround facade still emitted those recursion
+warnings under Pylint 4.0.5 and Pylint 4.1.3. The current facade did not.
+Keep the current package-side workarounds until a Pylint release can analyze
+the pre-workaround shapes without Astroid recursion warnings.
 
 These deviations intentionally make the runtime facade uglier than the
 straightforward implementation. The `.post2` Pylint/Astroid workaround commit

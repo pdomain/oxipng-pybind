@@ -7,6 +7,20 @@ last_verified: 2026-10-25
 
 ## Release Notes
 
+## 10.2.1.post2 - Refresh runtime dependencies and development tooling
+
+- Updated `log` from 0.4.34 to 0.4.35. Updated the `cc` build helper from
+  1.9.0 to 1.11.1. Refreshed third-party notices, including `crc32fast`
+  1.5.4.
+- Refreshed Python development dependencies. Moved Pylint from 4.0.5 to
+  4.1.3, which clears GHSA-22qq-2fwx-7p67. The consumer check also runs
+  Pylint 4.0.6, the Standard Ebooks developer pin. Kept the `click` and
+  `sh` security overrides because they are still needed.
+- Updated pre-commit hooks and reviewed GitHub Action pins, including
+  `pypa/gh-action-pypi-publish` v1.14.3 for GHSA-5xjx-3w67-w9x9.
+- The public Python API is unchanged. The package still wraps upstream
+  `oxipng` 10.2.1. Python runtime dependencies remain empty.
+
 ## 10.2.1.post1 - Refresh dependencies and development tooling
 
 - Updated Rust dependencies, including PyO3 from 0.29.2 to 0.29.3,

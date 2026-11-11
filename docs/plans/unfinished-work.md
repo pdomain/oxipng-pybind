@@ -1,13 +1,13 @@
 ---
 kind: process
 status: active
-last_verified: 2026-10-25
+last_verified: 2026-11-11
 ---
 # Unfinished Work
 
 This file tracks active work that is not covered by durable process docs.
 
-Last checked: 2026-10-25.
+Last checked: 2026-11-11.
 
 ## What's Already Working
 
@@ -42,6 +42,25 @@ See the durable process docs for implementation details:
 
 No release or dependency work remains from the 10.2.1.post1 refresh. Release
 preparation commit `d7c0f86` passed hosted `ci`, `api-matrix`, and `wheels` checks.
+
+### Deferred Release: 2026-11-11 Dependency Refresh
+
+The 2026-11-11 dependency refresh ships without a release. Dependency refresh
+PR #20 carries it.
+
+The classifier labeled the refresh `release-needed`. The only shipped change is
+`crc32fast` 1.5.4 to 1.5.5. That release adds a faster CRC32 path on aarch64.
+It fixes no bug and no security issue, and x86_64 behavior does not change.
+
+The other changes do not reach published wheels:
+
+- `filelock` 4.2.9 to 4.2.10 is a dev-only tool.
+- `taiki-e/install-action` v2.90.3 and `peter-evans/create-pull-request`
+  v8.1.3 are CI-only action pins.
+
+Ship `crc32fast` 1.5.5 with the next upstream `oxipng` bump or the next
+release. Cut a release sooner if a refresh brings a security fix to a shipped
+dependency.
 
 The GitHub settings audit does not read the active repository ruleset. It
 reports missing protection and required checks even though the ruleset enforces

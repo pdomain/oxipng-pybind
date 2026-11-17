@@ -10,7 +10,7 @@ dependencies retain their upstream licenses and notices.
 ## Runtime Rust Dependencies
 
 - Project: [bumpalo](https://github.com/fitzgen/bumpalo)
-- Version: 3.20.3
+- Version: 3.20.4
 - License: MIT OR Apache-2.0
 
 - Project: [bytemuck](https://github.com/Lokathor/bytemuck)

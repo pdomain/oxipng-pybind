@@ -7,6 +7,18 @@ last_verified: 2026-10-25
 
 ## Release Notes
 
+## 10.2.1.post3 - Update bundled Rust dependencies
+
+- Updated `bumpalo` from 3.20.3 to 3.20.4 to fix a low-severity security
+  issue in an allocator used by `zopfli`. See [GHSA-j7wg-xg3h-2pr6](https://github.com/fitzgen/bumpalo/security/advisories/GHSA-j7wg-xg3h-2pr6).
+- Updated `crc32fast` to 1.5.5, which speeds up CRC32 checks on aarch64.
+  Updated the `cc` and `target-lexicon` build dependencies and refreshed
+  third-party notices.
+- Updated Python development dependencies, pre-commit hooks, and the
+  `taiki-e/install-action` pin. The build toolchain now uses Rust 1.100.0.
+- The public Python API and optimization behavior stay the same. The
+  package still wraps upstream `oxipng` 10.2.1.
+
 ## 10.2.1.post2 - Refresh runtime dependencies and development tooling
 
 - Updated `log` from 0.4.34 to 0.4.35. Updated the `cc` build helper from

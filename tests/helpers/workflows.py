@@ -17,12 +17,12 @@ REVIEWED_ACTION_REFS = {
     "actions/upload-artifact": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
     "actions/download-artifact": "9000827ccba6bdab643e8b6fd33ac0654aef8333",
     "astral-sh/setup-uv": "68559e99cc807c1eb7e9238fd43a15bba460eec2",
-    "taiki-e/install-action": "cfdb7ed4ccc7c7dce37759eae89dc5674b469b39",
+    "taiki-e/install-action": "75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f",
     "peter-evans/create-pull-request": "3ffccacd46053766916f087ce41d627c0b8cf2d1",
     "PyO3/maturin-action": "e83996d129638aa358a18fbd1dfb82f0b0fb5d3b",
     "pypa/gh-action-pypi-publish": "7245906fb61fa33a13554f9d5fb856fe61758086",
 }
-RUST_TOOLCHAIN_VERSION = "1.99.1"
+RUST_TOOLCHAIN_VERSION = "1.100.0"
 
 
 def load_workflow(relative: str) -> Workflow:

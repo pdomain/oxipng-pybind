@@ -44,6 +44,23 @@ stdin and stdout are caller-owned. Use `optimize_from_memory` for byte streams.
 For attacker-controlled files or bytes, see
 [Untrusted Input](docs/usage/untrusted-input.md).
 
+## Command Line
+
+The package also installs an `oxipng` command. It accepts a subset of the
+upstream `oxipng` flags. Run `oxipng --help` to see them.
+
+With [uv](https://docs.astral.sh/uv/), you can run it without a manual install:
+
+```bash
+uvx --from oxipng-pybind oxipng -o max --strip safe image.png
+```
+
+Or install it as a tool:
+
+```bash
+uv tool install oxipng-pybind
+```
+
 ## pyoxipng Compatibility
 
 This package can replace `pyoxipng` for most callers.

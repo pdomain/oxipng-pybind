@@ -12,6 +12,7 @@ from pathlib import Path
 EXPECTED_DISTRIBUTION = "oxipng-pybind"
 EXPECTED_PACKAGE_FILES = (
     "oxipng/__init__.py",
+    "oxipng/cli.py",
     "oxipng/_pyoxipng_compat.py",
     "oxipng/__init__.pyi",
     "oxipng/py.typed",

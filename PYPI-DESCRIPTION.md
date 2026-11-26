@@ -31,6 +31,23 @@ This project can replace `pyoxipng` for most use cases.
 
 It tracks upstream Rust `oxipng` version updates.
 
+## Command Line
+
+The package also installs an `oxipng` command. It accepts a subset of the
+upstream `oxipng` flags. Run `oxipng --help` to see them.
+
+With [uv](https://docs.astral.sh/uv/), you can run it without a manual install:
+
+```bash
+uvx --from oxipng-pybind oxipng -o max --strip safe image.png
+```
+
+Or install it as a tool:
+
+```bash
+uv tool install oxipng-pybind
+```
+
 ## Links
 
 - [Project home](https://github.com/pdomain/oxipng-pybind)

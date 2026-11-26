@@ -31,6 +31,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+oxipng = "oxipng.cli:main"
+
 [project.urls]
 Repository = "https://github.com/pdomain/oxipng-pybind"
 Issues = "https://github.com/pdomain/oxipng-pybind/issues"
